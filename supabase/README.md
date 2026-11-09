@@ -111,6 +111,38 @@ SUPABASE_ANON_KEY=… npm run smoke:assistant --workspace @chairside/ai   # end-
 
 Deploy: `npx supabase functions deploy ai-assistant` (from the repo root, like `ai`).
 
+### Inbox agent (`functions/inbox`, #34)
+
+The endpoint the salon's iOS Shortcut forwards keyword texts to (see `docs/spikes/ios-shortcut-keyword-bridge.md`). It has no user JWT (`verify_jwt = false`). The `X-Bridge-Token` header identifies the salon, and the body is never used for that. The owner generates the token in Settings → Text bridge (`rotate_inbox_bridge_token`). Only its SHA-256 is stored in `inbox_bridges`, and the plain token is shown once. Each token is limited to 60 texts per hour.
+
+```http
+POST /functions/v1/inbox
+X-Bridge-Token: csb_…
+{ "sender": "Karina M.", "senderPhone": "+1 555 010 0101", "text": "Chairside can I get color + trim fri afternoon?",
+  "receivedAt": "2026-12-01T14:03:22-05:00", "bridgeVersion": "1" }
+→ 200 { "ok": true, "status": "captured" | "duplicate" | "ignored", "requestId": "…" }
+```
+
+Request flow (`@chairside/ai/inbox`):
+
+1. The function strips the keyword.
+2. The salon's model fills one forced `submit_request` tool call with intent, services from the menu, a date, time of day and the client's name. It does no slot math, and usage is metered as `purpose = 'inbox'` against the salon budget.
+3. The client is matched by phone, then by one confident name. An unknown sender gets a `pending` client.
+4. The `packages/core` engine picks the closest slot, preferring the time of day the client asked for.
+5. `capture_inbox_request` (service role) stores a `captured_requests` row and holds the slot as a `requested` appointment (`source = 'inbox'`). That appointment gets the request push and hold expiry from #62.
+
+**Draft mode:** nothing is ever sent back to the client. The stylist approves or declines the held slot in the Inbox tab. A trigger then marks the request approved, declined or expired, keeps the new client on confirm, and cancels the old appointment for an approved reschedule. Cancel requests have a **Cancel appointment** action (`resolve_captured_request`). Duplicates are matched on sender, text and `receivedAt`. Non-requests ("thanks!") store nothing.
+
+Local check without a key: serve with `CHAIRSIDE_AI_DEMO=1` (same env file as above). The function then uses a rule-based parser and needs no AI provider.
+
+```bash
+curl -X POST http://127.0.0.1:54321/functions/v1/inbox -H "X-Bridge-Token: csb_…" \
+  -H 'Content-Type: application/json' \
+  -d '{"sender":"Dana","senderPhone":"+13125550199","text":"Chairside cut fri afternoon?","bridgeVersion":"1"}'
+```
+
+Deploy: `npx supabase functions deploy inbox --no-verify-jwt`.
+
 ## Payments (Stripe Connect)
 
 Each salon gets a **Stripe Connect Express** account (the platform is Chairside's Stripe account). Owners connect it in **Settings → Payments** (`apps/mobile/src/app/settings/payments.tsx`), which opens Stripe's hosted onboarding (business details, ID, bank account). Stripe pays out to the salon's bank; Chairside never handles bank details. See [`docs/PLAN.md` §9](../docs/PLAN.md).

@@ -450,3 +450,7 @@ verify_jwt = false
 
 [functions.ai-assistant]
 verify_jwt = true
+
+# The salon's iOS Shortcut calls this without a JWT; requests are authenticated by X-Bridge-Token.
+[functions.inbox]
+verify_jwt = false

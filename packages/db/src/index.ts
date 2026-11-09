@@ -13,6 +13,7 @@ export * from './appointments.ts';
 export * from './notifications.ts';
 export * from './search.ts';
 export * from './clients.ts';
+export * from './inbox.ts';
 
 type PublicSchema = Database['public'];
 
