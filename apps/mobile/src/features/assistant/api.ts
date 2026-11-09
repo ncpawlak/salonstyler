@@ -3,6 +3,7 @@ import type {
   AssistantCardResponse,
   AssistantClientResponse,
   AssistantMessageResponse,
+  AssistantReplyResponse,
   AssistantRequest,
   AssistantRunningLateResponse,
   AssistantStatusResponse,
@@ -59,6 +60,8 @@ export function assistantApi(supabase: ChairsideClient, salonId: string) {
         salonId,
         ...r,
       }),
+    draftReply: (r: Req<'draft_reply'>) =>
+      invoke<AssistantReplyResponse>(supabase, { action: 'draft_reply', salonId, ...r }),
   };
 }
 

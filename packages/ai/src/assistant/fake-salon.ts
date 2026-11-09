@@ -9,7 +9,13 @@ import type {
   ServiceMenu,
 } from '@chairside/db';
 
-import type { AssistantClient, AssistantPort, ClientVisit } from './types.ts';
+import type {
+  AssistantClient,
+  AssistantPort,
+  ClientVisit,
+  ReplyContext,
+  ReplyRequestInfo,
+} from './types.ts';
 
 export const TZ = 'America/Chicago';
 /** Tue Dec 1 2026, 9:00 AM in Chicago. */
@@ -130,6 +136,8 @@ export interface FakePort extends AssistantPort {
   visits: Map<string, ClientVisit[]>;
   overrides: Map<string, ClientServiceOverride[]>;
   notes: { clientId: string; kind: 'note' | 'formula'; text: string }[];
+  replySettings: Omit<ReplyContext, 'request'>;
+  requests: ReplyRequestInfo[];
 }
 
 export function createFakePort(): FakePort {
@@ -159,6 +167,14 @@ export function createFakePort(): FakePort {
     overrides,
     notes: [],
     audits: [],
+    replySettings: {
+      autoSendReplies: false,
+      toneExamples: null,
+      bookingLink: null,
+      includeBookingLink: false,
+      bridgeKeyword: null,
+    },
+    requests: [],
     async getSchedule() {
       return {
         salonName: 'Studio K',
@@ -235,6 +251,10 @@ export function createFakePort(): FakePort {
       clients.push(client);
       return client;
     },
+    getReplyContext: async (requestId) => ({
+      ...port.replySettings,
+      request: port.requests.find((r) => r.id === requestId) ?? null,
+    }),
     async audit(action, details) {
       port.audits.push({ action, details });
     },

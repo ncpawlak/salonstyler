@@ -6,6 +6,12 @@ import { createProvider as defaultCreateProvider } from '../registry.ts';
 import type { ChatMessage, LLMProvider } from '../types.ts';
 import { runAssistantTurn } from '../assistant/loop.ts';
 import {
+  draftReply,
+  type ReplyDraft,
+  type ReplyDraftInput,
+  templateReply,
+} from '../assistant/reply.ts';
+import {
   type ClientTextDraft,
   draftRunningLateTexts,
   type RunningLateDraftInput,
@@ -81,6 +87,18 @@ export const assistantRequestSchema = z.discriminatedUnion('action', [
       .min(1)
       .max(50),
   }),
+  /**
+   * Draft a reply to a client (#7): about an inbox request, an appointment, or neither ("other").
+   * Who, when and what are read from the database; the model only words the text.
+   */
+  z.object({
+    action: z.literal('draft_reply'),
+    salonId: z.uuid(),
+    kind: z.enum(['confirm', 'offer', 'decline', 'cancelled', 'other']),
+    requestId: z.uuid().optional(),
+    appointmentId: z.uuid().optional(),
+    clientId: z.uuid().optional(),
+  }),
 ]);
 export type AssistantRequest = z.infer<typeof assistantRequestSchema>;
 
@@ -114,6 +132,16 @@ export type AssistantRunningLateResponse = {
   usage: AssistantUsage;
 };
 
+export type AssistantReplyResponse = {
+  draft: ReplyDraft;
+  /** The client's number (client record, else the sender's), or null if unknown. */
+  to: string | null;
+  clientId: string | null;
+  appointmentId: string | null;
+  notice: string | null;
+  usage: AssistantUsage;
+};
+
 export type AssistantServiceResult =
   | {
       status: 200;
@@ -122,7 +150,8 @@ export type AssistantServiceResult =
         | AssistantMessageResponse
         | AssistantCardResponse
         | AssistantClientResponse
-        | AssistantRunningLateResponse;
+        | AssistantRunningLateResponse
+        | AssistantReplyResponse;
     }
   | { status: 400 | 401 | 403 | 409 | 429 | 500 | 502; body: AiErrorBody };
 
@@ -188,6 +217,8 @@ export async function handleAssistantRequest(
         return await message(request, deps, ctx);
       case 'draft_running_late':
         return await draftRunningLate(request, deps, ctx);
+      case 'draft_reply':
+        return await draftClientReply(request, deps, ctx);
     }
   } catch (error) {
     if (error instanceof ToolError) return fail(409, error.code, error.message);
@@ -335,4 +366,89 @@ async function draftRunningLate(
     sources: drafts.map((d) => d.source),
   });
   return { status: 200, body: { drafts, notice, usage } };
+}
+
+const PHONE_LIKE = /^[+\d\s().\-]+$/;
+
+/**
+ * Drafts one reply. Without a usable provider (no key, budget spent, provider down) the template
+ * is returned with a notice, so the stylist can always send something.
+ */
+async function draftClientReply(
+  request: Extract<AssistantRequest, { action: 'draft_reply' }>,
+  deps: AssistantServiceDeps,
+  ctx: ToolContext,
+): Promise<AssistantServiceResult> {
+  const replyCtx = await ctx.port.getReplyContext(request.requestId ?? null);
+  const req = replyCtx.request;
+  if (request.requestId && !req) throw new ToolError('not_found', 'That request no longer exists');
+
+  const appointmentId =
+    request.appointmentId ??
+    (req
+      ? req.intent === 'cancel' || request.kind === 'cancelled'
+        ? (req.targetAppointmentId ?? req.appointmentId)
+        : (req.appointmentId ?? req.targetAppointmentId)
+      : null);
+  const appt = appointmentId ? await ctx.port.getAppointment(appointmentId) : null;
+  if (appointmentId && (!appt || appt.salon_id !== request.salonId)) {
+    throw new ToolError('not_found', 'That appointment no longer exists');
+  }
+  const clientId = appt?.client_id ?? req?.clientId ?? request.clientId ?? null;
+  const client = appt?.client ?? (clientId ? await ctx.port.getClient(clientId) : null);
+  const sender = req?.sender && !PHONE_LIKE.test(req.sender) ? req.sender : null;
+
+  const today = new Date(ctx.now()).toISOString().slice(0, 10);
+  const schedule = await ctx.port.getSchedule({ from: today, to: today });
+  const input: ReplyDraftInput = {
+    kind: request.kind,
+    salonName: schedule.salonName,
+    timeZone: schedule.hours.timeZone,
+    clientName: client?.name ?? sender,
+    start: appt?.starts_at ? new Date(appt.starts_at).toISOString() : null,
+    services: (appt?.services ?? []).map((s) => s.name),
+    clientMessage: req?.message ?? null,
+    toneExamples: replyCtx.toneExamples,
+    bookingLink: replyCtx.includeBookingLink ? replyCtx.bookingLink : null,
+    confirmKeyword: replyCtx.bridgeKeyword,
+    teachKeyword: req ? replyCtx.bridgeKeyword : null,
+  };
+
+  let draft: ReplyDraft;
+  let notice: string | null = null;
+  let usage: AssistantUsage = null;
+  const resolved = await resolveProvider(request.salonId, deps, 'reply');
+  if ('status' in resolved) {
+    draft = templateReply(input);
+    notice =
+      resolved.status === 429
+        ? 'Monthly AI budget used up, so this is a standard reply.'
+        : 'Add an AI provider in Settings → AI assistant for personal replies.';
+  } else {
+    usage = resolved.usage;
+    try {
+      draft = await draftReply(resolved.llm, input, resolved.meter);
+    } catch (error) {
+      if (!(error instanceof AiProviderError)) throw error;
+      draft = templateReply(input);
+      notice = 'The AI provider didn’t respond, so this is a standard reply.';
+    }
+  }
+  await ctx.port.audit('assistant.reply_draft', {
+    kind: request.kind,
+    requestId: req?.id ?? null,
+    appointmentId: appt?.id ?? null,
+    source: draft.source,
+  });
+  return {
+    status: 200,
+    body: {
+      draft,
+      to: client?.phone ?? req?.senderPhone ?? null,
+      clientId,
+      appointmentId: appt?.id ?? null,
+      notice,
+      usage,
+    },
+  };
 }

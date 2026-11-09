@@ -7,9 +7,15 @@
 export const BRIDGE_SHORTCUT_NAME = 'Chairside Bridge';
 /**
  * Version the published Shortcut sends as `bridgeVersion`. Bump it (and re-publish the iCloud
- * link) whenever the Shortcut changes. v1 = the spike recipe; v2 adds auto-reply (Send Message).
+ * link) whenever the Shortcut changes. v1 = the spike recipe; v2 adds auto-reply (Send Message);
+ * v3 also sends the queued `replies` (#7 auto-send confirmations).
  */
-export const BRIDGE_SHORTCUT_VERSION = 2;
+export const BRIDGE_SHORTCUT_VERSION = 3;
+/**
+ * First version that sends `replies`. The server only hands queued replies (and marks them sent)
+ * to a Shortcut at least this new, so older ones never drop a confirmation.
+ */
+export const OUTBOX_BRIDGE_VERSION = 3;
 export const DEFAULT_BRIDGE_KEYWORD = 'Chairside';
 /** No texts for this long while a bridge is set up: the automation may have stopped. */
 export const BRIDGE_STALE_DAYS = 7;

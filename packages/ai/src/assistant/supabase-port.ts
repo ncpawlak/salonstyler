@@ -4,6 +4,8 @@ import {
   addClientFormula,
   addClientNote,
   bookAppointment,
+  getInboxBridge,
+  getReplySettings,
   getWorkHours,
   listAppointments,
   listClientOverrides,
@@ -141,6 +143,42 @@ export function createSupabaseAssistantPort(
 
     async createClient(input) {
       return toClient(await addClient(client, salonId, input));
+    },
+
+    async getReplyContext(requestId) {
+      const [settings, bridge, request] = await Promise.all([
+        getReplySettings(client, salonId),
+        getInboxBridge(client, salonId),
+        requestId
+          ? client
+              .from('captured_requests')
+              .select(
+                'id, intent, status, sender, sender_phone, message, client_id, appointment_id, target_appointment_id',
+              )
+              .eq('salon_id', salonId)
+              .eq('id', requestId)
+              .maybeSingle()
+          : null,
+      ]);
+      if (request?.error) throw request.error;
+      const row = request?.data;
+      return {
+        ...settings,
+        bridgeKeyword: bridge?.keyword ?? null,
+        request: row
+          ? {
+              id: row.id,
+              intent: row.intent,
+              status: row.status,
+              sender: row.sender,
+              senderPhone: row.sender_phone,
+              message: row.message,
+              clientId: row.client_id,
+              appointmentId: row.appointment_id,
+              targetAppointmentId: row.target_appointment_id,
+            }
+          : null,
+      };
     },
 
     async audit(action, details) {

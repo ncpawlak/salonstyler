@@ -85,6 +85,9 @@ export default function TextBridgeScreen() {
                 {saved?.auto_reply
                   ? ' The Shortcut texts the client a short “got it”.'
                   : ' Nothing is sent back to the client.'}
+                {
+                  ' Confirmations go out when you tap Send, or on their own with auto-send in Client replies.'
+                }
               </Text>
             </View>
             {saved ? <Badge label="On" tone="success" /> : <Badge label="Off" />}

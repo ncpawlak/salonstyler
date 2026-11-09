@@ -37,6 +37,30 @@ export interface SalonSchedule {
   holdExpiryHours: number;
 }
 
+/** An inbox request a reply is about (issue #7). */
+export interface ReplyRequestInfo {
+  id: string;
+  intent: 'booking' | 'reschedule' | 'cancel';
+  status: string;
+  sender: string | null;
+  senderPhone: string | null;
+  message: string;
+  clientId: string | null;
+  appointmentId: string | null;
+  targetAppointmentId: string | null;
+}
+
+/** Reply preferences, the bridge keyword, and (optionally) the request being answered. */
+export interface ReplyContext {
+  autoSendReplies: boolean;
+  toneExamples: string | null;
+  bookingLink: string | null;
+  includeBookingLink: boolean;
+  /** Null when the text bridge isn't set up. */
+  bridgeKeyword: string | null;
+  request: ReplyRequestInfo | null;
+}
+
 /**
  * Everything the assistant's tools read or write. In production this is backed by a user-scoped
  * Supabase client, so RLS limits every call to the caller's salon; tests use an in-memory fake.
@@ -68,6 +92,8 @@ export interface AssistantPort {
   }): Promise<{ id: string; holdExpiresAt: string | null }>;
   setStatus(id: string, status: 'confirmed' | 'cancelled', reason?: string): Promise<void>;
   createClient(input: { name: string; phone?: string | null }): Promise<AssistantClient>;
+  /** Reply settings, plus the given inbox request (null if it isn't this salon's). */
+  getReplyContext(requestId?: string | null): Promise<ReplyContext>;
   audit(action: string, details: Record<string, unknown>): Promise<void>;
 }
 

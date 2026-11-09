@@ -727,6 +727,97 @@ export type Database = {
           },
         ];
       };
+      client_replies: {
+        Row: {
+          appointment_id: string | null;
+          body: string | null;
+          captured_request_id: string | null;
+          channel: string;
+          claimed_at: string | null;
+          client_id: string | null;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          kind: string;
+          salon_id: string;
+          sent_at: string | null;
+          source: string | null;
+          status: string;
+          to_phone: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          appointment_id?: string | null;
+          body?: string | null;
+          captured_request_id?: string | null;
+          channel: string;
+          claimed_at?: string | null;
+          client_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          kind: string;
+          salon_id: string;
+          sent_at?: string | null;
+          source?: string | null;
+          status?: string;
+          to_phone?: string | null;
+        };
+        Update: {
+          appointment_id?: string | null;
+          body?: string | null;
+          captured_request_id?: string | null;
+          channel?: string;
+          claimed_at?: string | null;
+          client_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          kind?: string;
+          salon_id?: string;
+          sent_at?: string | null;
+          source?: string | null;
+          status?: string;
+          to_phone?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'client_replies_appointment_fkey';
+            columns: ['salon_id', 'appointment_id'];
+            isOneToOne: false;
+            referencedRelation: 'appointments';
+            referencedColumns: ['salon_id', 'id'];
+          },
+          {
+            foreignKeyName: 'client_replies_client_fkey';
+            columns: ['salon_id', 'client_id'];
+            isOneToOne: false;
+            referencedRelation: 'client_summaries';
+            referencedColumns: ['salon_id', 'client_id'];
+          },
+          {
+            foreignKeyName: 'client_replies_client_fkey';
+            columns: ['salon_id', 'client_id'];
+            isOneToOne: false;
+            referencedRelation: 'clients';
+            referencedColumns: ['salon_id', 'id'];
+          },
+          {
+            foreignKeyName: 'client_replies_request_fkey';
+            columns: ['salon_id', 'captured_request_id'];
+            isOneToOne: false;
+            referencedRelation: 'captured_requests';
+            referencedColumns: ['salon_id', 'id'];
+          },
+          {
+            foreignKeyName: 'client_replies_salon_id_fkey';
+            columns: ['salon_id'];
+            isOneToOne: false;
+            referencedRelation: 'salons';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       client_service_overrides: {
         Row: {
           client_id: string;
@@ -1430,7 +1521,9 @@ export type Database = {
       };
       settings: {
         Row: {
+          auto_send_replies: boolean;
           autonomy: string;
+          booking_link: string | null;
           booking_window_days: number;
           created_at: string;
           currency: string;
@@ -1443,13 +1536,17 @@ export type Database = {
           quiet_hours_enabled: boolean;
           quiet_hours_end: string;
           quiet_hours_start: string;
+          reply_include_booking_link: boolean;
+          reply_tone_examples: string | null;
           salon_id: string;
           slot_grid_minutes: number;
           updated_at: string;
         };
         ComputedFields: never;
         Insert: {
+          auto_send_replies?: boolean;
           autonomy?: string;
+          booking_link?: string | null;
           booking_window_days?: number;
           created_at?: string;
           currency?: string;
@@ -1462,12 +1559,16 @@ export type Database = {
           quiet_hours_enabled?: boolean;
           quiet_hours_end?: string;
           quiet_hours_start?: string;
+          reply_include_booking_link?: boolean;
+          reply_tone_examples?: string | null;
           salon_id: string;
           slot_grid_minutes?: number;
           updated_at?: string;
         };
         Update: {
+          auto_send_replies?: boolean;
           autonomy?: string;
+          booking_link?: string | null;
           booking_window_days?: number;
           created_at?: string;
           currency?: string;
@@ -1480,6 +1581,8 @@ export type Database = {
           quiet_hours_enabled?: boolean;
           quiet_hours_end?: string;
           quiet_hours_start?: string;
+          reply_include_booking_link?: boolean;
+          reply_tone_examples?: string | null;
           salon_id?: string;
           slot_grid_minutes?: number;
           updated_at?: string;
@@ -1865,6 +1968,32 @@ export type Database = {
         };
       };
       payout_summary: { Args: { p_day?: string; p_salon_id: string }; Returns: Json };
+      record_client_reply: {
+        Args: { p_reply: Json; p_salon_id: string };
+        Returns: {
+          appointment_id: string | null;
+          body: string | null;
+          captured_request_id: string | null;
+          channel: string;
+          claimed_at: string | null;
+          client_id: string | null;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          kind: string;
+          salon_id: string;
+          sent_at: string | null;
+          source: string | null;
+          status: string;
+          to_phone: string | null;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'client_replies';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       register_push_token: {
         Args: {
           p_platform: Database['public']['Enums']['push_platform'];

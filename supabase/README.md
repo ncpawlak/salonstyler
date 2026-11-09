@@ -99,7 +99,7 @@ Provider contract tests replay fixtures in `packages/ai/fixtures` (no network in
 
 The owner's chat assistant. It uses the same JWT, membership, Vault-key and budget wiring as `ai` (shared in `functions/_shared/ai-deps.ts`) and runs the tool-calling loop from `@chairside/ai/assistant` server-side. Tools read and write through the **caller's JWT**, so RLS scopes them to their salon. The model only interprets the request and calls tools: `find_client`, `list_services`, `find_slots` (the `packages/core` engine on the requested day and the days around it), `get_day_summary`, `propose_booking` (a `held` appointment with notes `Drafted by Ask Chairside`) and `cancel_draft`. Confirming is **not** a model tool; the app calls it when the owner taps Confirm. Every tool call is written to `audit_log` (`entity_type = 'ai_assistant'`).
 
-Actions: `status`, `message` (`{history, text}`; the app resends the returned `messages` as history, so nothing is stored server-side), `propose`, `confirm`, `discard`, `create_client`. With no key, `message` returns `409 not_configured` and the app links to Settings → AI assistant.
+Actions: `status`, `message` (`{history, text}`; the app resends the returned `messages` as history, so nothing is stored server-side), `propose`, `confirm`, `discard`, `create_client`, `draft_running_late` (#37) and `draft_reply` (#7, below). With no key, `message` returns `409 not_configured` and the app links to Settings → AI assistant.
 
 ```bash
 npx supabase functions serve                     # serves ai + ai-assistant
@@ -119,8 +119,13 @@ The endpoint the salon's iOS Shortcut forwards keyword texts to (see [`docs/shor
 POST /functions/v1/inbox
 X-Bridge-Token: csb_…
 { "sender": "Karina M.", "senderPhone": "+1 555 010 0101", "text": "Chairside can I get color + trim fri afternoon?",
-  "receivedAt": "2026-12-01T14:03:22-05:00", "bridgeVersion": "2" }
-→ 200 { "ok": true, "status": "captured" | "duplicate" | "ignored" | "test", "requestId": "…", "reply": "…" }
+  "receivedAt": "2026-12-01T14:03:22-05:00", "bridgeVersion": "3" }
+→ 200 { "ok": true, "status": "captured" | "duplicate" | "ignored" | "test" | "confirmed", "requestId": "…", "reply": "…",
+        "replies": [{ "id": "…", "to": "+1555…", "text": "Hi Karina! You're booked…" }] }
+
+POST /functions/v1/inbox   (same header)
+{ "action": "outbox" }
+→ 200 { "ok": true, "status": "outbox", "replies": [ … ] }
 ```
 
 Request flow (`@chairside/ai/inbox`):
@@ -135,7 +140,7 @@ Request flow (`@chairside/ai/inbox`):
 
 **Auto-reply (#6, off by default):** with `inbox_bridges.auto_reply` on, the response carries a `reply` for the Shortcut to text back: "got it" for a captured request, a how-to for a keyword-only text, and a "connected" note for a test text. Duplicates never reply.
 
-**Draft mode** (auto-reply off): nothing is ever sent back to the client. The stylist approves or declines the held slot in the Inbox tab. A trigger then marks the request approved, declined or expired, keeps the new client on confirm, and cancels the old appointment for an approved reschedule. Cancel requests have a **Cancel appointment** action (`resolve_captured_request`). Duplicates are matched on sender, text and `receivedAt`. Non-requests ("thanks!") store nothing.
+**Draft-then-approve:** besides those acknowledgements, nothing is sent to the client without the stylist (see Client replies below). The stylist approves or declines the held slot in the Inbox tab. A trigger then marks the request approved, declined or expired, keeps the new client on confirm, and cancels the old appointment for an approved reschedule. Cancel requests have a **Cancel appointment** action (`resolve_captured_request`). Duplicates are matched on sender, text and `receivedAt`. Non-requests ("thanks!") store nothing.
 
 Local check without a key: serve with `CHAIRSIDE_AI_DEMO=1` (same env file as above). The function then uses a rule-based parser and needs no AI provider.
 
@@ -146,6 +151,16 @@ curl -X POST http://127.0.0.1:54321/functions/v1/inbox -H "X-Bridge-Token: csb_�
 ```
 
 Deploy: `npx supabase functions deploy inbox --no-verify-jwt`.
+
+### Client replies (#7)
+
+The model only **drafts** replies; it never decides who, when or what. `draft_reply` on `ai-assistant` (`{kind: confirm | offer | decline | cancelled | other, requestId?, appointmentId?, clientId?}`) reads the client, appointment and services from the database, asks the salon's model for the wording (`purpose = 'reply'`), and appends the booking link (if `settings.reply_include_booking_link`) and, for offers, `Reply "<keyword> yes" to confirm.` in code. Without a key or budget it returns a template. Tone examples (`settings.reply_tone_examples`) steer the style only.
+
+In the app the editor opens after Approve, Decline or Cancel appointment in the Inbox, from **Offer** on a held request, and for each running-late text. **Send** opens the Messages composer prefilled (`expo-sms`, else an `sms:` link); on web it copies. `record_client_reply` then stores a `client_replies` row (`channel = messages | copy`, `source = ai | template | edited`), cancels any queued auto-send reply for the same request, and writes `reply.sent` to `audit_log`. Members can read `client_replies` (Realtime refreshes the Inbox); only RPCs and the service role write it.
+
+**Auto-send** (`settings.auto_send_replies`, off by default, owner opt-in in Settings → Client replies) needs the text bridge. It is separate from the bridge's auto-reply above, which only acknowledges. When a texted request is approved, the `captured_requests_queue_auto_reply` trigger queues a `bridge` reply (`confirm`, or `cancelled` for an approved cancel). The next `inbox` call from a v3+ Shortcut (a new text, or `{"action":"outbox"}` from an optional second automation) claims up to 10 queued replies, drafts them (`purpose = 'auto_reply'`, template fallback) and returns them in `replies`; the Shortcut sends each with **Send Message**. Older Shortcuts (`bridgeVersion` < 3, see `OUTBOX_BRIDGE_VERSION`) get no `replies`, so nothing is marked sent that they would drop. Handing a reply to the Shortcut marks it sent (at most once). Stale claims are retried after 2 minutes.
+
+**"Yes" to an offer:** if a known number replies affirmatively (`"<keyword> yes"`, "sounds good", 👍 …) within 7 days of an offer for a still-held slot, `inbox` confirms that appointment instead of capturing a new request (`status: "confirmed"`). This works with auto-send off, since the stylist made the offer.
 
 ## Payments (Stripe Connect)
 
