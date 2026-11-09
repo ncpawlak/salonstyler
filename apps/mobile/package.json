@@ -13,10 +13,15 @@
   "dependencies": {
     "@chairside/ai": "*",
     "@chairside/core": "*",
+    "@chairside/db": "*",
+    "@react-native-async-storage/async-storage": "2.2.0",
     "@tanstack/react-query": "^5.107.1",
     "expo": "~58.0.23",
+    "expo-apple-authentication": "~58.0.2",
     "expo-constants": "~58.0.15",
+    "expo-crypto": "~58.0.7",
     "expo-linking": "~58.0.16",
+    "expo-localization": "~58.0.5",
     "expo-router": "~58.0.30",
     "expo-status-bar": "~58.0.4",
     "nativewind": "^4.2.7",
@@ -31,7 +36,7 @@
   },
   "devDependencies": {
     "@types/react": "~19.3.0",
-    "typescript": "~6.0.3",
-    "tailwindcss": "^3.4.19"
+    "tailwindcss": "^3.4.19",
+    "typescript": "~6.0.3"
   }
 }
