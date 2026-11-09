@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { appt, at, NY, ROOT_TOUCH_UP } from '../availability/test-helpers';
-import type { WorkHours } from '../availability/types';
+import { appt, at, NY, ROOT_TOUCH_UP } from '../availability/test-helpers.ts';
+import type { WorkHours } from '../availability/types.ts';
 import {
   dayUtilization,
   rangeUtilization,
   summarizeUtilization,
   utilizationLevel,
-} from './utilization';
+} from './utilization.ts';
 
 /** Tue–Sat 9–5 open with a 12–1 lunch; Saturday 5–7 tentative; Sunday 10–2 tentative. */
 const hours: WorkHours = {

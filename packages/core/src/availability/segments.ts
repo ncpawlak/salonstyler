@@ -1,5 +1,5 @@
-import { mergeIntervals } from './intervals';
-import { MINUTE, toMs } from './time';
+import { mergeIntervals } from './intervals.ts';
+import { MINUTE, toMs } from './time.ts';
 import type {
   DurationOverride,
   ExistingAppointment,
@@ -8,7 +8,7 @@ import type {
   PlacedSegmentKind,
   ServiceRequest,
   ServiceSegment,
-} from './types';
+} from './types.ts';
 
 /** Segment kinds during which the stylist is occupied (hands-on or prep/cleanup). */
 export function isBlocking(kind: PlacedSegmentKind): boolean {

@@ -1,5 +1,5 @@
-import { assertTimeZone, parseClock, parseLocalDate } from '../availability/time';
-import type { HoursType, WeeklyTemplate } from '../availability/types';
+import { assertTimeZone, parseClock, parseLocalDate } from '../availability/time.ts';
+import type { HoursType, WeeklyTemplate } from '../availability/types.ts';
 import type {
   BookingRules,
   BookingSettingsRow,
@@ -10,7 +10,7 @@ import type {
   WorkHoursOverrideRow,
   WorkHoursRows,
   WorkHoursTemplateRow,
-} from './types';
+} from './types.ts';
 
 const HOURS_TYPES: readonly HoursType[] = ['open', 'tentative', 'closed'];
 

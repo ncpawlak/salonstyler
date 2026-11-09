@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { dayAvailability, scheduleForDate } from './hours';
-import { FRI, NY, at, weekdayHours } from './test-helpers';
-import type { WorkHours } from './types';
+import { dayAvailability, scheduleForDate } from './hours.ts';
+import { FRI, NY, at, weekdayHours } from './test-helpers.ts';
+import type { WorkHours } from './types.ts';
 
 const iso = (i: { start: number; end: number }) => [
   new Date(i.start).toISOString(),

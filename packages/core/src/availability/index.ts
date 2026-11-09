@@ -1,14 +1,14 @@
-export * from './types';
+export * from './types.ts';
 export {
   findSlots,
   evaluateStart,
   compareCandidates,
   DEFAULT_RULES,
   TIME_OF_DAY_WINDOWS,
-} from './engine';
-export type { Evaluation, RejectionReason } from './engine';
-export { dayAvailability, scheduleForDate } from './hours';
-export type { DayAvailability } from './hours';
+} from './engine.ts';
+export type { Evaluation, RejectionReason } from './engine.ts';
+export { dayAvailability, scheduleForDate } from './hours.ts';
+export type { DayAvailability } from './hours.ts';
 export {
   applyDurationOverrides,
   busyRanges,
@@ -18,8 +18,8 @@ export {
   processingRanges,
   toTstzRanges,
   validateSegments,
-} from './segments';
-export type { TimedSegment } from './segments';
-export { mergeIntervals, subtractIntervals } from './intervals';
-export { addDays, formatLocalDate, parseLocalDate, zonedParts, zonedToUtc } from './time';
-export type { LocalDate } from './time';
+} from './segments.ts';
+export type { TimedSegment } from './segments.ts';
+export { mergeIntervals, subtractIntervals } from './intervals.ts';
+export { addDays, formatLocalDate, parseLocalDate, zonedParts, zonedToUtc } from './time.ts';
+export type { LocalDate } from './time.ts';

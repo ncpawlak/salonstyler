@@ -121,7 +121,7 @@ const TEST_PROMPT: ChatMessage[] = [
   { role: 'user', content: 'Ping' },
 ];
 
-function providerFailure(error: unknown, apiKey: string): AiServiceResult {
+export function providerFailure(error: unknown, apiKey: string): AiServiceResult {
   if (error instanceof AiProviderError) {
     return fail(502, `provider_${error.code}`, redactSecrets(error.message, apiKey));
   }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { findSlots, layoutService } from '../availability';
-import type { ServiceSegment } from '../availability/types';
+import { findSlots, layoutService } from '../availability/index.ts';
+import type { ServiceSegment } from '../availability/types.ts';
 import {
   applyAddons,
   applyVariant,
@@ -11,8 +11,8 @@ import {
   resolveCombo,
   resolveService,
   totalMinutes,
-} from './resolve';
-import { STARTER_MENU } from './starter-menu';
+} from './resolve.ts';
+import { STARTER_MENU } from './starter-menu.ts';
 
 const FULL_COLOR: ServiceSegment[] = [
   { kind: 'busy', minutes: 30, label: 'Apply' },

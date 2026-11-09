@@ -4,7 +4,7 @@
  * Segments reuse the availability engine's `ServiceSegment` so a resolved service can be passed
  * straight to `findSlots({ service })` / `layoutService`.
  */
-import type { DurationOverride, ServiceRequest, ServiceSegment } from '../availability/types';
+import type { DurationOverride, ServiceRequest, ServiceSegment } from '../availability/types.ts';
 
 /** Calendar color tags. Mirrors the `color_tag` check in supabase/migrations/*_service_builder.sql. */
 export const SERVICE_COLOR_TAGS = [

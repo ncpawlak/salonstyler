@@ -1,5 +1,5 @@
-import { zonedToUtc } from './time';
-import type { ExistingAppointment, PlacedSegmentKind, ServiceSegment, WorkHours } from './types';
+import { zonedToUtc } from './time.ts';
+import type { ExistingAppointment, PlacedSegmentKind, ServiceSegment, WorkHours } from './types.ts';
 
 export const NY = 'America/New_York';
 

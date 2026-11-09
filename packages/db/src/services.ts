@@ -6,7 +6,7 @@ import type {
   ServiceVariant,
 } from '@chairside/core';
 
-import type { ChairsideClient } from './index';
+import type { ChairsideClient } from './index.ts';
 
 /** A saved (non-combo) service. */
 export interface MenuService extends ServiceDefinition {

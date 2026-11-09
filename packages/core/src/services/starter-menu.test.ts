@@ -3,10 +3,10 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
-import { validateSegments } from '../availability/segments';
-import { applyAddons, applyVariant, formatDuration, totalMinutes } from './resolve';
-import { STARTER_CATEGORIES, STARTER_MENU } from './starter-menu';
-import { SERVICE_COLOR_TAGS } from './types';
+import { validateSegments } from '../availability/segments.ts';
+import { applyAddons, applyVariant, formatDuration, totalMinutes } from './resolve.ts';
+import { STARTER_CATEGORIES, STARTER_MENU } from './starter-menu.ts';
+import { SERVICE_COLOR_TAGS } from './types.ts';
 
 const MIGRATIONS = fileURLToPath(new URL('../../../../supabase/migrations', import.meta.url));
 

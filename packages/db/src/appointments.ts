@@ -1,13 +1,13 @@
 import type { BookingSegment } from '@chairside/core';
 
-import type { Json } from './database.types';
+import type { Json } from './database.types.ts';
 import type {
   Appointment,
   AppointmentSource,
   AppointmentStatus,
   ChairsideClient,
   ClientRow,
-} from './index';
+} from './index.ts';
 
 /** What was booked, snapshotted on the appointment so menu edits don't rewrite history. */
 export interface AppointmentServiceSnapshot {

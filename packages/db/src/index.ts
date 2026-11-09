@@ -4,13 +4,13 @@ import {
   type SupabaseClientOptions,
 } from '@supabase/supabase-js';
 
-import type { Database, Json } from './database.types';
+import type { Database, Json } from './database.types.ts';
 
-export type { Database, Json } from './database.types';
+export type { Database, Json } from './database.types.ts';
 export type { Session, User } from '@supabase/supabase-js';
-export * from './services';
-export * from './appointments';
-export * from './notifications';
+export * from './services.ts';
+export * from './appointments.ts';
+export * from './notifications.ts';
 
 type PublicSchema = Database['public'];
 

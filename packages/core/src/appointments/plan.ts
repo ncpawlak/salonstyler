@@ -2,9 +2,9 @@
  * Manual booking checks (docs/PLAN.md §5, issue #30): quick-book, drag-to-move and edits.
  * Thin wrappers over the availability engine so the app never re-implements slot math.
  */
-import { evaluateStart, type RejectionReason } from '../availability/engine';
-import { findBusyConflicts, layoutService, type TimedSegment } from '../availability/segments';
-import { MINUTE, toIso, toMs } from '../availability/time';
+import { evaluateStart, type RejectionReason } from '../availability/engine.ts';
+import { findBusyConflicts, layoutService, type TimedSegment } from '../availability/segments.ts';
+import { MINUTE, toIso, toMs } from '../availability/time.ts';
 import type {
   BookingRules,
   ExistingAppointment,
@@ -14,7 +14,7 @@ import type {
   ServiceRequest,
   ServiceSegment,
   WorkHours,
-} from '../availability/types';
+} from '../availability/types.ts';
 
 /** A placed segment as stored in `appointment_segments` / sent to `book_appointment`. */
 export interface BookingSegment {

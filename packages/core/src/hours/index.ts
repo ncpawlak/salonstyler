@@ -7,7 +7,7 @@ export type {
   WorkHoursRows,
   WorkHoursTemplateRow,
   WorkingBlocks,
-} from './types';
+} from './types.ts';
 export {
   bookingRulesFromSettings,
   diffOverrides,
@@ -18,8 +18,8 @@ export {
   parseTimeRanges,
   sortOverrides,
   templateToRows,
-} from './rows';
-export { findOverride, getWorkingBlocks, getWorkingBlocksRange, toSalonDate } from './resolve';
+} from './rows.ts';
+export { findOverride, getWorkingBlocks, getWorkingBlocksRange, toSalonDate } from './resolve.ts';
 export {
   DEFAULT_DAY_RANGE,
   WEEKDAYS,
@@ -30,5 +30,5 @@ export {
   setTemplateDay,
   withOverride,
   withoutOverride,
-} from './paint';
-export type { BlanketScheduleInput, Paint, Weekday } from './paint';
+} from './paint.ts';
+export type { BlanketScheduleInput, Paint, Weekday } from './paint.ts';

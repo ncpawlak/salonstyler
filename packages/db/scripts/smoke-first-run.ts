@@ -15,7 +15,7 @@ import {
   listMySalons,
   toSalonSlug,
   type ChairsideClient,
-} from '../src/index';
+} from '../src/index.ts';
 
 const url = process.env.SUPABASE_URL ?? 'http://127.0.0.1:54321';
 const anonKey = process.env.SUPABASE_ANON_KEY ?? '';

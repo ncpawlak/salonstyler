@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mergeIntervals, subtractIntervals } from './intervals';
+import { mergeIntervals, subtractIntervals } from './intervals.ts';
 import {
   addDays,
   parseClock,
@@ -8,7 +8,7 @@ import {
   zoneOffset,
   zonedParts,
   zonedToUtc,
-} from './time';
+} from './time.ts';
 
 const iso = (ms: number) => new Date(ms).toISOString();
 

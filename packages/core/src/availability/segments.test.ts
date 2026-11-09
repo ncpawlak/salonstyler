@@ -6,8 +6,8 @@ import {
   layoutService,
   processingRanges,
   toTstzRanges,
-} from './segments';
-import { FRI, ROOT_TOUCH_UP, appt, at } from './test-helpers';
+} from './segments.ts';
+import { FRI, ROOT_TOUCH_UP, appt, at } from './test-helpers.ts';
 
 const M = 60_000;
 

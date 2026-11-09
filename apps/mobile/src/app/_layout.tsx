@@ -55,6 +55,7 @@ function RootNavigator() {
           <Stack.Screen name="settings/payments" />
           <Stack.Screen name="settings/notifications" />
           <Stack.Screen name="requests/[id]" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="assistant" options={{ presentation: 'modal' }} />
           <Stack.Screen name="hours/index" />
           <Stack.Screen name="services/index" />
           <Stack.Screen name="services/[id]" />

@@ -1,5 +1,5 @@
-import { mergeIntervals, overlapMs, subtractIntervals } from '../availability/intervals';
-import { isBlocking } from '../availability/segments';
+import { mergeIntervals, overlapMs, subtractIntervals } from '../availability/intervals.ts';
+import { isBlocking } from '../availability/segments.ts';
 import {
   addDays,
   daysBetween,
@@ -9,10 +9,10 @@ import {
   toMs,
   zonedParts,
   zonedToUtc,
-} from '../availability/time';
-import type { InstantInput, Interval, PlacedSegment, WorkHours } from '../availability/types';
-import { getWorkingBlocks, toSalonDate } from '../hours/resolve';
-import type { DayStatus } from '../hours/types';
+} from '../availability/time.ts';
+import type { InstantInput, Interval, PlacedSegment, WorkHours } from '../availability/types.ts';
+import { getWorkingBlocks, toSalonDate } from '../hours/resolve.ts';
+import type { DayStatus } from '../hours/types.ts';
 
 /**
  * How each minute of a day reads on the calendar. Precedence: booked > open > tentative > closed.

@@ -1,12 +1,12 @@
-import { dayAvailability, type DayAvailability } from './hours';
-import { mergeIntervals, overlapMs, overlaps, contains, subtractIntervals } from './intervals';
+import { dayAvailability, type DayAvailability } from './hours.ts';
+import { mergeIntervals, overlapMs, overlaps, contains, subtractIntervals } from './intervals.ts';
 import {
   busyRanges,
   isBlocking,
   layoutService,
   processingRanges,
   type TimedSegment,
-} from './segments';
+} from './segments.ts';
 import {
   MINUTE,
   DAY_MS,
@@ -21,7 +21,7 @@ import {
   toMs,
   zonedParts,
   zonedToUtc,
-} from './time';
+} from './time.ts';
 import type {
   BookingRules,
   ExistingAppointment,
@@ -32,7 +32,7 @@ import type {
   SlotCandidate,
   TimePreference,
   WorkHours,
-} from './types';
+} from './types.ts';
 
 export const DEFAULT_RULES: Required<BookingRules> = {
   leadTimeMinutes: 0,

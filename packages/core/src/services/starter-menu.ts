@@ -5,8 +5,8 @@
  * supabase/migrations/*_service_builder.sql embeds this exact data as JSON in
  * `private.starter_menu()`; `starter-menu.test.ts` keeps the two in sync.
  */
-import type { ServiceSegment } from '../availability/types';
-import type { ServiceAddon, ServiceDefinition, ServiceVariant } from './types';
+import type { ServiceSegment } from '../availability/types.ts';
+import type { ServiceAddon, ServiceDefinition, ServiceVariant } from './types.ts';
 
 export interface StarterComboItem {
   /** Name of a service in `StarterMenu.services`. */
