@@ -10,6 +10,7 @@ export type {
 } from './types';
 export {
   bookingRulesFromSettings,
+  diffOverrides,
   buildWorkHours,
   overrideFromRow,
   overrideToRow,

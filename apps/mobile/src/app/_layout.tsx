@@ -35,6 +35,7 @@ function RootNavigator() {
       </Stack.Protected>
       <Stack.Protected guard={signedIn && hasSalon}>
         <Stack.Screen name="index" />
+        <Stack.Screen name="hours/index" />
       </Stack.Protected>
     </Stack>
   );

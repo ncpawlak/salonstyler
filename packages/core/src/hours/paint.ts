@@ -1,4 +1,10 @@
-import { parseClock, parseLocalDate, weekday } from '../availability/time';
+import {
+  addDays,
+  formatLocalDate,
+  parseClock,
+  parseLocalDate,
+  weekday,
+} from '../availability/time';
 import type { WeeklyTemplate } from '../availability/types';
 import type { HoursBlock, TimeRange, WorkHours, WorkHoursOverride } from './types';
 
@@ -91,24 +97,42 @@ export function paintDays(
   };
 }
 
-/**
- * Returns `hours` with `override` applied on top: overrides for exactly the same range are
- * replaced (matching the DB's unique `(salon_id, start_date, end_date)`), and the new one wins.
- */
-export function withOverride(hours: WorkHours, override: WorkHoursOverride): WorkHours {
-  const to = override.to ?? override.from;
-  const rest = (hours.overrides ?? []).filter(
-    (o) => !(o.from === override.from && (o.to ?? o.from) === to),
-  );
-  return { ...hours, overrides: [...rest, override] };
+function shiftDate(date: string, days: number): string {
+  return formatLocalDate(addDays(parseLocalDate(date), days));
 }
 
-/** Removes overrides for exactly `from`…`to`, so those dates fall back to the template. */
-export function withoutOverride(hours: WorkHours, from: string, to: string = from): WorkHours {
+/**
+ * Cuts `from`…`to` out of every override, keeping the parts outside it (a vacation with a day
+ * painted in the middle becomes two shorter vacations). Overrides therefore never overlap, so
+ * the engine's "last match wins" and the DB's `sortOverrides` precedence always agree.
+ */
+function clipOverrides(
+  overrides: readonly WorkHoursOverride[],
+  from: string,
+  to: string,
+): WorkHoursOverride[] {
+  return overrides.flatMap((o) => {
+    const oTo = o.to ?? o.from;
+    if (oTo < from || o.from > to) return [o];
+    const parts: WorkHoursOverride[] = [];
+    if (o.from < from) parts.push({ ...o, to: shiftDate(from, -1) });
+    if (oTo > to) parts.push({ ...o, from: shiftDate(to, 1), to: oTo });
+    return parts;
+  });
+}
+
+/** Returns `hours` with `override` painted on top: it replaces whatever covered its dates. */
+export function withOverride(hours: WorkHours, override: WorkHoursOverride): WorkHours {
+  const to = override.to ?? override.from;
   return {
     ...hours,
-    overrides: (hours.overrides ?? []).filter((o) => !(o.from === from && (o.to ?? o.from) === to)),
+    overrides: [...clipOverrides(hours.overrides ?? [], override.from, to), override],
   };
+}
+
+/** Clears every override touching `from`…`to`, so those dates fall back to the template. */
+export function withoutOverride(hours: WorkHours, from: string, to: string = from): WorkHours {
+  return { ...hours, overrides: clipOverrides(hours.overrides ?? [], from, to) };
 }
 
 /** "9:00 AM" style label for an `HH:MM` wall-clock time. */
