@@ -30,7 +30,9 @@ SUPABASE_ANON_KEY=<publishable/anon key from `npx supabase status`> npm run smok
 |---|---|---|
 | `salons` | Tenant root: name, unique `slug`, IANA `timezone` | Members read; owners update/delete. Created **only** via `create_salon()` |
 | `salon_members` | `(salon_id, user_id, role)`; role = `owner` \| `stylist` | Members read co-members; owners manage; anyone can leave. A salon always keeps ≥ 1 owner |
-| `settings` | 1:1 per salon: autonomy (`draft`), booking window, hold expiry / follow-up nudge (24h) | Members read; owners update |
+| `settings` | 1:1 per salon: autonomy (`draft`), booking rules (`booking_window_days` 60, `min_notice_minutes` 120, `slot_grid_minutes` 15), hold expiry / follow-up nudge (24h) | Members read; owners update |
+| `work_hours_template` | `(salon_id, weekday 0=Sun..6)`: `blocks` (`{start,end,type: open\|tentative}`) + `breaks`, `HH:MM` salon-local | Members read; owners manage |
+| `work_hours_override` | Date or date range (`start_date..end_date`) with `kind` = `custom` (own blocks/breaks) \| `day_off` \| `vacation`. Beats the template; narrower/newer overrides win | Members read; owners manage |
 | `audit_log` | Append-only event log | Members read and append as themselves; no update/delete |
 | `push_tokens` | Expo push tokens per user per salon | Users manage only their own tokens |
 
