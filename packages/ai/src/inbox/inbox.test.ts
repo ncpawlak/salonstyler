@@ -271,7 +271,7 @@ describe('parsing', () => {
         item('balayage', 'Balayage'),
       ],
       combos: [{ ...item('combo', "Balayage + Women's cut"), isCombo: true }],
-    } as typeof MENU;
+    } as unknown as typeof MENU;
     const big = { ...ctx, menu };
     expect(demoParse('Can I get a haircut tomorrow at 2pm?', big)).toMatchObject({
       services: [{ serviceId: 'haircut' }],

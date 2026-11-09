@@ -276,6 +276,106 @@ export type Database = {
           },
         ];
       };
+      captured_requests: {
+        Row: {
+          appointment_id: string | null;
+          channel: string;
+          client_created: boolean;
+          client_id: string | null;
+          created_at: string;
+          dedupe_key: string;
+          id: string;
+          intent: Database['public']['Enums']['captured_request_intent'];
+          message: string;
+          note: string | null;
+          parsed: NonNullable<Json>;
+          received_at: string;
+          resolved_at: string | null;
+          salon_id: string;
+          sender: string | null;
+          sender_phone: string | null;
+          status: Database['public']['Enums']['captured_request_status'];
+          target_appointment_id: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          appointment_id?: string | null;
+          channel?: string;
+          client_created?: boolean;
+          client_id?: string | null;
+          created_at?: string;
+          dedupe_key: string;
+          id?: string;
+          intent: Database['public']['Enums']['captured_request_intent'];
+          message: string;
+          note?: string | null;
+          parsed?: NonNullable<Json>;
+          received_at?: string;
+          resolved_at?: string | null;
+          salon_id: string;
+          sender?: string | null;
+          sender_phone?: string | null;
+          status?: Database['public']['Enums']['captured_request_status'];
+          target_appointment_id?: string | null;
+        };
+        Update: {
+          appointment_id?: string | null;
+          channel?: string;
+          client_created?: boolean;
+          client_id?: string | null;
+          created_at?: string;
+          dedupe_key?: string;
+          id?: string;
+          intent?: Database['public']['Enums']['captured_request_intent'];
+          message?: string;
+          note?: string | null;
+          parsed?: NonNullable<Json>;
+          received_at?: string;
+          resolved_at?: string | null;
+          salon_id?: string;
+          sender?: string | null;
+          sender_phone?: string | null;
+          status?: Database['public']['Enums']['captured_request_status'];
+          target_appointment_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'captured_requests_appointment_fkey';
+            columns: ['salon_id', 'appointment_id'];
+            isOneToOne: false;
+            referencedRelation: 'appointments';
+            referencedColumns: ['salon_id', 'id'];
+          },
+          {
+            foreignKeyName: 'captured_requests_client_fkey';
+            columns: ['salon_id', 'client_id'];
+            isOneToOne: false;
+            referencedRelation: 'client_summaries';
+            referencedColumns: ['salon_id', 'client_id'];
+          },
+          {
+            foreignKeyName: 'captured_requests_client_fkey';
+            columns: ['salon_id', 'client_id'];
+            isOneToOne: false;
+            referencedRelation: 'clients';
+            referencedColumns: ['salon_id', 'id'];
+          },
+          {
+            foreignKeyName: 'captured_requests_salon_id_fkey';
+            columns: ['salon_id'];
+            isOneToOne: false;
+            referencedRelation: 'salons';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'captured_requests_target_fkey';
+            columns: ['salon_id', 'target_appointment_id'];
+            isOneToOne: false;
+            referencedRelation: 'appointments';
+            referencedColumns: ['salon_id', 'id'];
+          },
+        ];
+      };
       client_formulas: {
         Row: {
           appointment_id: string | null;
@@ -556,6 +656,7 @@ export type Database = {
           marketing_opt_in: boolean;
           name: string;
           notes: string | null;
+          pending: boolean;
           phone: string | null;
           preferred_service_ids: string[];
           salon_id: string;
@@ -570,6 +671,7 @@ export type Database = {
           marketing_opt_in?: boolean;
           name: string;
           notes?: string | null;
+          pending?: boolean;
           phone?: string | null;
           preferred_service_ids?: string[];
           salon_id: string;
@@ -583,6 +685,7 @@ export type Database = {
           marketing_opt_in?: boolean;
           name?: string;
           notes?: string | null;
+          pending?: boolean;
           phone?: string | null;
           preferred_service_ids?: string[];
           salon_id?: string;
@@ -594,6 +697,51 @@ export type Database = {
             foreignKeyName: 'clients_salon_id_fkey';
             columns: ['salon_id'];
             isOneToOne: false;
+            referencedRelation: 'salons';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      inbox_bridges: {
+        Row: {
+          created_at: string;
+          keyword: string;
+          last_received_at: string | null;
+          rotated_at: string;
+          salon_id: string;
+          token_hash: string;
+          token_hint: string;
+          window_count: number;
+          window_started_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          keyword?: string;
+          last_received_at?: string | null;
+          rotated_at?: string;
+          salon_id: string;
+          token_hash: string;
+          token_hint: string;
+          window_count?: number;
+          window_started_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          keyword?: string;
+          last_received_at?: string | null;
+          rotated_at?: string;
+          salon_id?: string;
+          token_hash?: string;
+          token_hint?: string;
+          window_count?: number;
+          window_started_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'inbox_bridges_salon_id_fkey';
+            columns: ['salon_id'];
+            isOneToOne: true;
             referencedRelation: 'salons';
             referencedColumns: ['id'];
           },
@@ -1410,6 +1558,7 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      capture_inbox_request: { Args: { p_request: Json; p_salon_id: string }; Returns: Json };
       claim_notifications: {
         Args: { p_limit?: number };
         Returns: {
@@ -1466,6 +1615,15 @@ export type Database = {
           model: string;
           monthly_token_budget: number;
           provider: Database['public']['Enums']['ai_provider'];
+        }[];
+      };
+      inbox_bridge_for_token: {
+        Args: { p_hourly_limit?: number; p_token: string };
+        Returns: {
+          keyword: string;
+          rate_limited: boolean;
+          salon_id: string;
+          timezone: string;
         }[];
       };
       is_salon_slug_available: { Args: { p_slug: string }; Returns: boolean };
@@ -1525,6 +1683,36 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      resolve_captured_request: {
+        Args: { p_action: string; p_request_id: string };
+        Returns: {
+          appointment_id: string | null;
+          channel: string;
+          client_created: boolean;
+          client_id: string | null;
+          created_at: string;
+          dedupe_key: string;
+          id: string;
+          intent: Database['public']['Enums']['captured_request_intent'];
+          message: string;
+          note: string | null;
+          parsed: NonNullable<Json>;
+          received_at: string;
+          resolved_at: string | null;
+          salon_id: string;
+          sender: string | null;
+          sender_phone: string | null;
+          status: Database['public']['Enums']['captured_request_status'];
+          target_appointment_id: string | null;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'captured_requests';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      rotate_inbox_bridge_token: { Args: { p_salon_id: string }; Returns: string };
       save_ai_provider_config: {
         Args: {
           p_api_key?: string;
@@ -1607,6 +1795,8 @@ export type Database = {
       appointment_source: 'owner' | 'inbox' | 'public' | 'import';
       appointment_status:
         'held' | 'requested' | 'confirmed' | 'completed' | 'cancelled' | 'no_show';
+      captured_request_intent: 'booking' | 'reschedule' | 'cancel';
+      captured_request_status: 'pending' | 'approved' | 'declined' | 'expired' | 'dismissed';
       notification_kind: 'request' | 'request_nudge' | 'cancellation' | 'daily_agenda';
       notification_status: 'pending' | 'sending' | 'sent' | 'skipped' | 'failed';
       payment_status:
@@ -1737,6 +1927,8 @@ export const Constants = {
       appointment_segment_kind: ['busy', 'processing', 'style', 'buffer'],
       appointment_source: ['owner', 'inbox', 'public', 'import'],
       appointment_status: ['held', 'requested', 'confirmed', 'completed', 'cancelled', 'no_show'],
+      captured_request_intent: ['booking', 'reschedule', 'cancel'],
+      captured_request_status: ['pending', 'approved', 'declined', 'expired', 'dismissed'],
       notification_kind: ['request', 'request_nudge', 'cancellation', 'daily_agenda'],
       notification_status: ['pending', 'sending', 'sent', 'skipped', 'failed'],
       payment_status: [
