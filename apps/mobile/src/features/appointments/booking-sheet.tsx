@@ -1,4 +1,4 @@
-import { formatDuration, planBooking, type WorkHours } from '@chairside/core';
+import { formatDuration, formatOverride, planBooking, type WorkHours } from '@chairside/core';
 import type { AppointmentWithDetails, ClientRow, ServiceMenu } from '@chairside/db';
 import { useMemo, useState } from 'react';
 import { View } from 'react-native';
@@ -16,6 +16,7 @@ import {
 } from '@/components/ui';
 import { haptics } from '@/lib/haptics';
 
+import { useClientOverrides } from '../clients/api';
 import { formatPrice, useServiceMenu } from '../services/data';
 import {
   errorMessage,
@@ -127,9 +128,11 @@ function BookingForm({
   // Tied to the plan it came from, so changing the booking clears it.
   const [serverError, setServerError] = useState<{ plan: unknown; text: string } | null>(null);
 
+  // The client's saved duration overrides ("Karina's color +20m") apply automatically.
+  const overrides = useClientOverrides(client?.id);
   const resolved = useMemo(
-    () => (menu.data ? resolveSelection(menu.data, selection) : null),
-    [menu.data, selection],
+    () => (menu.data ? resolveSelection(menu.data, selection, overrides.data ?? []) : null),
+    [menu.data, selection, overrides.data],
   );
 
   const plan = useMemo(() => {
@@ -230,6 +233,12 @@ function BookingForm({
             {plan?.ok ? ` · until ${formatTime(Date.parse(plan.end), hours.timeZone)}` : ''}
             {priceCents != null ? ` · ${formatPrice(priceCents)}` : ''}
           </Text>
+          {resolved.clientAdjustmentMinutes && client ? (
+            <Text variant="footnote" tone="muted">
+              Includes {client.name.split(' ')[0]}&apos;s usual{' '}
+              {formatOverride(resolved.clientAdjustmentMinutes)}
+            </Text>
+          ) : null}
         </View>
       ) : null}
 

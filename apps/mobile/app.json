@@ -29,7 +29,14 @@
       "expo-router",
       "expo-localization",
       "expo-apple-authentication",
-      "expo-notifications"
+      "expo-notifications",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Chairside saves before and after photos to your clients' profiles.",
+          "cameraPermission": "Chairside takes before and after photos for your clients' profiles."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

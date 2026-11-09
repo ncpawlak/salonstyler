@@ -2,6 +2,7 @@ export * from './types.ts';
 export {
   DEFAULT_SEGMENT_LABELS,
   applyAddons,
+  applyClientAdjustment,
   applyVariant,
   combineServices,
   describeSegments,

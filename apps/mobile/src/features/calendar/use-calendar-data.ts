@@ -10,6 +10,7 @@ import { useEffect, useMemo } from 'react';
 
 import { useAppointments } from '@/features/appointments/api';
 import { useWorkHours } from '@/features/hours/use-work-hours';
+import { uniqueTopic } from '@/features/realtime/use-salon-realtime';
 import { supabase } from '@/lib/supabase';
 import { useCurrentSalon } from '@/providers/session-provider';
 
@@ -71,7 +72,7 @@ export function useAppointmentsRealtime() {
       );
     };
     const channel = supabase
-      .channel(`calendar-appointments-${salon.id}`)
+      .channel(uniqueTopic(`calendar-appointments-${salon.id}`))
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'appointments', filter: `salon_id=eq.${salon.id}` },

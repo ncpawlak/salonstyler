@@ -4,6 +4,18 @@ import { useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useCurrentSalon } from '@/providers/session-provider';
 
+let topicSeq = 0;
+
+/**
+ * supabase.channel() hands back an existing channel with the same topic, and removeChannel() is
+ * async. A quick remount (StrictMode, or the tabs mounting after a deep link) would then add
+ * callbacks to an already-subscribed channel and throw, so every subscription gets its own topic.
+ */
+export function uniqueTopic(base: string): string {
+  topicSeq += 1;
+  return `${base}:${topicSeq}`;
+}
+
 /**
  * Streams appointment and client changes for the current salon and refreshes the affected
  * queries, so Today, the calendar, the Inbox badge and search stay live across devices. Realtime
@@ -30,7 +42,7 @@ export function useSalonRealtime() {
 
     const filter = `salon_id=eq.${salon.id}`;
     const channel = supabase
-      .channel(`salon:${salon.id}`)
+      .channel(uniqueTopic(`salon:${salon.id}`))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments', filter }, () =>
         schedule('appointments', 'search'),
       )

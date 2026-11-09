@@ -1,7 +1,10 @@
 import {
   formatDuration,
+  formatOverride,
+  overrideFor,
   resolveCombo,
   resolveService,
+  type ClientServiceOverride,
   type ResolvedService,
 } from '@chairside/core';
 import type { AppointmentServiceSnapshot, MenuService, ServiceMenu } from '@chairside/db';
@@ -13,13 +16,20 @@ export interface ResolvedItems {
   snapshots: AppointmentServiceSnapshot[];
   summary: string;
   totalMinutes: number;
+  /** Net minutes added by the client's duration overrides (0 when none apply). */
+  clientAdjustmentMinutes: number;
 }
 
 /**
  * Resolves picked menu items into the single `ServiceRequest` the engine books (several items are
- * chained like a combo). Mirrors the app's booking sheet so both book identical segments.
+ * chained like a combo). Mirrors the app's booking sheet so both book identical segments. The
+ * client's duration overrides (`client_service_overrides`) are applied per item.
  */
-export function resolveItems(menu: ServiceMenu, items: readonly BookingItem[]): ResolvedItems {
+export function resolveItems(
+  menu: ServiceMenu,
+  items: readonly BookingItem[],
+  overrides: readonly ClientServiceOverride[] = [],
+): ResolvedItems {
   if (items.length === 0) throw new Error('Pick at least one service');
   const byId = new Map<string, MenuService>(menu.services.map((s) => [s.id, s]));
   const parts = items.map((item) => {
@@ -32,8 +42,10 @@ export function resolveItems(menu: ServiceMenu, items: readonly BookingItem[]): 
       const variant = item.variantId
         ? (service.variants.find((v) => v.id === item.variantId) ?? null)
         : null;
+      const clientAdjustment = overrideFor(overrides, service.id);
       return {
-        resolved: resolveService(service, { variant }),
+        adjustment: clientAdjustment?.deltaMinutes ?? 0,
+        resolved: resolveService(service, { variant, clientAdjustment }),
         snapshot: {
           serviceId: service.id,
           name: service.name,
@@ -43,15 +55,17 @@ export function resolveItems(menu: ServiceMenu, items: readonly BookingItem[]): 
         },
       };
     }
+    const clientAdjustment = overrideFor(overrides, combo!.id);
     const resolved = resolveCombo(
       combo!.items.map((i) => {
         const s = byId.get(i.serviceId);
         if (!s) throw new Error('Combo references a missing service');
         return { service: s, replacesPreviousFinish: i.replacesPreviousFinish };
       }),
-      { priceCents: combo!.priceCents },
+      { priceCents: combo!.priceCents, clientAdjustment },
     );
     return {
+      adjustment: clientAdjustment?.deltaMinutes ?? 0,
       resolved,
       snapshot: {
         serviceId: combo!.id,
@@ -69,11 +83,14 @@ export function resolveItems(menu: ServiceMenu, items: readonly BookingItem[]): 
   const names = parts.map((p) =>
     p.snapshot.variantName ? `${p.snapshot.name} (${p.snapshot.variantName})` : p.snapshot.name,
   );
+  const adjustment = parts.reduce((n, p) => n + p.adjustment, 0);
+  const note = adjustment ? ` (incl. ${formatOverride(adjustment)} for this client)` : '';
   return {
     service,
     snapshots: parts.map((p) => p.snapshot),
-    summary: `${names.join(' + ')} · ${formatDuration(service.totalMinutes)}`,
+    summary: `${names.join(' + ')} · ${formatDuration(service.totalMinutes)}${note}`,
     totalMinutes: service.totalMinutes,
+    clientAdjustmentMinutes: adjustment,
   };
 }
 

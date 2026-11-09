@@ -215,6 +215,13 @@ export type Database = {
             foreignKeyName: 'appointments_client_fkey';
             columns: ['salon_id', 'client_id'];
             isOneToOne: false;
+            referencedRelation: 'client_summaries';
+            referencedColumns: ['salon_id', 'client_id'];
+          },
+          {
+            foreignKeyName: 'appointments_client_fkey';
+            columns: ['salon_id', 'client_id'];
+            isOneToOne: false;
             referencedRelation: 'clients';
             referencedColumns: ['salon_id', 'id'];
           },
@@ -269,15 +276,290 @@ export type Database = {
           },
         ];
       };
+      client_formulas: {
+        Row: {
+          appointment_id: string | null;
+          client_id: string;
+          created_at: string;
+          created_by: string | null;
+          formula: string;
+          id: string;
+          notes: string | null;
+          salon_id: string;
+          service_name: string | null;
+          updated_at: string;
+          visit_date: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          appointment_id?: string | null;
+          client_id: string;
+          created_at?: string;
+          created_by?: string | null;
+          formula: string;
+          id?: string;
+          notes?: string | null;
+          salon_id: string;
+          service_name?: string | null;
+          updated_at?: string;
+          visit_date?: string;
+        };
+        Update: {
+          appointment_id?: string | null;
+          client_id?: string;
+          created_at?: string;
+          created_by?: string | null;
+          formula?: string;
+          id?: string;
+          notes?: string | null;
+          salon_id?: string;
+          service_name?: string | null;
+          updated_at?: string;
+          visit_date?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'client_formulas_appointment_fkey';
+            columns: ['salon_id', 'appointment_id'];
+            isOneToOne: false;
+            referencedRelation: 'appointments';
+            referencedColumns: ['salon_id', 'id'];
+          },
+          {
+            foreignKeyName: 'client_formulas_client_fkey';
+            columns: ['salon_id', 'client_id'];
+            isOneToOne: false;
+            referencedRelation: 'client_summaries';
+            referencedColumns: ['salon_id', 'client_id'];
+          },
+          {
+            foreignKeyName: 'client_formulas_client_fkey';
+            columns: ['salon_id', 'client_id'];
+            isOneToOne: false;
+            referencedRelation: 'clients';
+            referencedColumns: ['salon_id', 'id'];
+          },
+          {
+            foreignKeyName: 'client_formulas_salon_id_fkey';
+            columns: ['salon_id'];
+            isOneToOne: false;
+            referencedRelation: 'salons';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      client_notes: {
+        Row: {
+          body: string;
+          client_id: string;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          pinned: boolean;
+          salon_id: string;
+          source: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          body: string;
+          client_id: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          pinned?: boolean;
+          salon_id: string;
+          source?: string;
+          updated_at?: string;
+        };
+        Update: {
+          body?: string;
+          client_id?: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          pinned?: boolean;
+          salon_id?: string;
+          source?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'client_notes_client_fkey';
+            columns: ['salon_id', 'client_id'];
+            isOneToOne: false;
+            referencedRelation: 'client_summaries';
+            referencedColumns: ['salon_id', 'client_id'];
+          },
+          {
+            foreignKeyName: 'client_notes_client_fkey';
+            columns: ['salon_id', 'client_id'];
+            isOneToOne: false;
+            referencedRelation: 'clients';
+            referencedColumns: ['salon_id', 'id'];
+          },
+          {
+            foreignKeyName: 'client_notes_salon_id_fkey';
+            columns: ['salon_id'];
+            isOneToOne: false;
+            referencedRelation: 'salons';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      client_photos: {
+        Row: {
+          appointment_id: string | null;
+          caption: string | null;
+          client_id: string;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          kind: string;
+          salon_id: string;
+          storage_path: string;
+          taken_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          appointment_id?: string | null;
+          caption?: string | null;
+          client_id: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          kind?: string;
+          salon_id: string;
+          storage_path: string;
+          taken_at?: string;
+        };
+        Update: {
+          appointment_id?: string | null;
+          caption?: string | null;
+          client_id?: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          kind?: string;
+          salon_id?: string;
+          storage_path?: string;
+          taken_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'client_photos_appointment_fkey';
+            columns: ['salon_id', 'appointment_id'];
+            isOneToOne: false;
+            referencedRelation: 'appointments';
+            referencedColumns: ['salon_id', 'id'];
+          },
+          {
+            foreignKeyName: 'client_photos_client_fkey';
+            columns: ['salon_id', 'client_id'];
+            isOneToOne: false;
+            referencedRelation: 'client_summaries';
+            referencedColumns: ['salon_id', 'client_id'];
+          },
+          {
+            foreignKeyName: 'client_photos_client_fkey';
+            columns: ['salon_id', 'client_id'];
+            isOneToOne: false;
+            referencedRelation: 'clients';
+            referencedColumns: ['salon_id', 'id'];
+          },
+          {
+            foreignKeyName: 'client_photos_salon_id_fkey';
+            columns: ['salon_id'];
+            isOneToOne: false;
+            referencedRelation: 'salons';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      client_service_overrides: {
+        Row: {
+          client_id: string;
+          created_at: string;
+          created_by: string | null;
+          delta_minutes: number;
+          id: string;
+          note: string | null;
+          salon_id: string;
+          segment_index: number | null;
+          service_id: string;
+          source: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          client_id: string;
+          created_at?: string;
+          created_by?: string | null;
+          delta_minutes: number;
+          id?: string;
+          note?: string | null;
+          salon_id: string;
+          segment_index?: number | null;
+          service_id: string;
+          source?: string;
+          updated_at?: string;
+        };
+        Update: {
+          client_id?: string;
+          created_at?: string;
+          created_by?: string | null;
+          delta_minutes?: number;
+          id?: string;
+          note?: string | null;
+          salon_id?: string;
+          segment_index?: number | null;
+          service_id?: string;
+          source?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'client_service_overrides_client_fkey';
+            columns: ['salon_id', 'client_id'];
+            isOneToOne: false;
+            referencedRelation: 'client_summaries';
+            referencedColumns: ['salon_id', 'client_id'];
+          },
+          {
+            foreignKeyName: 'client_service_overrides_client_fkey';
+            columns: ['salon_id', 'client_id'];
+            isOneToOne: false;
+            referencedRelation: 'clients';
+            referencedColumns: ['salon_id', 'id'];
+          },
+          {
+            foreignKeyName: 'client_service_overrides_salon_id_fkey';
+            columns: ['salon_id'];
+            isOneToOne: false;
+            referencedRelation: 'salons';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'client_service_overrides_service_fkey';
+            columns: ['salon_id', 'service_id'];
+            isOneToOne: false;
+            referencedRelation: 'services';
+            referencedColumns: ['salon_id', 'id'];
+          },
+        ];
+      };
       clients: {
         Row: {
           created_at: string;
           email: string | null;
           id: string;
+          marketing_opt_in: boolean;
           name: string;
           notes: string | null;
           phone: string | null;
+          preferred_service_ids: string[];
           salon_id: string;
+          tags: string[];
           updated_at: string;
         };
         ComputedFields: never;
@@ -285,20 +567,26 @@ export type Database = {
           created_at?: string;
           email?: string | null;
           id?: string;
+          marketing_opt_in?: boolean;
           name: string;
           notes?: string | null;
           phone?: string | null;
+          preferred_service_ids?: string[];
           salon_id: string;
+          tags?: string[];
           updated_at?: string;
         };
         Update: {
           created_at?: string;
           email?: string | null;
           id?: string;
+          marketing_opt_in?: boolean;
           name?: string;
           notes?: string | null;
           phone?: string | null;
+          preferred_service_ids?: string[];
           salon_id?: string;
+          tags?: string[];
           updated_at?: string;
         };
         Relationships: [
@@ -1029,7 +1317,28 @@ export type Database = {
       };
     };
     Views: {
-      [_ in never]: never;
+      client_summaries: {
+        Row: {
+          cancelled_count: number | null;
+          client_id: string;
+          last_visit_at: string | null;
+          next_visit_at: string | null;
+          no_show_count: number | null;
+          paid_cents: number | null;
+          salon_id: string;
+          visit_count: number | null;
+        };
+        ComputedFields: never;
+        Relationships: [
+          {
+            foreignKeyName: 'clients_salon_id_fkey';
+            columns: ['salon_id'];
+            isOneToOne: false;
+            referencedRelation: 'salons';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
     };
     Functions: {
       ai_tokens_used_this_month: { Args: { p_salon_id: string }; Returns: number };

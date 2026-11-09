@@ -12,6 +12,7 @@ export * from './services.ts';
 export * from './appointments.ts';
 export * from './notifications.ts';
 export * from './search.ts';
+export * from './clients.ts';
 
 type PublicSchema = Database['public'];
 
@@ -37,6 +38,11 @@ export type WorkHoursTemplate = Tables<'work_hours_template'>;
 export type WorkHoursOverride = Tables<'work_hours_override'>;
 export type WorkHoursOverrideKind = Enums<'work_hours_override_kind'>;
 export type ClientRow = Tables<'clients'>;
+export type ClientServiceOverrideRow = Tables<'client_service_overrides'>;
+export type ClientFormulaRow = Tables<'client_formulas'>;
+export type ClientNoteRow = Tables<'client_notes'>;
+export type ClientPhotoRow = Tables<'client_photos'>;
+export type ClientSummary = PublicSchema['Views']['client_summaries']['Row'];
 export type Appointment = Tables<'appointments'>;
 export type AppointmentSegmentRow = Tables<'appointment_segments'>;
 export type AppointmentStatus = Enums<'appointment_status'>;

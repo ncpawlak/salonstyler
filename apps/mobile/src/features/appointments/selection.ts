@@ -1,7 +1,9 @@
 import {
   formatDuration,
+  overrideFor,
   resolveCombo,
   resolveService,
+  type ClientServiceOverride,
   type ResolvedService,
   type ServiceColorTag,
 } from '@chairside/core';
@@ -25,28 +27,41 @@ export interface ResolvedSelection {
   service: ResolvedService;
   snapshots: AppointmentServiceSnapshot[];
   colorTag: ServiceColorTag;
-  /** Client minutes including the adjustment. */
+  /** Client minutes including the adjustment and the client's overrides. */
   totalMinutes: number;
+  /** Net minutes from the client's saved duration overrides (already in `totalMinutes`). */
+  clientAdjustmentMinutes: number;
   summary: string;
 }
 
 /**
  * Resolves picked services into the single `ServiceRequest` the engine books, reusing the core
- * resolvers (several items are chained like a combo). Returns null for an empty selection.
+ * resolvers (several items are chained like a combo). The client's saved duration overrides
+ * (`client_service_overrides`) apply per item, before the one-off `adjustMinutes`. Returns null
+ * for an empty selection.
  */
 export function resolveSelection(
   menu: ServiceMenu,
   selection: BookingSelection,
+  clientOverrides: readonly ClientServiceOverride[] = [],
 ): ResolvedSelection | null {
-  const parts: { resolved: ResolvedService; snapshot: AppointmentServiceSnapshot }[] = [];
+  const parts: {
+    resolved: ResolvedService;
+    snapshot: AppointmentServiceSnapshot;
+    clientMinutes: number;
+  }[] = [];
   for (const item of selection.items) {
     const service = menu.services.find((s) => s.id === item.serviceId);
     const combo = service ? undefined : menu.combos.find((c) => c.id === item.serviceId);
     const def = service ?? combo;
     if (!def) continue;
     const variant = service?.variants.find((v) => v.id === item.variantId) ?? null;
+    const clientAdjustment = overrideFor(clientOverrides, def.id);
     parts.push({
-      resolved: service ? resolveService(service, { variant }) : resolveMenuCombo(menu, combo!),
+      resolved: service
+        ? resolveService(service, { variant, clientAdjustment })
+        : resolveMenuCombo(menu, combo!, { clientAdjustment }),
+      clientMinutes: clientAdjustment?.deltaMinutes ?? 0,
       snapshot: {
         serviceId: def.id,
         name: def.name,
@@ -74,6 +89,7 @@ export function resolveSelection(
     snapshots: parts.map((p) => p.snapshot),
     colorTag: (parts[0]!.snapshot.colorTag as ServiceColorTag | null) ?? 'gray',
     totalMinutes,
+    clientAdjustmentMinutes: parts.reduce((n, p) => n + p.clientMinutes, 0),
     summary: `${parts.map((p) => p.snapshot.name).join(' + ')} · ${formatDuration(totalMinutes)}`,
   };
 }

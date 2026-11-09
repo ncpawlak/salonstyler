@@ -122,4 +122,38 @@ describe('resolveSelection', () => {
       adjustMinutes: 0,
     });
   });
+
+  it("applies the client's saved duration overrides automatically", () => {
+    // Karina: color +20m (spread over hands-on time), combo -10m.
+    const overrides = [
+      { serviceId: 'color', deltaMinutes: 20 },
+      { serviceId: 'combo', deltaMinutes: -10, segmentIndex: 0 },
+    ];
+    const color = resolveSelection(
+      menu,
+      { items: [{ serviceId: 'color' }], adjustMinutes: 0 },
+      overrides,
+    )!;
+    expect(color.totalMinutes).toBe(95 + 20);
+    expect(color.clientAdjustmentMinutes).toBe(20);
+    expect(color.service.segments.find((s) => s.kind === 'processing')!.minutes).toBe(35);
+    expect(color.summary).toBe('Root touch-up · 1h55');
+
+    const cut = resolveSelection(
+      menu,
+      { items: [{ serviceId: 'cut' }], adjustMinutes: 0 },
+      overrides,
+    )!;
+    expect(cut.totalMinutes).toBe(45);
+    expect(cut.clientAdjustmentMinutes).toBe(0);
+
+    const combo = resolveSelection(
+      menu,
+      { items: [{ serviceId: 'combo' }], adjustMinutes: 5 },
+      overrides,
+    )!;
+    const plain = resolveSelection(menu, { items: [{ serviceId: 'combo' }], adjustMinutes: 5 })!;
+    expect(combo.totalMinutes).toBe(plain.totalMinutes - 10);
+    expect(combo.service.segments[0]!.minutes).toBe(plain.service.segments[0]!.minutes - 10);
+  });
 });

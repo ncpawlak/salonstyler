@@ -125,10 +125,12 @@ function ClientPeek({
   client,
   onBack,
   onBook,
+  onProfile,
 }: {
   client: SearchResult;
   onBack: () => void;
   onBook: () => void;
+  onProfile: () => void;
 }) {
   const phone = client.subtitle && /\d/.test(client.subtitle) ? client.subtitle : null;
   return (
@@ -154,6 +156,13 @@ function ClientPeek({
       </Card>
       <View className="flex-row gap-3">
         <Button grow icon="add" label="Book" onPress={onBook} />
+        <Button
+          grow
+          variant="secondary"
+          icon="person-outline"
+          label="Profile"
+          onPress={onProfile}
+        />
         {phone ? (
           <Button
             grow
@@ -223,6 +232,10 @@ export function SearchSheet({
       <ClientPeek
         client={peek}
         onBack={() => setPeek(null)}
+        onProfile={() => {
+          close();
+          router.push({ pathname: '/clients/[id]', params: { id: peek.id } });
+        }}
         onBook={() => {
           close();
           router.navigate({

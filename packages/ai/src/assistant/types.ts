@@ -1,4 +1,9 @@
-import type { BookingRules, BookingSegment, WorkHours } from '@chairside/core';
+import type {
+  BookingRules,
+  BookingSegment,
+  ClientServiceOverride,
+  WorkHours,
+} from '@chairside/core';
 import type {
   AppointmentServiceSnapshot,
   AppointmentStatus,
@@ -43,6 +48,14 @@ export interface AssistantPort {
   getClient(id: string): Promise<AssistantClient | null>;
   /** Most recent first. */
   clientVisits(clientId: string, limit: number): Promise<ClientVisit[]>;
+  /** Per-service duration overrides ("Karina's color +20m"), applied to every booking. */
+  clientOverrides(clientId: string): Promise<ClientServiceOverride[]>;
+  /** Attaches a note or color formula the owner pasted to the client's profile. */
+  addClientNote(input: {
+    clientId: string;
+    kind: 'note' | 'formula';
+    text: string;
+  }): Promise<{ id: string }>;
   /** Active appointments overlapping `[from, to)` (ISO). */
   listAppointments(range: { from: string; to: string }): Promise<AppointmentWithDetails[]>;
   getAppointment(id: string): Promise<AppointmentWithDetails | null>;

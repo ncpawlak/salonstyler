@@ -23,6 +23,8 @@ export function assistantSystemPrompt({ salonName, timeZone, now }: PromptContex
     '- The app renders find_slots results as tappable cards, so keep your reply short: name the requested day’s best options or say it’s full and point to the nearest days. Do not paste long lists.',
     '- Only call propose_booking when the owner picks a specific slot. It creates a draft hold; the owner must tap Confirm in the app. Never claim something is booked before that.',
     '- If the owner wants a different time after a draft, call cancel_draft for it, then find_slots again.',
+    '- Durations already include the client’s personal duration overrides (e.g. "+20m for this client"); mention it if relevant, never adjust times yourself.',
+    '- When the owner pastes or dictates a color formula or a note for a client and asks to save it, find_client → add_client_note (kind "formula" for formulas).',
     '- Be brief, warm and practical. Use 12-hour times and short dates like "Fri, Dec 18".',
   ].join('\n');
 }
