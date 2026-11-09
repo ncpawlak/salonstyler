@@ -5,14 +5,14 @@ import {
   type WorkHours,
   type WorkHoursOverrideRow,
 } from '@chairside/core';
+import type { WorkHoursOverride as WorkHoursOverrideDbRow } from '@chairside/db';
 import {
   deleteWorkHoursOverride,
   getWorkHours,
   saveWorkHoursTemplate,
   updateBookingRules,
   upsertWorkHoursOverride,
-  type WorkHoursOverride as WorkHoursOverrideDbRow,
-} from '@chairside/db';
+} from '@chairside/db/work-hours';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { supabase } from '@/lib/supabase';

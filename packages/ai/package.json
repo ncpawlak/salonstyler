@@ -18,6 +18,7 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "gen:tools": "tsx scripts/gen-tool-index.ts",
     "record:fixtures": "tsx scripts/record-fixtures.ts",
     "smoke:assistant": "tsx scripts/smoke-assistant.ts"
   },

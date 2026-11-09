@@ -1,5 +1,5 @@
 import type { TimeOfDay } from '@chairside/core';
-import type { ServiceMenu } from '@chairside/db';
+import type { ServiceMenu } from '@chairside/db/services';
 import { z } from 'zod';
 
 import { parseDemoDate } from '../assistant/demo-provider.ts';

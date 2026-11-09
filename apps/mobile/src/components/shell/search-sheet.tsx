@@ -1,4 +1,4 @@
-import type { SearchResult, SearchResultKind } from '@chairside/db';
+import type { SearchResult, SearchResultKind } from '@chairside/db/search';
 import { router } from 'expo-router';
 import { useState, type ReactNode } from 'react';
 import { ActivityIndicator, Linking, Pressable, View } from 'react-native';

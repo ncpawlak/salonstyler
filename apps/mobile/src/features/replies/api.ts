@@ -6,7 +6,7 @@ import {
   type RecordClientReplyInput,
   type ReplySettings,
   updateReplySettings,
-} from '@chairside/db';
+} from '@chairside/db/replies';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { supabase } from '@/lib/supabase';

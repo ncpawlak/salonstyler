@@ -24,3 +24,29 @@ jobs:
       - run: npm run lint
       - run: npm run format:check
       - run: npm test
+
+  database:
+    name: Database tests and generated types
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 3.1.0
+      - name: Start Supabase
+        run: supabase start -x studio,edge-runtime,logflare,vector,imgproxy,supavisor,realtime
+      - name: pgTAP tests
+        run: supabase test db
+      - name: Regenerate database types
+        run: npm run gen:types --workspace @chairside/db
+      - name: Check database.types.ts is up to date
+        run: |
+          if ! git diff --exit-code -- packages/db/src/database.types.ts; then
+            echo "::error file=packages/db/src/database.types.ts::Generated types are stale. Run 'npx supabase start' then 'npm run gen:types --workspace @chairside/db' and commit the result. On a merge conflict, take either side and regenerate."
+            exit 1
+          fi

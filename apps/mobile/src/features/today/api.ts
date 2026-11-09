@@ -2,7 +2,7 @@ import {
   listPendingRequests,
   setAppointmentStatus,
   type AppointmentWithDetails,
-} from '@chairside/db';
+} from '@chairside/db/appointments';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { supabase } from '@/lib/supabase';

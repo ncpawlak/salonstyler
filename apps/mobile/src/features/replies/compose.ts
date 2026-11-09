@@ -1,4 +1,4 @@
-import type { ClientReply, ClientReplySource } from '@chairside/db';
+import type { ClientReply, ClientReplySource } from '@chairside/db/replies';
 
 /**
  * An `sms:` URL that opens Messages with the body filled in (used when the in-app composer isn't

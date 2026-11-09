@@ -7,7 +7,8 @@ import {
   type ClientServiceOverride,
   type ResolvedService,
 } from '@chairside/core';
-import type { AppointmentServiceSnapshot, MenuService, ServiceMenu } from '@chairside/db';
+import type { AppointmentServiceSnapshot } from '@chairside/db/appointments';
+import type { MenuService, ServiceMenu } from '@chairside/db/services';
 
 import type { BookingItem, ClientVisit } from './types.ts';
 

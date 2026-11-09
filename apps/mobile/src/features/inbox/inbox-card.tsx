@@ -2,9 +2,9 @@ import { formatDuration } from '@chairside/core';
 import type {
   AppointmentServiceSnapshot,
   AppointmentWithDetails,
-  CapturedRequestAppointment,
-  ClientReply,
-} from '@chairside/db';
+} from '@chairside/db/appointments';
+import type { CapturedRequestAppointment } from '@chairside/db/inbox';
+import type { ClientReply } from '@chairside/db/replies';
 import { View } from 'react-native';
 import Animated, { FadeOut, LinearTransition, useReducedMotion } from 'react-native-reanimated';
 

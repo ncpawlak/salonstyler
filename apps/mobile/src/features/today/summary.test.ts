@@ -1,5 +1,6 @@
 import type { WorkHours } from '@chairside/core';
-import type { AppointmentStatus, AppointmentWithDetails } from '@chairside/db';
+import type { AppointmentStatus } from '@chairside/db';
+import type { AppointmentWithDetails } from '@chairside/db/appointments';
 import { describe, expect, it } from 'vitest';
 
 import {

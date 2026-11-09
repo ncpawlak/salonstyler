@@ -20,13 +20,14 @@ export const TAB_BAR_HEIGHT = 56;
  * Opens the assistant chat (`/assistant`); hidden on the chat itself. Voice input comes later.
  */
 export function AskChairsideButton() {
-  const segments = useSegments();
+  const segments: readonly string[] = useSegments();
   const insets = useSafeAreaInsets();
   const scale = useSharedValue(1);
   const reduceMotion = useReducedMotion();
   const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
-  const first = segments[0] as string | undefined;
+  // Signed-in screens sit inside the (app) group; look past it to the screen itself.
+  const first = segments[0] === '(app)' ? segments[1] : segments[0];
   // Hidden on client-facing screens (checkout is shown to the client; receipts and the booking
   // page are public).
   if (

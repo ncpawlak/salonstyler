@@ -1,4 +1,9 @@
-import { createSalon, isSalonSlugAvailable, isValidSalonSlug, toSalonSlug } from '@chairside/db';
+import {
+  createSalon,
+  isSalonSlugAvailable,
+  isValidSalonSlug,
+  toSalonSlug,
+} from '@chairside/db/salons';
 import { useQuery } from '@tanstack/react-query';
 import { getCalendars } from 'expo-localization';
 import { useEffect, useState } from 'react';

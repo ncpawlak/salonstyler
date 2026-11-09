@@ -1,5 +1,5 @@
 import { cardLabel, formatAmount } from '@chairside/payments';
-import { getReceipt, type Receipt } from '@chairside/db';
+import { getReceipt, type Receipt } from '@chairside/db/checkout';
 import { useQuery } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ScrollView, View } from 'react-native';

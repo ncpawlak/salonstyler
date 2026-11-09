@@ -17,7 +17,7 @@ import {
   type ImportAppointmentsResult,
   type ImportClientInput,
   type ImportClientsResult,
-} from '@chairside/db';
+} from '@chairside/db/import';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { supabase } from '@/lib/supabase';

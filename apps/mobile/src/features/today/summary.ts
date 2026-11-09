@@ -5,11 +5,11 @@ import {
   type Interval,
   type WorkHours,
 } from '@chairside/core';
+import type { AppointmentStatus } from '@chairside/db';
 import {
   ACTIVE_APPOINTMENT_STATUSES,
-  type AppointmentStatus,
   type AppointmentWithDetails,
-} from '@chairside/db';
+} from '@chairside/db/appointments';
 
 /** Statuses that are actually on the books (requests are pending, not booked). */
 const BOOKED: readonly AppointmentStatus[] = ['confirmed', 'held', 'completed'];

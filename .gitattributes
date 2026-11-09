@@ -1,2 +1,6 @@
 * text=auto eol=lf
 *.png binary
+
+# Generated: on a merge conflict take either side and regenerate (see CONTRIBUTING.md).
+packages/db/src/database.types.ts linguist-generated=true
+packages/ai/src/assistant/tools/index.ts linguist-generated=true

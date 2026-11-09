@@ -2,7 +2,7 @@ import {
   getNotificationSettings,
   type NotificationSettings,
   updateNotificationSettings,
-} from '@chairside/db';
+} from '@chairside/db/notifications';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { type Href, router } from 'expo-router';
 import { useEffect } from 'react';

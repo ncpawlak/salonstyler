@@ -1,15 +1,14 @@
+import { type AppointmentWithDetails, setAppointmentStatus } from '@chairside/db/appointments';
 import {
-  type AppointmentWithDetails,
   type CapturedRequestWithDetails,
   getInboxBridge,
   listCapturedRequests,
   removeInboxBridge,
   resolveCapturedRequest,
   rotateInboxBridgeToken,
-  setAppointmentStatus,
   updateInboxBridgeSettings,
   updateInboxKeyword,
-} from '@chairside/db';
+} from '@chairside/db/inbox';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { supabase } from '@/lib/supabase';

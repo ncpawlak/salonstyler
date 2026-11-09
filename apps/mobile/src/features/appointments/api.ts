@@ -1,4 +1,5 @@
 import { bookingErrorMessage, type BookingSegment } from '@chairside/core';
+import type { AppointmentStatus } from '@chairside/db';
 import {
   addClient,
   applyRunningLate,
@@ -9,10 +10,9 @@ import {
   setAppointmentStatus,
   type AddClientInput,
   type AppointmentServiceSnapshot,
-  type AppointmentStatus,
   type ApplyRunningLateInput,
   type BookAppointmentInput,
-} from '@chairside/db';
+} from '@chairside/db/appointments';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { supabase } from '@/lib/supabase';

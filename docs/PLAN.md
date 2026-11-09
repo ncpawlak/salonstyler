@@ -192,7 +192,7 @@ Vagaro has no one-click export to other apps, and its API needs manual approval 
   - Cancellation policy: free cancel ≥ X hrs before; inside the window, the deposit is kept. Refunds are one tap.
 - **Checkout at the chair: Tap to Pay on iPhone** (Stripe Terminal RN SDK). The appointment's services plus add-ons, retail products, and tip go in, and the remaining balance is charged after the deposit. No card reader needed (iPhone XS or newer).
   - Requires requesting Apple's **Tap to Pay entitlement**, which Stripe documents. **Start this early.**
-  - Built in #11: until the entitlement is granted, checkout charges through a Stripe test-mode **test reader** (web, Android and iOS builds without `EXPO_PUBLIC_TAP_TO_PAY=1`). Retail lines are free-form until inventory. Setup and on-device steps: [`supabase/README.md`](../supabase/README.md#checkout-and-tap-to-pay-11).
+  - Built in #11: until the entitlement is granted, checkout charges through a Stripe test-mode **test reader** (web, Android and iOS builds without `EXPO_PUBLIC_TAP_TO_PAY=1`). Retail lines are free-form until inventory. Setup and on-device steps: [`supabase/docs/checkout.md`](../supabase/docs/checkout.md).
 - Receipts by email/text link. Daily payout summary push.
 - Fees are per-transaction only (~2.7% + 15¢ in-person / 2.9% + 30¢ online). There's no monthly fee, which supports the "cheaper than Vagaro" pitch.
 

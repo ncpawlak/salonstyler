@@ -5,14 +5,14 @@ import type {
   CreateIntentResponse,
   RefundResponse,
 } from '@chairside/payments';
+import type { ChairsideClient } from '@chairside/db';
 import {
   payCheckoutOffline,
   startCheckout,
   updateCheckout,
-  type ChairsideClient,
   type CheckoutItemInput,
   type CheckoutWithItems,
-} from '@chairside/db';
+} from '@chairside/db/checkout';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Linking from 'expo-linking';
 import { Platform } from 'react-native';

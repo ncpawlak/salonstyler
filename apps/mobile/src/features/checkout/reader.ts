@@ -16,7 +16,7 @@ export interface CardReader {
 
 /**
  * Charges through a Stripe simulated reader driven server-side (test mode only). Used on web,
- * in Expo Go, and on iOS until the Tap to Pay entitlement ships (see supabase/README.md).
+ * in Expo Go, and on iOS until the Tap to Pay entitlement ships (see supabase/docs/checkout.md).
  */
 export const testReader: CardReader = {
   mode: 'test_reader',

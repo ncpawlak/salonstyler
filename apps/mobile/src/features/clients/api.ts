@@ -1,3 +1,5 @@
+import type { ClientPhotoRow } from '@chairside/db';
+import { listClients } from '@chairside/db/appointments';
 import {
   addClientFormula,
   addClientNote,
@@ -11,7 +13,6 @@ import {
   listClientNotes,
   listClientOverrideRows,
   listClientPhotos,
-  listClients,
   listClientSummaries,
   listClientVisits,
   saveClientOverride,
@@ -20,11 +21,10 @@ import {
   updateClient,
   uploadClientPhoto,
   type AddClientFormulaInput,
-  type ClientPhotoRow,
   type SaveClientOverrideInput,
   type UpdateClientInput,
   type UploadClientPhotoInput,
-} from '@chairside/db';
+} from '@chairside/db/clients';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { supabase } from '@/lib/supabase';

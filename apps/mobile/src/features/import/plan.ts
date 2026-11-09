@@ -7,12 +7,9 @@ import {
   type ImportedAppointment,
   type ImportedClient,
 } from '@chairside/core';
-import type {
-  AppointmentServiceSnapshot,
-  ImportAppointmentInput,
-  ImportClientInput,
-  ServiceMenu,
-} from '@chairside/db';
+import type { AppointmentServiceSnapshot } from '@chairside/db/appointments';
+import type { ImportAppointmentInput, ImportClientInput } from '@chairside/db/import';
+import type { ServiceMenu } from '@chairside/db/services';
 
 import { resolveSelection } from '../appointments/selection';
 

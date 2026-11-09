@@ -1,5 +1,7 @@
 import { formatOverride, MAX_OVERRIDE_MINUTES } from '@chairside/core';
-import type { ClientServiceOverrideRow, ClientVisit, ServiceMenu } from '@chairside/db';
+import type { ClientServiceOverrideRow } from '@chairside/db';
+import type { ClientVisit } from '@chairside/db/clients';
+import type { ServiceMenu } from '@chairside/db/services';
 import * as ImagePicker from 'expo-image-picker';
 import { useMemo, useState } from 'react';
 import { Image, Platform, Pressable, View } from 'react-native';

@@ -1,6 +1,7 @@
 import { templateRunningLateDrafts, type ClientTextDraft } from '@chairside/ai/assistant';
 import type { RunningLatePlan, RunningLateStrategy, WorkHours } from '@chairside/core';
-import type { AppointmentWithDetails, ClientReplySource } from '@chairside/db';
+import type { AppointmentWithDetails } from '@chairside/db/appointments';
+import type { ClientReplySource } from '@chairside/db/replies';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';

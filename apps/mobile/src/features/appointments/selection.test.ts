@@ -1,4 +1,4 @@
-import type { MenuService, ServiceMenu } from '@chairside/db';
+import type { MenuService, ServiceMenu } from '@chairside/db/services';
 import { describe, expect, it } from 'vitest';
 
 import { resolveSelection, selectionFromSnapshots } from './selection';

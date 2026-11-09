@@ -6,7 +6,7 @@ import type { ConfigContext, ExpoConfig } from 'expo/config';
  *   on every platform, and Expo Go can't load it anyway).
  * - Apple's Tap to Pay entitlement, only with `EXPO_PUBLIC_TAP_TO_PAY=1`. Builds signed without
  *   the entitlement on their provisioning profile fail, so leave it off until Apple grants it.
- * See supabase/README.md -> "Checkout and Tap to Pay".
+ * See supabase/docs/checkout.md.
  */
 const TAP_TO_PAY_ENTITLEMENT = 'com.apple.developer.proximity-reader.payment.acceptance';
 const TERMINAL_PLUGIN = '@stripe/stripe-terminal-react-native';

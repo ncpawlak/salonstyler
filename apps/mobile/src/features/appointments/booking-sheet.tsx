@@ -1,5 +1,7 @@
 import { formatDuration, formatOverride, planBooking, type WorkHours } from '@chairside/core';
-import type { AppointmentWithDetails, ClientRow, ServiceMenu } from '@chairside/db';
+import type { ClientRow } from '@chairside/db';
+import type { AppointmentWithDetails } from '@chairside/db/appointments';
+import type { ServiceMenu } from '@chairside/db/services';
 import { useMemo, useState } from 'react';
 import { View } from 'react-native';
 

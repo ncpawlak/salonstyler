@@ -11,7 +11,8 @@ import {
   type SlotCandidate,
   type TimeOfDay,
 } from '@chairside/core';
-import type { AppointmentServiceSnapshot, ServiceMenu } from '@chairside/db';
+import type { AppointmentServiceSnapshot } from '@chairside/db/appointments';
+import type { ServiceMenu } from '@chairside/db/services';
 
 import { resolveItems } from '../assistant/menu.ts';
 import { formatDayLabel, formatTime, pickSpread } from '../assistant/tools.ts';

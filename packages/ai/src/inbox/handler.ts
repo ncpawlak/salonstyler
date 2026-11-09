@@ -1,5 +1,8 @@
 import { findSlots, planBooking, toSalonDate, type SlotCandidate } from '@chairside/core';
-import type { AppointmentServiceSnapshot, AppointmentWithDetails } from '@chairside/db';
+import type {
+  AppointmentServiceSnapshot,
+  AppointmentWithDetails,
+} from '@chairside/db/appointments';
 import { z } from 'zod';
 
 import { AiProviderError } from '../http.ts';
