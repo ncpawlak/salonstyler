@@ -9,6 +9,7 @@
 //   { "action": "propose", "salonId", "clientId", "start", "services"? }   (owner tapped a slot)
 //   { "action": "confirm" | "discard", "salonId", "appointmentId" }        (owner tapped a draft)
 //   { "action": "create_client", "salonId", "name", "phone"? }
+//   { "action": "draft_running_late", "salonId", "delayMinutes", "moves": [{ "appointmentId", "newStart" }] }
 //
 // Local development only: CHAIRSIDE_AI_DEMO=1 swaps the LLM for a scripted, rule-based stand-in
 // (no key, no usage). It is ignored unless SUPABASE_URL points at a local stack.

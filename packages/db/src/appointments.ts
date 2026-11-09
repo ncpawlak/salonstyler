@@ -179,6 +179,36 @@ export async function rescheduleAppointment(
   return data;
 }
 
+export interface ApplyRunningLateInput {
+  salonId: string;
+  delayMinutes: number;
+  /** `ripple` / `shift_all` / `move_one` from `planRunningLate`, recorded in the audit log. */
+  strategy?: string | null;
+  /** New segments per appointment, including buffers (from `planRunningLate(...).moves`). */
+  moves: readonly { appointmentId: string; segments: readonly BookingSegment[] }[];
+}
+
+/**
+ * Applies a "running late" cascade atomically via `apply_running_late`: every appointment moves
+ * together, so back-to-back appointments can shift without colliding with each other mid-way.
+ */
+export async function applyRunningLate(
+  client: ChairsideClient,
+  input: ApplyRunningLateInput,
+): Promise<Appointment[]> {
+  const { data, error } = await client.rpc('apply_running_late', {
+    p_salon_id: input.salonId,
+    p_delay_minutes: input.delayMinutes,
+    p_moves: input.moves.map((m) => ({
+      appointmentId: m.appointmentId,
+      segments: m.segments.map(({ kind, start, end }) => ({ kind, start, end })),
+    })) as unknown as Json,
+    ...(input.strategy ? { p_strategy: input.strategy } : {}),
+  });
+  if (error) throw error;
+  return data;
+}
+
 /** Confirm, complete, mark no-show, cancel (with optional reason), or undo complete/no-show. */
 export async function setAppointmentStatus(
   client: ChairsideClient,

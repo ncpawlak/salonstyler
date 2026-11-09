@@ -29,6 +29,8 @@ import { InChairRow, NextClientCard, NoNextClient } from '@/features/today/next-
 import { ProcessingTimers } from '@/features/today/processing-timers';
 import { QuickActions } from '@/features/today/quick-actions';
 import { RequestStack, type RequestDecision } from '@/features/today/request-stack';
+import { parseLateParam } from '@/features/today/running-late';
+import { RunningLateSheet } from '@/features/today/running-late-sheet';
 import { serviceColor } from '@/features/today/service-pills';
 import { clientSpan, summarizeToday } from '@/features/today/summary';
 import { haptics } from '@/lib/haptics';
@@ -73,16 +75,25 @@ export default function TodayScreen() {
 
   const [booking, setBooking] = useState<BookingTarget | null>(null);
   const [selected, setSelected] = useState<AppointmentWithDetails | null>(null);
+  const [late, setLate] = useState<{ delay: number | null } | null>(null);
   const [requestError, setRequestError] = useState<string | null>(null);
   const { move } = useMoveAppointment(hours, list);
 
-  // Hand-offs from global search: open an appointment, or start a booking for a client.
+  // Hand-offs from global search / Ask Chairside: open an appointment, start a booking for a
+  // client, or open "Running late" with a delay.
   const params = useLocalSearchParams<{
     appointment?: string;
     bookClient?: string;
     bookClientName?: string;
     bookClientPhone?: string;
+    late?: string;
   }>();
+  useEffect(() => {
+    if (!hours || appointments.isLoading || !params.late) return;
+    const delay = parseLateParam(params.late);
+    router.setParams({ late: undefined });
+    setTimeout(() => setLate({ delay }), 0);
+  }, [hours, appointments.isLoading, params.late]);
   useEffect(() => {
     if (!hours) return;
     if (params.appointment) {
@@ -238,7 +249,12 @@ export default function TodayScreen() {
             actions={[
               { id: 'book', icon: 'add', label: 'Book', onPress: book },
               { id: 'block', icon: 'remove-circle-outline', label: 'Block time' },
-              { id: 'late', icon: 'time-outline', label: 'Running late' },
+              {
+                id: 'late',
+                icon: 'time-outline',
+                label: 'Running late',
+                onPress: () => setLate({ delay: null }),
+              },
               { id: 'checkout', icon: 'card-outline', label: 'Checkout' },
             ]}
           />
@@ -309,6 +325,14 @@ export default function TodayScreen() {
               setSelected(null);
               setBooking({ kind: 'edit', appointment: appt });
             }}
+          />
+          <RunningLateSheet
+            open={!!late}
+            onClose={() => setLate(null)}
+            appointments={list}
+            hours={hours}
+            now={now}
+            initialDelay={late?.delay}
           />
         </>
       ) : null}

@@ -5,8 +5,10 @@ import {
   formatDuration,
   formatLocalDate,
   getWorkingBlocks,
+  MAX_RUNNING_LATE_MINUTES,
   parseLocalDate,
   planBooking,
+  planRunningLate,
   toSalonDate,
   type SlotCandidate,
   type TimeOfDay,
@@ -23,12 +25,14 @@ import type {
   AssistantPort,
   BookingItem,
   DraftCard,
+  RunningLateCard,
   SlotDay,
 } from './types.ts';
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
 const DRAFT_NOTE = 'Drafted by Ask Chairside';
+const RUNNING_LATE_MOVABLE: readonly string[] = ['held', 'requested', 'confirmed'];
 
 export interface ToolContext {
   port: AssistantPort;
@@ -111,6 +115,7 @@ const schemas = {
     services: itemsSchema.nullish(),
   }),
   cancel_draft: z.object({ appointmentId: z.string().min(1) }),
+  running_late: z.object({ minutes: z.int().min(1).max(MAX_RUNNING_LATE_MINUTES) }),
 } as const;
 
 export type AssistantToolName = keyof typeof schemas;
@@ -197,6 +202,16 @@ export const ASSISTANT_TOOLS: ToolDefinition[] = [
       type: 'object',
       properties: { appointmentId: { type: 'string' } },
       required: ['appointmentId'],
+    },
+  },
+  {
+    name: 'running_late',
+    description:
+      'The owner is running late today ("I’m 15 behind"). Works out which of today’s clients have to move and shows a card to review the new times and drafted texts. Moves nothing by itself.',
+    parameters: {
+      type: 'object',
+      properties: { minutes: { type: 'integer', description: 'How many minutes late (1–240)' } },
+      required: ['minutes'],
     },
   },
 ];
@@ -584,6 +599,67 @@ export const confirmDraft = (ctx: ToolContext, appointmentId: string) =>
 export const cancelDraft = (ctx: ToolContext, appointmentId: string) =>
   finishDraft(ctx, appointmentId, 'cancelled');
 
+/** Previews today's cascade for a delay. The owner applies it from the Running late sheet. */
+async function runningLate(
+  ctx: ToolContext,
+  args: { minutes: number },
+): Promise<ToolOutput & { card: RunningLateCard }> {
+  const now = ctx.now();
+  const utcToday = toSalonDate(now, 'UTC');
+  const probe = await ctx.port.getSchedule({ from: utcToday, to: utcToday });
+  const timeZone = probe.hours.timeZone;
+  const today = toSalonDate(now, timeZone);
+  const schedule =
+    today === utcToday ? probe : await ctx.port.getSchedule({ from: today, to: today });
+  const day = (
+    await ctx.port.listAppointments({
+      from: new Date(now - DAY).toISOString(),
+      to: new Date(now + DAY).toISOString(),
+    })
+  ).filter((a) => toSalonDate(a.starts_at, timeZone) === today);
+  // Same defaults as the Running late sheet: only live bookings move, starting with the next
+  // client who hasn't started (or the earliest one still in the chair).
+  const movable = day
+    .filter((a) => RUNNING_LATE_MOVABLE.includes(a.status) && Date.parse(a.ends_at) > now)
+    .sort((a, b) => Date.parse(a.starts_at) - Date.parse(b.starts_at));
+  const first = movable.find((a) => Date.parse(a.starts_at) > now) ?? movable[0];
+  const plan = first
+    ? planRunningLate({
+        appointments: day.map((a) => ({ id: a.id, segments: a.segments })),
+        delayMinutes: args.minutes,
+        firstId: first.id,
+        fixedIds: day.filter((a) => !RUNNING_LATE_MOVABLE.includes(a.status)).map((a) => a.id),
+        hours: schedule.hours,
+        now,
+      })
+    : { moves: [], unchanged: [], overtimeMinutes: 0 };
+  const name = (id: string) => day.find((a) => a.id === id)?.client?.name ?? 'Walk-in';
+  const card: RunningLateCard = {
+    type: 'running_late',
+    delayMinutes: args.minutes,
+    moves: plan.moves.map((m) => ({
+      appointmentId: m.id,
+      clientName: name(m.id),
+      from: m.from.start,
+      to: m.to.start,
+      label: `${formatTime(m.from.start, timeZone)} → ${formatTime(m.to.start, timeZone)}`,
+    })),
+    unchangedCount: plan.unchanged.length,
+    overtimeMinutes: plan.overtimeMinutes,
+  };
+  return {
+    result: {
+      moves: card.moves.map((m) => ({ client: m.clientName, change: m.label })),
+      unaffectedLaterClients: card.unchangedCount,
+      overtimeMinutes: card.overtimeMinutes,
+      note: card.moves.length
+        ? 'Card shown with a Review button: the owner checks the new times and the drafted texts, then updates the calendar. Nothing has moved yet.'
+        : 'Nobody left today needs to move.',
+    },
+    card,
+  };
+}
+
 const HANDLERS: {
   [K in AssistantToolName]: (
     ctx: ToolContext,
@@ -596,6 +672,7 @@ const HANDLERS: {
   get_day_summary: daySummary,
   propose_booking: (ctx, args) => proposeBooking(ctx, args),
   cancel_draft: (ctx, args) => cancelDraft(ctx, args.appointmentId),
+  running_late: runningLate,
 };
 
 /**

@@ -1,9 +1,17 @@
+import { MAX_RUNNING_LATE_MINUTES } from '@chairside/core';
 import { z } from 'zod';
 
 import { AiProviderError } from '../http.ts';
 import { createProvider as defaultCreateProvider } from '../registry.ts';
 import type { ChatMessage, LLMProvider } from '../types.ts';
 import { runAssistantTurn } from '../assistant/loop.ts';
+import {
+  type ClientTextDraft,
+  draftRunningLateTexts,
+  type RunningLateDraftInput,
+  type RunningLateDraftItem,
+  templateRunningLateDrafts,
+} from '../assistant/running-late.ts';
 import {
   cancelDraft,
   confirmDraft,
@@ -60,6 +68,19 @@ export const assistantRequestSchema = z.discriminatedUnion('action', [
     name: z.string().trim().min(1).max(120),
     phone: z.string().trim().max(40).nullish(),
   }),
+  /**
+   * Draft texts for a "running late" cascade planned by `planRunningLate` (before it's applied).
+   * Names and current times are read from the database; only the new start comes from the app.
+   */
+  z.object({
+    action: z.literal('draft_running_late'),
+    salonId: z.uuid(),
+    delayMinutes: z.number().int().min(1).max(MAX_RUNNING_LATE_MINUTES),
+    moves: z
+      .array(z.object({ appointmentId: z.uuid(), newStart: z.iso.datetime({ offset: true }) }))
+      .min(1)
+      .max(50),
+  }),
 ]);
 export type AssistantRequest = z.infer<typeof assistantRequestSchema>;
 
@@ -86,6 +107,12 @@ export type AssistantMessageResponse = {
 };
 export type AssistantCardResponse = { card: DraftCard };
 export type AssistantClientResponse = { client: AssistantClient };
+export type AssistantRunningLateResponse = {
+  drafts: ClientTextDraft[];
+  /** Why the texts are templates rather than AI-written, if they are. */
+  notice: string | null;
+  usage: AssistantUsage;
+};
 
 export type AssistantServiceResult =
   | {
@@ -94,7 +121,8 @@ export type AssistantServiceResult =
         | AssistantStatusResponse
         | AssistantMessageResponse
         | AssistantCardResponse
-        | AssistantClientResponse;
+        | AssistantClientResponse
+        | AssistantRunningLateResponse;
     }
   | { status: 400 | 401 | 403 | 409 | 429 | 500 | 502; body: AiErrorBody };
 
@@ -158,6 +186,8 @@ export async function handleAssistantRequest(
       }
       case 'message':
         return await message(request, deps, ctx);
+      case 'draft_running_late':
+        return await draftRunningLate(request, deps, ctx);
     }
   } catch (error) {
     if (error instanceof ToolError) return fail(409, error.code, error.message);
@@ -166,51 +196,62 @@ export async function handleAssistantRequest(
   }
 }
 
+type ResolvedProvider = {
+  llm: LLMProvider;
+  usage: AssistantUsage;
+  apiKey: string;
+  meter?: (u: { inputTokens: number; outputTokens: number }, model: string) => Promise<void>;
+};
+
+/** The demo provider, or the salon's own key with budget check and usage metering. */
+async function resolveProvider(
+  salonId: string,
+  deps: AssistantServiceDeps,
+  purpose: string,
+): Promise<ResolvedProvider | AssistantServiceResult> {
+  if (deps.demoProvider) return { llm: deps.demoProvider(), usage: null, apiKey: '' };
+  const config = await deps.loadConfig(salonId);
+  if (!config) {
+    return fail(
+      409,
+      'not_configured',
+      'Ask Chairside needs an AI provider. Add a key in Settings → AI assistant.',
+    );
+  }
+  const used = await deps.tokensUsedThisMonth(salonId);
+  if (used >= config.monthlyTokenBudget) {
+    return fail(429, 'budget_exceeded', 'This salon has used its monthly AI token budget');
+  }
+  const usage = { usedThisMonth: used, monthlyTokenBudget: config.monthlyTokenBudget };
+  return {
+    llm: (deps.createProvider ?? defaultCreateProvider)(config.provider, {
+      apiKey: config.apiKey,
+      model: config.model,
+    }),
+    usage,
+    apiKey: config.apiKey,
+    meter: async (u, model) => {
+      usage.usedThisMonth += u.inputTokens + u.outputTokens;
+      await deps.recordUsage({
+        salonId,
+        provider: config.provider,
+        model,
+        purpose,
+        inputTokens: u.inputTokens,
+        outputTokens: u.outputTokens,
+      });
+    },
+  };
+}
+
 async function message(
   request: Extract<AssistantRequest, { action: 'message' }>,
   deps: AssistantServiceDeps,
   ctx: ToolContext,
 ): Promise<AssistantServiceResult> {
-  let llm: LLMProvider;
-  let usage: AssistantUsage = null;
-  let apiKey = '';
-  let meter:
-    | ((u: { inputTokens: number; outputTokens: number }, model: string) => Promise<void>)
-    | undefined;
-
-  if (deps.demoProvider) {
-    llm = deps.demoProvider();
-  } else {
-    const config = await deps.loadConfig(request.salonId);
-    if (!config) {
-      return fail(
-        409,
-        'not_configured',
-        'Ask Chairside needs an AI provider. Add a key in Settings → AI assistant.',
-      );
-    }
-    const used = await deps.tokensUsedThisMonth(request.salonId);
-    if (used >= config.monthlyTokenBudget) {
-      return fail(429, 'budget_exceeded', 'This salon has used its monthly AI token budget');
-    }
-    apiKey = config.apiKey;
-    llm = (deps.createProvider ?? defaultCreateProvider)(config.provider, {
-      apiKey: config.apiKey,
-      model: config.model,
-    });
-    usage = { usedThisMonth: used, monthlyTokenBudget: config.monthlyTokenBudget };
-    meter = async (u, model) => {
-      usage!.usedThisMonth += u.inputTokens + u.outputTokens;
-      await deps.recordUsage({
-        salonId: request.salonId,
-        provider: config.provider,
-        model,
-        purpose: 'assistant',
-        inputTokens: u.inputTokens,
-        outputTokens: u.outputTokens,
-      });
-    };
-  }
+  const resolved = await resolveProvider(request.salonId, deps, 'assistant');
+  if ('status' in resolved) return resolved;
+  const { llm, usage, apiKey, meter } = resolved;
 
   const today = new Date(ctx.now()).toISOString().slice(0, 10);
   const schedule = await ctx.port.getSchedule({ from: today, to: today });
@@ -234,4 +275,64 @@ async function message(
     }
     throw error;
   }
+}
+
+/**
+ * Drafts a text per moved client. Times and names come from the database, not the request; the
+ * model only words the message. Without a usable provider (no key, budget spent, provider down)
+ * the template texts are returned instead, so the owner is never blocked.
+ */
+async function draftRunningLate(
+  request: Extract<AssistantRequest, { action: 'draft_running_late' }>,
+  deps: AssistantServiceDeps,
+  ctx: ToolContext,
+): Promise<AssistantServiceResult> {
+  const today = new Date(ctx.now()).toISOString().slice(0, 10);
+  const schedule = await ctx.port.getSchedule({ from: today, to: today });
+  const items: RunningLateDraftItem[] = [];
+  for (const move of request.moves) {
+    const appt = await ctx.port.getAppointment(move.appointmentId);
+    if (!appt || appt.salon_id !== request.salonId) {
+      throw new ToolError('not_found', 'One of those appointments no longer exists');
+    }
+    items.push({
+      appointmentId: appt.id,
+      clientName: appt.client?.name ?? null,
+      oldStart: appt.starts_at,
+      newStart: new Date(move.newStart).toISOString(),
+    });
+  }
+  const input: RunningLateDraftInput = {
+    salonName: schedule.salonName,
+    timeZone: schedule.hours.timeZone,
+    delayMinutes: request.delayMinutes,
+    items,
+  };
+
+  let drafts: ClientTextDraft[];
+  let notice: string | null = null;
+  let usage: AssistantUsage = null;
+  const resolved = await resolveProvider(request.salonId, deps, 'running_late');
+  if ('status' in resolved) {
+    drafts = templateRunningLateDrafts(input);
+    notice =
+      resolved.status === 429
+        ? 'Monthly AI budget used up, so these are standard texts.'
+        : 'Add an AI provider in Settings → AI assistant for personal texts.';
+  } else {
+    usage = resolved.usage;
+    try {
+      drafts = await draftRunningLateTexts(resolved.llm, input, resolved.meter);
+    } catch (error) {
+      if (!(error instanceof AiProviderError)) throw error;
+      drafts = templateRunningLateDrafts(input);
+      notice = 'The AI provider didn’t respond, so these are standard texts.';
+    }
+  }
+  await ctx.port.audit('assistant.running_late_drafts', {
+    delayMinutes: request.delayMinutes,
+    appointmentIds: items.map((i) => i.appointmentId),
+    sources: drafts.map((d) => d.source),
+  });
+  return { status: 200, body: { drafts, notice, usage } };
 }

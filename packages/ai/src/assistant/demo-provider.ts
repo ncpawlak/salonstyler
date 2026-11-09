@@ -1,6 +1,7 @@
 import type { AiProvider } from '../providers.ts';
 import type { ChatMessage, ChatResult, LLMProvider, ToolCall } from '../types.ts';
 import { nameMatchScore } from './fuzzy.ts';
+import { RUNNING_LATE_PROMPT_TAG } from './running-late.ts';
 
 /**
  * A deterministic, rule-based stand-in for an LLM, for local development demos and tests only
@@ -59,6 +60,9 @@ export class DemoAssistantProvider implements LLMProvider {
 
   async chat(messages: ChatMessage[]): Promise<ChatResult> {
     const system = messages.find((m) => m.role === 'system');
+    if (typeof system?.content === 'string' && system.content.startsWith(RUNNING_LATE_PROMPT_TAG)) {
+      return this.runningLate(messages);
+    }
     const today =
       (system && /\((\d{4}-\d{2}-\d{2})\)/.exec(system.content as string)?.[1]) ??
       new Date().toISOString().slice(0, 10);
@@ -70,6 +74,31 @@ export class DemoAssistantProvider implements LLMProvider {
     return lastTool
       ? this.afterTool(lastTool, messages, text, today)
       : this.start(messages, text, today);
+  }
+
+  /** Drafts {drafts:[…]} JSON for the running-late prompt, like a real model would. */
+  private runningLate(messages: ChatMessage[]): ChatResult {
+    const user = messages.find((m) => m.role === 'user');
+    const input = parse(typeof user?.content === 'string' ? user.content : '{}');
+    const minutes = Number(input.runningLateMinutes) || 0;
+    type Item = {
+      appointmentId: string;
+      clientFirstName: string | null;
+      originalStart: string;
+      newStart: string;
+    };
+    const items = (input.appointments as Item[] | undefined) ?? [];
+    const drafts = items.map((a) => {
+      const hey = a.clientFirstName ? `Hey ${a.clientFirstName}!` : 'Hey!';
+      return {
+        appointmentId: a.appointmentId,
+        text:
+          a.newStart === a.originalStart
+            ? `${hey} Quick heads-up: I'm about ${minutes} minutes behind, but we're still on for ${a.originalStart}.`
+            : `${hey} I'm running a little behind today. Could you come in at ${a.newStart} instead of ${a.originalStart}? So sorry!`,
+      };
+    });
+    return this.say(JSON.stringify({ drafts }));
   }
 
   private call(name: string, args: Json): ChatResult {
@@ -106,6 +135,12 @@ export class DemoAssistantProvider implements LLMProvider {
 
   private start(messages: ChatMessage[], text: string, today: string): ChatResult {
     const t = text.trim();
+    const late =
+      /\b(?:running|am|i'?m)\s+(?:about\s+)?(\d{1,3})\s*(?:min(?:ute)?s?\s+)?(?:late|behind)\b/i.exec(
+        t,
+      );
+    if (late) return this.call('running_late', { minutes: Number(late[1]) });
+
     const schedule = /\b(?:schedule|book|put)\s+(.+?)\s+(?:in\s+)?(?:for|on)\s+(.+)$/i.exec(t);
     if (schedule && !/^(the|that|option)\b/i.test(schedule[1]!)) {
       return this.call('find_client', { query: schedule[1]!.replace(/'s$/i, '') });
@@ -237,6 +272,14 @@ export class DemoAssistantProvider implements LLMProvider {
         );
       case 'cancel_draft':
         return this.say(error ? error.message : 'Okay, I released that hold.');
+      case 'running_late': {
+        if (error) return this.say(error.message);
+        const moves = (result.moves as { client: string; change: string }[]) ?? [];
+        if (moves.length === 0) return this.say('Nobody left today needs to move.');
+        return this.say(
+          `${moves.map((m) => `${m.client.split(' ')[0]} ${m.change}`).join('; ')}. Tap Review to check the texts and update the calendar.`,
+        );
+      }
       case 'get_day_summary': {
         const appts = (result.appointments as { time: string; client: string | null }[]) ?? [];
         if (result.status === 'closed' && appts.length === 0) {

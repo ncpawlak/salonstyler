@@ -4,6 +4,7 @@ import type {
   AssistantClientResponse,
   AssistantMessageResponse,
   AssistantRequest,
+  AssistantRunningLateResponse,
   AssistantStatusResponse,
 } from '@chairside/ai/assistant-server';
 import type { ChairsideClient } from '@chairside/db';
@@ -52,6 +53,12 @@ export function assistantApi(supabase: ChairsideClient, salonId: string) {
       invoke<AssistantCardResponse>(supabase, { action: 'discard', salonId, appointmentId }),
     createClient: (r: Req<'create_client'>) =>
       invoke<AssistantClientResponse>(supabase, { action: 'create_client', salonId, ...r }),
+    draftRunningLate: (r: Req<'draft_running_late'>) =>
+      invoke<AssistantRunningLateResponse>(supabase, {
+        action: 'draft_running_late',
+        salonId,
+        ...r,
+      }),
   };
 }
 

@@ -1,4 +1,10 @@
-import type { AssistantCard, DraftCard, SlotOption, SlotsCard } from '@chairside/ai/assistant';
+import type {
+  AssistantCard,
+  DraftCard,
+  RunningLateCard,
+  SlotOption,
+  SlotsCard,
+} from '@chairside/ai/assistant';
 import type { ChatMessage } from '@chairside/ai';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useFocusEffect } from 'expo-router';
@@ -391,9 +397,50 @@ function EntryView({
                 )}
               </Card>
             );
+          case 'running_late':
+            return <RunningLateCardView key={i} card={card} />;
         }
       })}
     </View>
+  );
+}
+
+/** Preview only: the Running late sheet on Today recomputes, drafts the texts and applies. */
+function RunningLateCardView({ card }: { card: RunningLateCard }) {
+  return (
+    <Card className="gap-3" testID="running-late-card">
+      <View className="gap-0.5">
+        <Text variant="headline">Running {card.delayMinutes} min late</Text>
+        <Text variant="footnote" tone="muted">
+          {card.moves.length
+            ? `${card.moves.length} ${card.moves.length === 1 ? 'client moves' : 'clients move'}` +
+              (card.unchangedCount ? ` · ${card.unchangedCount} unaffected` : '')
+            : 'Nobody needs to move'}
+        </Text>
+      </View>
+      {card.moves.map((m) => (
+        <View key={m.appointmentId} className="flex-row items-center justify-between gap-3">
+          <Text variant="subhead" className="flex-1" numberOfLines={1}>
+            {m.clientName}
+          </Text>
+          <Text variant="subhead" tone="muted">
+            {m.label}
+          </Text>
+        </View>
+      ))}
+      {card.overtimeMinutes > 0 ? (
+        <Badge label={`Runs ${card.overtimeMinutes} min past closing`} tone="warning" />
+      ) : null}
+      {card.moves.length ? (
+        <Button
+          icon="time-outline"
+          label="Review texts & update"
+          onPress={() =>
+            router.navigate({ pathname: '/', params: { late: String(card.delayMinutes) } })
+          }
+        />
+      ) : null}
+    </Card>
   );
 }
 

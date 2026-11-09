@@ -1,6 +1,7 @@
 import { bookingErrorMessage, type BookingSegment } from '@chairside/core';
 import {
   addClient,
+  applyRunningLate,
   bookAppointment,
   listAppointments,
   listClients,
@@ -9,6 +10,7 @@ import {
   type AddClientInput,
   type AppointmentServiceSnapshot,
   type AppointmentStatus,
+  type ApplyRunningLateInput,
   type BookAppointmentInput,
 } from '@chairside/db';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -66,6 +68,17 @@ export function useRescheduleAppointment() {
         input.segments,
         input.services ? { services: input.services, priceCents: input.priceCents } : undefined,
       ),
+    onSettled: invalidate,
+  });
+}
+
+/** Moves every appointment of a "running late" cascade in one transaction. */
+export function useApplyRunningLate() {
+  const salon = useCurrentSalon();
+  const invalidate = useInvalidateAppointments();
+  return useMutation({
+    mutationFn: (input: Omit<ApplyRunningLateInput, 'salonId'>) =>
+      applyRunningLate(supabase, { ...input, salonId: salon.id }),
     onSettled: invalidate,
   });
 }

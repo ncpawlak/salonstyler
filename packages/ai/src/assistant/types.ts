@@ -106,5 +106,19 @@ export interface ClientNotFoundCard {
   suggestions: { id: string; name: string }[];
 }
 
+/**
+ * "I'm running 15 late": a preview of the cascade. Nothing moves until the owner opens the
+ * Running late sheet from the card, reviews the texts and taps Update.
+ */
+export interface RunningLateCard {
+  type: 'running_late';
+  delayMinutes: number;
+  /** Squeeze plan from `planRunningLate`; the sheet recomputes and offers the other options. */
+  moves: { appointmentId: string; clientName: string; from: string; to: string; label: string }[];
+  /** Clients the delay doesn't reach. */
+  unchangedCount: number;
+  overtimeMinutes: number;
+}
+
 /** Structured output the app renders next to the assistant's text. */
-export type AssistantCard = SlotsCard | DraftCard | ClientNotFoundCard;
+export type AssistantCard = SlotsCard | DraftCard | ClientNotFoundCard | RunningLateCard;
