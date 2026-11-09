@@ -3,7 +3,10 @@ import { dayAvailability, scheduleForDate } from './hours';
 import { FRI, NY, at, weekdayHours } from './test-helpers';
 import type { WorkHours } from './types';
 
-const iso = (i: { start: number; end: number }) => [new Date(i.start).toISOString(), new Date(i.end).toISOString()];
+const iso = (i: { start: number; end: number }) => [
+  new Date(i.start).toISOString(),
+  new Date(i.end).toISOString(),
+];
 
 describe('work hours', () => {
   it('uses the weekly template; missing weekday = closed', () => {
@@ -57,7 +60,10 @@ describe('work hours', () => {
   });
 
   it('measures real elapsed time across DST transitions', () => {
-    const night: WorkHours = { timeZone: NY, weekly: { 0: { blocks: [{ start: '01:00', end: '04:00', type: 'open' }] } } };
+    const night: WorkHours = {
+      timeZone: NY,
+      weekly: { 0: { blocks: [{ start: '01:00', end: '04:00', type: 'open' }] } },
+    };
     const [spring] = dayAvailability(night, '2026-03-08').available;
     expect((spring!.end - spring!.start) / 3_600_000).toBe(2);
     const [fall] = dayAvailability(night, '2026-11-01').available;
@@ -65,7 +71,10 @@ describe('work hours', () => {
   });
 
   it('rejects inverted ranges', () => {
-    const h: WorkHours = { timeZone: NY, weekly: { 5: { blocks: [{ start: '17:00', end: '09:00', type: 'open' }] } } };
+    const h: WorkHours = {
+      timeZone: NY,
+      weekly: { 5: { blocks: [{ start: '17:00', end: '09:00', type: 'open' }] } },
+    };
     expect(() => dayAvailability(h, FRI)).toThrow();
   });
 });

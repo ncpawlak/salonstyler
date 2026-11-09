@@ -48,12 +48,29 @@ docs/                 plan & design docs
 ```
 
 ## Getting started
-_Coming in Phase 0._ Planned commands:
+Requires **Node 22.12+** (see `.nvmrc`) and npm. This is an npm workspaces monorepo: run everything from the repo root.
+
 ```bash
 npm install
-npx supabase start        # local Postgres + functions
-npm run dev --workspace apps/mobile -- --web   # run the app in a browser
+npm run dev               # Expo dev server + opens the app in your browser
 ```
+
+**On an iPhone:** install [Expo Go](https://apps.apple.com/app/expo-go/id982107779), run `npm run dev` (or `npm run ios`), and scan the QR code in the terminal with the Camera app. Your phone and computer must be on the same Wi‑Fi (otherwise run `npx expo start --tunnel` from `apps/mobile`). Features that need native modules outside Expo Go will later require a development build (`npx eas-cli build --profile development`).
+
+| Command | What it does |
+|---|---|
+| `npm run dev` | Start the app on web (extra flags pass through, e.g. `npm run dev -- --port 8082`) |
+| `npm run ios` | Start the Expo dev server for iOS |
+| `npm run typecheck` | `tsc --noEmit` in every workspace |
+| `npm run lint` | ESLint (Expo config + Prettier compat) |
+| `npm run format` / `format:check` | Prettier write / check |
+| `npm test` | Vitest in `packages/*` |
+
+CI (`.github/workflows/ci.yml`) runs typecheck, lint, format check, and tests on every PR.
+
+**Stack in `apps/mobile`:** Expo SDK 58 · Expo Router (routes in `src/app/`) · NativeWind 4 (Tailwind classes via `className`) · TanStack Query · Zod. Shared code lives in `@chairside/core` and `@chairside/ai` (`packages/*`), imported directly as TypeScript source.
+
+**Backend (Supabase):** requires Docker. `npx supabase start` runs Postgres, Auth, and REST locally and applies migrations; copy keys from `npx supabase status` into `.env` (see `.env.example`). Details in [`supabase/README.md`](supabase/README.md).
 
 ## Roadmap
 Work is tracked as GitHub issues, one per feature, each landing as its own PR. Phases:

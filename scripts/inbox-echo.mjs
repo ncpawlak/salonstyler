@@ -76,5 +76,7 @@ const server = createServer((req, res) => {
 
 server.listen(PORT, () => {
   console.log(`inbox-echo listening on http://localhost:${PORT}  (POST /inbox, GET /health)`);
-  console.log(TOKEN ? 'Requiring X-Bridge-Token header.' : 'BRIDGE_TOKEN not set: accepting any token.');
+  console.log(
+    TOKEN ? 'Requiring X-Bridge-Token header.' : 'BRIDGE_TOKEN not set: accepting any token.',
+  );
 });

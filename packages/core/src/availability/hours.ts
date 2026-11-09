@@ -1,5 +1,12 @@
 import { mergeIntervals, subtractIntervals } from './intervals';
-import { formatLocalDate, parseClock, parseLocalDate, weekday, zonedToUtc, type LocalDate } from './time';
+import {
+  formatLocalDate,
+  parseClock,
+  parseLocalDate,
+  weekday,
+  zonedToUtc,
+  type LocalDate,
+} from './time';
 import type { DaySchedule, Interval, WorkHours } from './types';
 
 export interface DayAvailability {
@@ -39,9 +46,18 @@ export function dayAvailability(hours: WorkHours, date: string): DayAvailability
   const ld = parseLocalDate(date);
   const schedule = scheduleForDate(hours, date);
   const byType = { open: [] as Interval[], tentative: [] as Interval[], closed: [] as Interval[] };
-  for (const b of schedule.blocks) byType[b.type].push(toInterval(ld, b.start, b.end, hours.timeZone));
-  const removed = [...byType.closed, ...(schedule.breaks ?? []).map((b) => toInterval(ld, b.start, b.end, hours.timeZone))];
+  for (const b of schedule.blocks)
+    byType[b.type].push(toInterval(ld, b.start, b.end, hours.timeZone));
+  const removed = [
+    ...byType.closed,
+    ...(schedule.breaks ?? []).map((b) => toInterval(ld, b.start, b.end, hours.timeZone)),
+  ];
   const open = subtractIntervals(byType.open, removed);
   const tentative = subtractIntervals(byType.tentative, [...removed, ...open]);
-  return { date: formatLocalDate(ld), open, tentative, available: mergeIntervals([...open, ...tentative]) };
+  return {
+    date: formatLocalDate(ld),
+    open,
+    tentative,
+    available: mergeIntervals([...open, ...tentative]),
+  };
 }
