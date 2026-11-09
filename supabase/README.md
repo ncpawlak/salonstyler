@@ -14,6 +14,7 @@ Docs are split by feature so parallel PRs don't edit the same file. When you add
 - [Payments](docs/payments.md): Stripe Connect.
 - [Checkout and Tap to Pay](docs/checkout.md) (#11).
 - [Push notifications](docs/push-notifications.md) (#8), including the notifier Vault secrets.
+- [Client self-service](docs/client-self-service.md) (#10): manage link (`functions/manage-booking`), client emails and the reminder queue.
 - [Hosted project setup](docs/hosted-setup.md).
 - [Sign in with Apple](docs/sign-in-with-apple.md).
 

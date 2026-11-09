@@ -159,6 +159,7 @@ export type Database = {
           hold_expires_at: string | null;
           id: string;
           import_key: string | null;
+          manage_token: string;
           notes: string | null;
           price_cents: number | null;
           requested_at: string | null;
@@ -168,6 +169,7 @@ export type Database = {
           starts_at: string;
           status: Database['public']['Enums']['appointment_status'];
           stylist_id: string;
+          text_reminder_sent_at: string | null;
           updated_at: string;
         };
         ComputedFields: never;
@@ -181,6 +183,7 @@ export type Database = {
           hold_expires_at?: string | null;
           id?: string;
           import_key?: string | null;
+          manage_token?: string;
           notes?: string | null;
           price_cents?: number | null;
           requested_at?: string | null;
@@ -190,6 +193,7 @@ export type Database = {
           starts_at: string;
           status?: Database['public']['Enums']['appointment_status'];
           stylist_id: string;
+          text_reminder_sent_at?: string | null;
           updated_at?: string;
         };
         Update: {
@@ -202,6 +206,7 @@ export type Database = {
           hold_expires_at?: string | null;
           id?: string;
           import_key?: string | null;
+          manage_token?: string;
           notes?: string | null;
           price_cents?: number | null;
           requested_at?: string | null;
@@ -211,6 +216,7 @@ export type Database = {
           starts_at?: string;
           status?: Database['public']['Enums']['appointment_status'];
           stylist_id?: string;
+          text_reminder_sent_at?: string | null;
           updated_at?: string;
         };
         Relationships: [
@@ -523,6 +529,79 @@ export type Database = {
           },
           {
             foreignKeyName: 'checkouts_salon_id_fkey';
+            columns: ['salon_id'];
+            isOneToOne: false;
+            referencedRelation: 'salons';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      client_email_outbox: {
+        Row: {
+          appointment_id: string;
+          attempts: number;
+          claimed_at: string | null;
+          created_at: string;
+          dedupe_key: string;
+          id: string;
+          kind: Database['public']['Enums']['client_email_kind'];
+          last_error: string | null;
+          provider_id: string | null;
+          reminder_hours: number | null;
+          salon_id: string;
+          send_after: string;
+          sent_at: string | null;
+          starts_at: string;
+          status: Database['public']['Enums']['notification_status'];
+          to_email: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          appointment_id: string;
+          attempts?: number;
+          claimed_at?: string | null;
+          created_at?: string;
+          dedupe_key: string;
+          id?: string;
+          kind: Database['public']['Enums']['client_email_kind'];
+          last_error?: string | null;
+          provider_id?: string | null;
+          reminder_hours?: number | null;
+          salon_id: string;
+          send_after?: string;
+          sent_at?: string | null;
+          starts_at: string;
+          status?: Database['public']['Enums']['notification_status'];
+          to_email?: string | null;
+        };
+        Update: {
+          appointment_id?: string;
+          attempts?: number;
+          claimed_at?: string | null;
+          created_at?: string;
+          dedupe_key?: string;
+          id?: string;
+          kind?: Database['public']['Enums']['client_email_kind'];
+          last_error?: string | null;
+          provider_id?: string | null;
+          reminder_hours?: number | null;
+          salon_id?: string;
+          send_after?: string;
+          sent_at?: string | null;
+          starts_at?: string;
+          status?: Database['public']['Enums']['notification_status'];
+          to_email?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'client_email_outbox_appointment_id_fkey';
+            columns: ['appointment_id'];
+            isOneToOne: false;
+            referencedRelation: 'appointments';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'client_email_outbox_salon_id_fkey';
             columns: ['salon_id'];
             isOneToOne: false;
             referencedRelation: 'salons';
@@ -1542,6 +1621,9 @@ export type Database = {
           booking_page_faq: string | null;
           booking_page_intro: string | null;
           booking_window_days: number;
+          client_emails_enabled: boolean;
+          client_reminder_hours: number[];
+          client_self_service_enabled: boolean;
           created_at: string;
           currency: string;
           daily_agenda_enabled: boolean;
@@ -1568,6 +1650,9 @@ export type Database = {
           booking_page_faq?: string | null;
           booking_page_intro?: string | null;
           booking_window_days?: number;
+          client_emails_enabled?: boolean;
+          client_reminder_hours?: number[];
+          client_self_service_enabled?: boolean;
           created_at?: string;
           currency?: string;
           daily_agenda_enabled?: boolean;
@@ -1593,6 +1678,9 @@ export type Database = {
           booking_page_faq?: string | null;
           booking_page_intro?: string | null;
           booking_window_days?: number;
+          client_emails_enabled?: boolean;
+          client_reminder_hours?: number[];
+          client_self_service_enabled?: boolean;
           created_at?: string;
           currency?: string;
           daily_agenda_enabled?: boolean;
@@ -1798,6 +1886,7 @@ export type Database = {
           hold_expires_at: string | null;
           id: string;
           import_key: string | null;
+          manage_token: string;
           notes: string | null;
           price_cents: number | null;
           requested_at: string | null;
@@ -1807,6 +1896,7 @@ export type Database = {
           starts_at: string;
           status: Database['public']['Enums']['appointment_status'];
           stylist_id: string;
+          text_reminder_sent_at: string | null;
           updated_at: string;
         }[];
         SetofOptions: {
@@ -1838,6 +1928,7 @@ export type Database = {
           hold_expires_at: string | null;
           id: string;
           import_key: string | null;
+          manage_token: string;
           notes: string | null;
           price_cents: number | null;
           requested_at: string | null;
@@ -1847,6 +1938,7 @@ export type Database = {
           starts_at: string;
           status: Database['public']['Enums']['appointment_status'];
           stylist_id: string;
+          text_reminder_sent_at: string | null;
           updated_at: string;
         };
         SetofOptions: {
@@ -1860,7 +1952,9 @@ export type Database = {
         Args: { p_booking: Json; p_max_upcoming?: number; p_salon_id: string; p_user_id: string };
         Returns: Json;
       };
+      cancel_booking_by_token: { Args: { p_token: string }; Returns: Json };
       capture_inbox_request: { Args: { p_request: Json; p_salon_id: string }; Returns: Json };
+      claim_client_emails: { Args: { p_limit?: number }; Returns: Json };
       claim_notifications: {
         Args: { p_limit?: number };
         Returns: {
@@ -1944,6 +2038,7 @@ export type Database = {
         };
       };
       delete_ai_provider_config: { Args: { p_salon_id: string }; Returns: undefined };
+      finish_client_emails: { Args: { p_results: Json }; Returns: number };
       finish_notifications: { Args: { p_results: Json }; Returns: number };
       get_ai_provider_secret: {
         Args: { p_salon_id: string };
@@ -1973,6 +2068,11 @@ export type Database = {
         }[];
       };
       is_salon_slug_available: { Args: { p_slug: string }; Returns: boolean };
+      manage_booking: { Args: { p_token: string }; Returns: Json };
+      mark_text_reminder_sent: {
+        Args: { p_appointment_id: string; p_sent?: boolean };
+        Returns: string;
+      };
       pay_checkout_offline: {
         Args: { p_checkout_id: string; p_method: Database['public']['Enums']['checkout_method'] };
         Returns: {
@@ -2054,6 +2154,7 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      reminder_queue: { Args: { p_day?: string; p_salon_id: string }; Returns: Json };
       reschedule_appointment: {
         Args: {
           p_appointment_id: string;
@@ -2071,6 +2172,7 @@ export type Database = {
           hold_expires_at: string | null;
           id: string;
           import_key: string | null;
+          manage_token: string;
           notes: string | null;
           price_cents: number | null;
           requested_at: string | null;
@@ -2080,6 +2182,7 @@ export type Database = {
           starts_at: string;
           status: Database['public']['Enums']['appointment_status'];
           stylist_id: string;
+          text_reminder_sent_at: string | null;
           updated_at: string;
         };
         SetofOptions: {
@@ -2089,6 +2192,7 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      reschedule_booking_by_token: { Args: { p_segments: Json; p_token: string }; Returns: Json };
       resolve_captured_request: {
         Args: { p_action: string; p_request_id: string };
         Returns: {
@@ -2176,6 +2280,7 @@ export type Database = {
           hold_expires_at: string | null;
           id: string;
           import_key: string | null;
+          manage_token: string;
           notes: string | null;
           price_cents: number | null;
           requested_at: string | null;
@@ -2185,6 +2290,7 @@ export type Database = {
           starts_at: string;
           status: Database['public']['Enums']['appointment_status'];
           stylist_id: string;
+          text_reminder_sent_at: string | null;
           updated_at: string;
         };
         SetofOptions: {
@@ -2267,13 +2373,15 @@ export type Database = {
       checkout_item_kind: 'service' | 'addon' | 'retail' | 'custom';
       checkout_method: 'card' | 'cash' | 'other';
       checkout_status: 'open' | 'paid' | 'canceled';
+      client_email_kind: 'confirmation' | 'reminder' | 'rescheduled' | 'cancellation';
       notification_kind:
         | 'request'
         | 'request_nudge'
         | 'cancellation'
         | 'daily_agenda'
         | 'payout_summary'
-        | 'public_booking';
+        | 'public_booking'
+        | 'client_rescheduled';
       notification_status: 'pending' | 'sending' | 'sent' | 'skipped' | 'failed';
       payment_status:
         | 'pending'
@@ -2408,6 +2516,7 @@ export const Constants = {
       checkout_item_kind: ['service', 'addon', 'retail', 'custom'],
       checkout_method: ['card', 'cash', 'other'],
       checkout_status: ['open', 'paid', 'canceled'],
+      client_email_kind: ['confirmation', 'reminder', 'rescheduled', 'cancellation'],
       notification_kind: [
         'request',
         'request_nudge',
@@ -2415,6 +2524,7 @@ export const Constants = {
         'daily_agenda',
         'payout_summary',
         'public_booking',
+        'client_rescheduled',
       ],
       notification_status: ['pending', 'sending', 'sent', 'skipped', 'failed'],
       payment_status: [

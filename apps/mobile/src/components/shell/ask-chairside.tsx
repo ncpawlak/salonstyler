@@ -28,14 +28,15 @@ export function AskChairsideButton() {
 
   // Signed-in screens sit inside the (app) group; look past it to the screen itself.
   const first = segments[0] === '(app)' ? segments[1] : segments[0];
-  // Hidden on client-facing screens (checkout is shown to the client; receipts and the booking
-  // page are public).
+  // Hidden on client-facing screens (checkout is shown to the client; receipts, manage links and
+  // the booking page are public).
   if (
     first === '(auth)' ||
     first === '(onboarding)' ||
     first === 'assistant' ||
     first === 'checkout' ||
     first === 'receipt' ||
+    first === 'm' ||
     first === 'b'
   ) {
     return null;
