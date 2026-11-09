@@ -46,6 +46,11 @@ export type AiProviderConfig = Tables<'ai_provider_config'>;
 export type AiUsage = Tables<'ai_usage'>;
 export type AiProviderId = Enums<'ai_provider'>;
 
+/** Stripe Connect account status, synced by the `payments` / `stripe-webhook` Edge Functions. */
+export type StripeAccount = Tables<'stripe_accounts'>;
+export type Payment = Tables<'payments'>;
+export type PaymentStatus = Enums<'payment_status'>;
+
 export type ChairsideClient = SupabaseClient<Database>;
 
 /** Typed Supabase client. Use the anon key in apps; RLS scopes every query to the user's salons. */
@@ -275,6 +280,36 @@ export async function getAiTokensUsedThisMonth(
   const { data, error } = await client.rpc('ai_tokens_used_this_month', { p_salon_id: salonId });
   if (error) throw error;
   return Number(data ?? 0);
+}
+
+/** The salon's Stripe Connect account, or null if it hasn't connected Stripe yet (read-only). */
+export async function getStripeAccount(
+  client: ChairsideClient,
+  salonId: string,
+): Promise<StripeAccount | null> {
+  const { data, error } = await client
+    .from('stripe_accounts')
+    .select('*')
+    .eq('salon_id', salonId)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+/** Most recent payments first (read-only; rows are written by the stripe-webhook function). */
+export async function listPayments(
+  client: ChairsideClient,
+  salonId: string,
+  limit = 20,
+): Promise<Payment[]> {
+  const { data, error } = await client
+    .from('payments')
+    .select('*')
+    .eq('salon_id', salonId)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return data;
 }
 
 // Mirrors private.is_valid_salon_slug() in supabase/migrations/*_foundation.sql.

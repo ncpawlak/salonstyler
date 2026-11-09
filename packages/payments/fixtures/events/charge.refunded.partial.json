@@ -1,0 +1,33 @@
+{
+  "id": "evt_3TestChargeRefunded",
+  "object": "event",
+  "api_version": "2026-10-28.endive",
+  "account": "acct_1TestSalonA0001",
+  "created": 1794242000,
+  "livemode": false,
+  "pending_webhooks": 1,
+  "request": { "id": "req_TestRefund", "idempotency_key": null },
+  "type": "charge.refunded",
+  "data": {
+    "object": {
+      "id": "ch_3TestTapToPay0001",
+      "object": "charge",
+      "amount": 18500,
+      "amount_captured": 18500,
+      "amount_refunded": 5000,
+      "captured": true,
+      "created": 1794240900,
+      "currency": "usd",
+      "description": "Balayage + toner",
+      "livemode": false,
+      "metadata": {},
+      "on_behalf_of": null,
+      "paid": true,
+      "payment_intent": "pi_3TestTapToPay0001",
+      "refunded": false,
+      "status": "succeeded",
+      "transfer_data": null
+    },
+    "previous_attributes": { "amount_refunded": 0 }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "id": "evt_1TestCustomerCreated",
+  "object": "event",
+  "api_version": "2026-10-28.endive",
+  "account": "acct_1TestSalonA0001",
+  "created": 1794243000,
+  "livemode": false,
+  "pending_webhooks": 1,
+  "request": { "id": null, "idempotency_key": null },
+  "type": "customer.created",
+  "data": {
+    "object": { "id": "cus_TestKarina", "object": "customer", "email": "karina@example.test" }
+  }
+}
