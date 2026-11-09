@@ -12,6 +12,7 @@ import {
 } from '@chairside/core';
 import type { ImportAppointmentsResult, ImportClientsResult } from '@chairside/db/import';
 import * as DocumentPicker from 'expo-document-picker';
+import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { View } from 'react-native';
 
@@ -253,6 +254,26 @@ function StartStep({
           </Card>
         );
       })}
+      <Card className="gap-3">
+        <View className="flex-row items-center gap-3">
+          <Icon name="pricetags-outline" color="primary" />
+          <View className="flex-1">
+            <Text variant="headline">Services</Text>
+            <Text variant="footnote" tone="muted">
+              Your menu with lengths and prices, from your booking page link or a screenshot.
+            </Text>
+          </View>
+        </View>
+        <Button
+          label="Import services"
+          icon="pricetags-outline"
+          variant="outline"
+          fullWidth
+          disabled={busyKind !== null}
+          onPress={() => router.push('/import/services')}
+          testID="import-services-entry"
+        />
+      </Card>
       <Text variant="footnote" tone="subtle" className="px-1">
         Excel (.xlsx) and CSV files work. Columns are matched by your salon’s AI when it’s set up
         (it only sees masked samples) or by their headers otherwise. You confirm every column.

@@ -11,6 +11,7 @@ Docs are split by feature so parallel PRs don't edit the same file. When you add
 - [Client replies](docs/client-replies.md) (#7).
 - [Public booking page](docs/public-booking.md): `functions/public-booking` (#14).
 - [Import from Vagaro](docs/import-vagaro.md) (#15).
+- [Import services from Vagaro](docs/import-vagaro-services.md): `functions/import-services` (#16).
 - [Payments](docs/payments.md): Stripe Connect.
 - [Checkout and Tap to Pay](docs/checkout.md) (#11).
 - [Push notifications](docs/push-notifications.md) (#8), including the notifier Vault secrets.
