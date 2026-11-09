@@ -53,6 +53,8 @@ function RootNavigator() {
           <Stack.Screen name="settings" />
           <Stack.Screen name="settings/ai" />
           <Stack.Screen name="settings/text-bridge" />
+          <Stack.Screen name="settings/text-bridge-setup" />
+          <Stack.Screen name="settings/station-card" />
           <Stack.Screen name="settings/payments" />
           <Stack.Screen name="settings/notifications" />
           <Stack.Screen name="requests/[id]" options={{ presentation: 'modal' }} />

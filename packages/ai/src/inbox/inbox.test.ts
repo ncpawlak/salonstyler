@@ -106,10 +106,13 @@ function setup(
     config?: StoredAiConfig | null;
     used?: number;
     rateLimited?: boolean;
+    autoReply?: boolean;
   } = {},
 ) {
   const port = fakeInboxPort();
   const usage: UsageEntry[] = [];
+  const versions: (string | null)[] = [];
+  const tested: string[] = [];
   const config =
     options.config === undefined
       ? {
@@ -120,10 +123,18 @@ function setup(
         }
       : options.config;
   const deps: InboxServiceDeps = {
-    authenticate: async (token) =>
-      token === TOKEN
-        ? { salonId: SALON, keyword: 'Chairside', rateLimited: options.rateLimited ?? false }
-        : null,
+    authenticate: async (token, meta) => {
+      if (token !== TOKEN) return null;
+      versions.push(meta.bridgeVersion);
+      return {
+        salonId: SALON,
+        keyword: 'Chairside',
+        rateLimited: options.rateLimited ?? false,
+        autoReply: options.autoReply ?? false,
+        salonName: 'Studio K',
+      };
+    },
+    markTested: async (salonId) => void tested.push(salonId),
     createPort: () => port,
     loadConfig: async () => config,
     tokensUsedThisMonth: async () => options.used ?? 0,
@@ -132,7 +143,7 @@ function setup(
     demo: options.demo,
     now: () => NOW,
   };
-  return { deps, port, usage };
+  return { deps, port, usage, versions, tested };
 }
 
 const body = (text: string, extra: Record<string, unknown> = {}) => ({
@@ -406,7 +417,54 @@ describe('handleInboxRequest', () => {
     const { deps, usage } = setup();
     const res = await handleInboxRequest(TOKEN, body('  Chairside!  '), deps);
     expect(res.body).toMatchObject({ status: 'ignored', reason: 'empty' });
+    expect(res.body).not.toHaveProperty('reply');
     expect(usage).toHaveLength(0);
+  });
+
+  it('records the Shortcut version the bridge reported', async () => {
+    const { deps, versions } = setup();
+    await handleInboxRequest(TOKEN, body('Chairside!', { bridgeVersion: 2 }), deps);
+    await handleInboxRequest(TOKEN, 'not json', deps);
+    expect(versions).toEqual(['2', null]);
+  });
+
+  it('treats a hand run and "<keyword> test" as a bridge test, capturing nothing', async () => {
+    const { deps, port, usage, tested } = setup({ autoReply: true });
+    const handRun = await handleInboxRequest(TOKEN, body(''), deps);
+    expect(handRun).toEqual({ status: 200, body: { ok: true, status: 'test' } });
+    const texted = await handleInboxRequest(TOKEN, body('Chair side TEST!'), deps);
+    expect(texted.body).toMatchObject({ status: 'test', reply: expect.stringContaining('✅') });
+    expect(tested).toEqual([SALON, SALON]);
+    expect(port.captured).toHaveLength(0);
+    expect(usage).toHaveLength(0);
+  });
+
+  it('auto-reply mode: help for a bare keyword, a teaching "got it" for a request', async () => {
+    const llm = fakeLlm({ intent: 'booking', services: [{ serviceId: CUT }], date: '2026-12-04' });
+    const { deps } = setup({ llm, autoReply: true });
+    const help = await handleInboxRequest(TOKEN, body('chairside'), deps);
+    expect(help.body).toMatchObject({ status: 'ignored', reason: 'empty' });
+    expect((help.body as { reply: string }).reply).toMatch(
+      /Studio K.*“Chairside” \+ what you need/,
+    );
+
+    const res = await handleInboxRequest(TOKEN, body('Chairside cut fri'), deps);
+    expect(res.body).toMatchObject({ status: 'captured' });
+    expect((res.body as { reply: string }).reply).toBe(
+      'Got it! Studio K will confirm your time shortly. Next time just text “Chairside” + what you need ✂️',
+    );
+    // A retry never texts the client twice.
+    const again = await handleInboxRequest(TOKEN, body('Chairside cut fri'), deps);
+    expect(again.body).toMatchObject({ status: 'duplicate' });
+    expect(again.body).not.toHaveProperty('reply');
+  });
+
+  it('draft mode never replies', async () => {
+    const llm = fakeLlm({ intent: 'booking', services: [{ serviceId: CUT }], date: '2026-12-04' });
+    const { deps } = setup({ llm });
+    const res = await handleInboxRequest(TOKEN, body('Chairside cut fri'), deps);
+    expect(res.body).toMatchObject({ status: 'captured' });
+    expect(res.body).not.toHaveProperty('reply');
   });
 
   it('auto-creates a pending client for an unknown sender', async () => {

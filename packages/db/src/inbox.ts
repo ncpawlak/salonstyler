@@ -111,7 +111,7 @@ export async function getInboxBridge(
   const { data, error } = await client
     .from('inbox_bridges')
     .select(
-      'salon_id, token_hint, keyword, window_started_at, window_count, last_received_at, created_at, rotated_at',
+      'salon_id, token_hint, keyword, auto_reply, phone, window_started_at, window_count, last_received_at, last_bridge_version, last_test_at, created_at, rotated_at',
     )
     .eq('salon_id', salonId)
     .maybeSingle();
@@ -138,6 +138,19 @@ export async function updateInboxKeyword(
     .from('inbox_bridges')
     .update({ keyword: keyword.trim() })
     .eq('salon_id', salonId);
+  if (error) throw error;
+}
+
+/** Owner-only. Auto-reply mode and the number clients text (station card). */
+export async function updateInboxBridgeSettings(
+  client: ChairsideClient,
+  salonId: string,
+  settings: { autoReply?: boolean; phone?: string | null },
+): Promise<void> {
+  const patch: { auto_reply?: boolean; phone?: string | null } = {};
+  if (settings.autoReply !== undefined) patch.auto_reply = settings.autoReply;
+  if (settings.phone !== undefined) patch.phone = settings.phone?.trim() || null;
+  const { error } = await client.from('inbox_bridges').update(patch).eq('salon_id', salonId);
   if (error) throw error;
 }
 

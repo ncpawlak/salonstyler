@@ -7,6 +7,7 @@ import {
   resolveCapturedRequest,
   rotateInboxBridgeToken,
   setAppointmentStatus,
+  updateInboxBridgeSettings,
   updateInboxKeyword,
 } from '@chairside/db';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -102,11 +103,23 @@ export function useResolveCapturedRequest() {
 
 const bridgeKey = (salonId: string) => ['inbox-bridge', salonId] as const;
 
-export function useInboxBridge() {
+/** `pollMs` re-reads the bridge while setup waits for the Shortcut's test message. */
+export function useInboxBridge(options: { pollMs?: number } = {}) {
   const salon = useCurrentSalon();
   return useQuery({
     queryKey: bridgeKey(salon.id),
     queryFn: () => getInboxBridge(supabase, salon.id),
+    refetchInterval: options.pollMs ?? false,
+  });
+}
+
+export function useUpdateBridgeSettings() {
+  const salon = useCurrentSalon();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (settings: { autoReply?: boolean; phone?: string | null }) =>
+      updateInboxBridgeSettings(supabase, salon.id, settings),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: bridgeKey(salon.id) }),
   });
 }
 
@@ -141,3 +154,9 @@ export function useRemoveBridge() {
 /** The URL the iOS Shortcut posts to. */
 export const inboxEndpoint = () =>
   `${(process.env.EXPO_PUBLIC_SUPABASE_URL ?? '').replace(/\/+$/, '')}/functions/v1/inbox`;
+
+/**
+ * The published "Add to Shortcuts" link (iCloud or a hosted signed .shortcut). Unset: setup shows
+ * the build-it-yourself recipe instead. See docs/shortcut-bridge.md.
+ */
+export const shortcutInstallUrl = () => process.env.EXPO_PUBLIC_BRIDGE_SHORTCUT_URL?.trim() || null;

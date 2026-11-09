@@ -24,6 +24,7 @@ import {
   phonesMatch,
   stripKeyword,
 } from './text.ts';
+import { helpReply, isTestMessage, receivedReply, TEST_REPLY } from './shortcut.ts';
 
 const DAY = 86_400_000;
 /** Forwarded requests per bridge token per hour. */
@@ -34,7 +35,8 @@ export const INBOX_NOTE = 'Requested by text';
 export const inboxRequestSchema = z.object({
   sender: z.string().trim().max(200).default(''),
   senderPhone: z.string().trim().max(60).nullish(),
-  text: z.string().trim().min(1).max(4000),
+  // Empty when the Shortcut is run by hand (onboarding's network check).
+  text: z.string().trim().max(4000),
   receivedAt: z.string().trim().max(60).nullish(),
   bridgeVersion: z.union([z.string().max(20), z.number()]).nullish(),
   channel: z
@@ -48,6 +50,9 @@ export interface InboxBridge {
   salonId: string;
   keyword: string;
   rateLimited: boolean;
+  /** Answer with a `reply` for the Shortcut to text back (auto-reply mode). */
+  autoReply?: boolean;
+  salonName?: string | null;
 }
 
 /** Args for the `capture_inbox_request` RPC (camelCase JSON). */
@@ -90,16 +95,25 @@ export interface InboxPort extends Pick<
 }
 
 export interface InboxServiceDeps extends Omit<AiServiceDeps, 'createProvider' | 'getMemberRole'> {
-  /** Resolves (and rate-counts) a bridge token. Null when the token is unknown. */
-  authenticate(token: string): Promise<InboxBridge | null>;
+  /**
+   * Resolves (and rate-counts) a bridge token, recording the Shortcut's version. Null when the
+   * token is unknown.
+   */
+  authenticate(token: string, meta: { bridgeVersion: string | null }): Promise<InboxBridge | null>;
+  /** Records a test message or hand run (health / onboarding check). */
+  markTested?(salonId: string): Promise<void>;
   createPort(salonId: string): InboxPort;
   createProvider?: typeof defaultCreateProvider;
   /** Local development only: parse with rules instead of the salon's model. Never in production. */
   demo?: boolean;
 }
 
+/**
+ * `reply` is only present in auto-reply mode: the Shortcut texts it back to the sender as is.
+ */
 export type InboxResponse =
-  | { ok: true; status: 'ignored'; reason: 'empty' | 'not_a_request' }
+  | { ok: true; status: 'ignored'; reason: 'empty' | 'not_a_request'; reply?: string }
+  | { ok: true; status: 'test'; reply?: string }
   | { ok: true; status: 'duplicate'; requestId: string }
   | {
       ok: true;
@@ -108,6 +122,7 @@ export type InboxResponse =
       intent: CaptureInput['intent'];
       appointmentId: string | null;
       clientCreated: boolean;
+      reply?: string;
     };
 
 export type InboxServiceResult =
@@ -120,6 +135,13 @@ const fail = (
   message: string,
 ): InboxServiceResult => ({ status, body: { error: { code, message } } });
 
+/** `bridgeVersion` from a not-yet-validated body, for the health record. */
+function readVersion(rawBody: unknown): string | null {
+  if (!rawBody || typeof rawBody !== 'object') return null;
+  const v = (rawBody as { bridgeVersion?: unknown }).bridgeVersion;
+  return typeof v === 'string' || typeof v === 'number' ? String(v).slice(0, 20) : null;
+}
+
 const isUnexpired = (a: AppointmentWithDetails) =>
   ['held', 'requested', 'confirmed'].includes(a.status);
 
@@ -130,7 +152,7 @@ export async function handleInboxRequest(
   deps: InboxServiceDeps,
 ): Promise<InboxServiceResult> {
   if (!token?.trim()) return fail(401, 'unauthorized', 'Missing X-Bridge-Token');
-  const bridge = await deps.authenticate(token.trim());
+  const bridge = await deps.authenticate(token.trim(), { bridgeVersion: readVersion(rawBody) });
   if (!bridge) return fail(401, 'unauthorized', 'Unknown bridge token');
   if (bridge.rateLimited) return fail(429, 'rate_limited', 'Too many messages; try again later');
 
@@ -138,9 +160,26 @@ export async function handleInboxRequest(
   if (!body.success) return fail(400, 'invalid_request', z.prettifyError(body.error));
   const request = body.data;
   const now = deps.now ?? (() => Date.now());
+  const withReply = (reply: string) => (bridge.autoReply ? { reply } : {});
 
   const message = stripKeyword(request.text, bridge.keyword).slice(0, 2000);
-  if (!message) return { status: 200, body: { ok: true, status: 'ignored', reason: 'empty' } };
+  // A hand run has no message; "<keyword> test" checks the bridge from another phone.
+  if (!request.text || isTestMessage(message)) {
+    await deps.markTested?.(bridge.salonId);
+    const reply = request.text ? withReply(TEST_REPLY) : {};
+    return { status: 200, body: { ok: true, status: 'test', ...reply } };
+  }
+  if (!message) {
+    return {
+      status: 200,
+      body: {
+        ok: true,
+        status: 'ignored',
+        reason: 'empty',
+        ...withReply(helpReply(bridge.keyword, bridge.salonName)),
+      },
+    };
+  }
 
   const port = deps.createPort(bridge.salonId);
   try {
@@ -204,6 +243,7 @@ export async function handleInboxRequest(
         intent: capture.intent,
         appointmentId: result.appointmentId ?? null,
         clientCreated: Boolean(result.clientCreated),
+        ...withReply(receivedReply(bridge.keyword, bridge.salonName ?? ctx.salonName)),
       },
     };
   } catch (error) {
