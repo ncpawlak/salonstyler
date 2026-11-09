@@ -22,6 +22,7 @@ import { AppointmentSheet } from '@/features/appointments/appointment-sheet';
 import { BookingSheet, type BookingTarget } from '@/features/appointments/booking-sheet';
 import { formatLocalDateLong, formatTime } from '@/features/appointments/format';
 import { useMoveAppointment } from '@/features/appointments/use-move';
+import { ReminderQueueCard } from '@/features/client-self-service/reminder-queue-card';
 import { useWorkHours } from '@/features/hours/use-work-hours';
 import { usePendingRequests, useRespondToRequest } from '@/features/today/api';
 import { DayCard } from '@/features/today/day-card';
@@ -266,6 +267,8 @@ export default function TodayScreen() {
               },
             ]}
           />
+
+          <ReminderQueueCard timeZone={tz} />
 
           {later.length ? (
             <>

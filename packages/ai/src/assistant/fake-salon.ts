@@ -118,6 +118,8 @@ export function appointment(
     created_by: null,
     updated_at: '2026-11-01T00:00:00Z',
     import_key: null,
+    manage_token: '0'.repeat(64),
+    text_reminder_sent_at: null,
     ...overrides,
   };
 }

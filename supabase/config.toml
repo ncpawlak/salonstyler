@@ -463,3 +463,8 @@ verify_jwt = false
 # Booking verifies the client's own session in the function; every action is rate limited.
 [functions.public-booking]
 verify_jwt = false
+
+# A client's manage link (/m/{token}): signed-out clients call it without a JWT. The 256-bit
+# token is the only credential and unlocks one appointment; every action is rate limited.
+[functions.manage-booking]
+verify_jwt = false

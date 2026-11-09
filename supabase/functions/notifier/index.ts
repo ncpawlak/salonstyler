@@ -1,17 +1,39 @@
-// Chairside notifier. Drains public.notifications_outbox and delivers through Expo Push.
+// Chairside notifier. Drains public.notifications_outbox and delivers through Expo Push, then
+// drains public.client_email_outbox (client confirmations, reminders, moves, cancellations) through
+// Resend or SMTP.
 //
-// Invoked by pg_cron (private.dispatch_notifications → pg_net) every minute when something is due,
-// authenticated with a shared secret rather than a user JWT:
+// Invoked by pg_cron (private.dispatch_notifications / private.dispatch_client_emails → pg_net)
+// every minute when something is due, authenticated with a shared secret rather than a user JWT:
 //   POST /functions/v1/notifier   x-notifier-secret: <NOTIFIER_SECRET>
 // Secrets: NOTIFIER_SECRET (must match Vault `notifier_secret`), optional EXPO_ACCESS_TOKEN.
+// Client emails (optional; they stay queued until set): EMAIL_FROM, PUBLIC_APP_URL, and either
+// RESEND_API_KEY or SMTP_HOST/SMTP_PORT/SMTP_USER/SMTP_PASS[/SMTP_SECURITY].
+// See supabase/docs/client-self-service.md.
 import { createClient } from '@supabase/supabase-js';
 
+import {
+  type ClientEmailResult,
+  type ClientEmailRow,
+  emailConfigFromEnv,
+  runEmailer,
+  type SmtpConn,
+  type SmtpConnector,
+} from '@chairside/notifications/server/client-email.ts';
 import {
   type NotificationResult,
   type OutboxRow,
   type PushTokenRow,
   runNotifier,
 } from '@chairside/notifications/server/notifier.ts';
+
+const smtpConnector: SmtpConnector = {
+  async connect({ hostname, port, tls }): Promise<SmtpConn> {
+    return tls ? await Deno.connectTls({ hostname, port }) : await Deno.connect({ hostname, port });
+  },
+  async startTls(conn, hostname): Promise<SmtpConn> {
+    return await Deno.startTls(conn as Deno.TcpConn, { hostname });
+  },
+};
 
 function json(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), {
@@ -46,8 +68,15 @@ Deno.serve(async (req) => {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
+  const errors: string[] = [];
+  const fail = (what: string, err: unknown) => {
+    console.error(`${what} failed`, err);
+    errors.push(`${what}: ${err instanceof Error ? err.message : String(err)}`);
+  };
+
+  let pushes: unknown = null;
   try {
-    const summary = await runNotifier({
+    pushes = await runNotifier({
       expoAccessToken: Deno.env.get('EXPO_ACCESS_TOKEN') ?? undefined,
       async claim(limit) {
         const { data, error } = await db.rpc('claim_notifications', { p_limit: limit });
@@ -72,9 +101,32 @@ Deno.serve(async (req) => {
         if (error) throw error;
       },
     });
-    return json(200, summary);
   } catch (err) {
-    console.error('notifier failed', err);
-    return json(500, { error: err instanceof Error ? err.message : 'notifier failed' });
+    fail('push', err);
   }
+
+  // Client emails stay queued (and are skipped once stale) until email is configured.
+  let emails: unknown = { skipped: 'email_not_configured' };
+  const email = emailConfigFromEnv(Deno.env.toObject(), { connector: smtpConnector });
+  if (email) {
+    try {
+      emails = await runEmailer({
+        config: email,
+        async claim(limit) {
+          const { data, error } = await db.rpc('claim_client_emails', { p_limit: limit });
+          if (error) throw error;
+          return (data ?? []) as ClientEmailRow[];
+        },
+        async finish(results: ClientEmailResult[]) {
+          const { error } = await db.rpc('finish_client_emails', { p_results: results });
+          if (error) throw error;
+        },
+      });
+    } catch (err) {
+      fail('email', err);
+    }
+  }
+
+  if (errors.length > 0) return json(500, { error: errors.join('; '), pushes, emails });
+  return json(200, { ...(pushes as object), emails });
 });
