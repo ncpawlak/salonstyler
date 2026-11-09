@@ -99,9 +99,9 @@ select pg_temp.book('moved', (select d13 from ids), '+15550108004', true, (selec
 update public.appointments set starts_at = now() + interval '3 hours', ends_at = now() + interval '4 hours'
  where id = (select (val ->> 'appointmentId')::uuid from t where name = 'late');
 
-select is((select string_agg(status::text, ',' order by d.created_at) from public.appointment_deposits d
+select is((select string_agg(status::text, ',' order by status::text) from public.appointment_deposits d
             where d.salon_id = (select a from ids)),
-  'paid,paid,pending,paid', 'three paid deposits and one unpaid');
+  'paid,paid,paid,pending', 'three paid deposits and one unpaid');
 
 -- What the link shows ------------------------------------------------------------------
 select pg_temp.as_service_role();
