@@ -91,10 +91,11 @@ Environment:
 3. Settings → Deposits & cancellations: turn on **Ask for deposits** and set the window, e.g. 24 hours.
 4. Services → pick a service → **Deposit**: Amount $20, then **Save deposit**.
 5. Open `/b/<slug>`, book that service, and check you land on `/pay/<token>` showing "Pay $20.00 to book".
-6. Pay with `4242 4242 4242 4242`, any future date and CVC. On return the page says "You're booked" and the appointment is confirmed in the calendar.
+6. Pay with `4242 4242 4242 4242`, any future date and CVC. On return the page says "You're booked" and the appointment is in the calendar (confirmed, or requested if the salon approves bookings).
 7. In the Stripe dashboard (connected account) the payment shows with `metadata.purpose = deposit`.
 8. Check out the appointment. The $20 deposit is taken off the amount due.
 9. Book again and pay, then cancel from the appointment sheet more than 24 h ahead. It offers **Cancel & refund**, and the Stripe payment shows refunded.
 10. Book within 24 h, pay, then cancel. The sheet says it's a late cancellation; **Cancel & keep deposit** marks it `kept`.
 11. Webhook path: `stripe listen --forward-connect-to http://127.0.0.1:54321/functions/v1/stripe-webhook`, pay, and close the tab before returning. The deposit still becomes `paid`.
-12. Turn deposits off and book again: no pay page, booking is unchanged.
+12. Client manage link (#10): with **Client self-service** on, open `/m/<token>` from the confirmation email of a paid booking more than 24 h out. It says "Cancel by … and your deposit is refunded". **Cancel appointment → Yes, cancel** refunds it on Stripe. Inside the window it warns that the salon keeps the deposit, and cancelling marks it `kept`.
+13. Turn deposits off and book again: no pay page, booking is unchanged.
