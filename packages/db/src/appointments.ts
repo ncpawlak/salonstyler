@@ -1,4 +1,5 @@
 import type { BookingSegment } from '@chairside/core';
+import type { QueryData } from '@supabase/supabase-js';
 
 import type { Json } from './database.types.ts';
 import type {
@@ -22,7 +23,7 @@ export interface AppointmentServiceSnapshot {
 
 export interface AppointmentWithDetails extends Omit<Appointment, 'services'> {
   services: AppointmentServiceSnapshot[];
-  client: Pick<ClientRow, 'id' | 'name' | 'phone'> | null;
+  client: Pick<ClientRow, 'id' | 'name' | 'phone' | 'notes'> | null;
   /** Ordered, including buffers; ISO UTC. */
   segments: (BookingSegment & { label: string | null })[];
 }
@@ -63,13 +64,7 @@ export async function listAppointments(
   range: { from: string; to: string },
   options: { includeInactive?: boolean } = {},
 ): Promise<AppointmentWithDetails[]> {
-  let query = client
-    .from('appointments')
-    .select(
-      `*,
-       client:clients(id, name, phone),
-       segments:appointment_segments(kind, label, range, position)`,
-    )
+  let query = selectAppointments(client)
     .eq('salon_id', salonId)
     .lt('starts_at', range.to)
     // Buffers can extend past the client span; an hour of slack covers them.
@@ -78,13 +73,57 @@ export async function listAppointments(
   if (!options.includeInactive) query = query.in('status', [...ACTIVE_APPOINTMENT_STATUSES]);
   const { data, error } = await query;
   if (error) throw error;
-  return data.map(({ segments, services, ...row }) => ({
+  return data.map(toAppointmentWithDetails);
+}
+
+/** Booking requests awaiting the stylist's approve/decline that haven't already ended. */
+export async function listPendingRequests(
+  client: ChairsideClient,
+  salonId: string,
+  now: Date = new Date(),
+): Promise<AppointmentWithDetails[]> {
+  const { data, error } = await selectAppointments(client)
+    .eq('salon_id', salonId)
+    .eq('status', 'requested')
+    .gt('ends_at', now.toISOString())
+    .order('starts_at')
+    .limit(50);
+  if (error) throw error;
+  return data.map(toAppointmentWithDetails);
+}
+
+/** A single appointment with client and segments, or null if it's gone / not visible. */
+export async function getAppointment(
+  client: ChairsideClient,
+  appointmentId: string,
+): Promise<AppointmentWithDetails | null> {
+  const { data, error } = await selectAppointments(client).eq('id', appointmentId).maybeSingle();
+  if (error) throw error;
+  return data ? toAppointmentWithDetails(data) : null;
+}
+
+function selectAppointments(client: ChairsideClient) {
+  return client.from('appointments').select(
+    `*,
+       client:clients(id, name, phone, notes),
+       segments:appointment_segments(kind, label, range, position)`,
+  );
+}
+
+type AppointmentQueryRow = QueryData<ReturnType<typeof selectAppointments>>[number];
+
+function toAppointmentWithDetails({
+  segments,
+  services,
+  ...row
+}: AppointmentQueryRow): AppointmentWithDetails {
+  return {
     ...row,
     services: (Array.isArray(services) ? services : []) as unknown as AppointmentServiceSnapshot[],
     segments: [...segments]
       .sort((a, b) => a.position - b.position)
       .map((s) => ({ kind: s.kind, label: s.label, ...parseTstzRange(s.range) })),
-  }));
+  };
 }
 
 export interface BookAppointmentInput {

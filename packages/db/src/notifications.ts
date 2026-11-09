@@ -1,5 +1,3 @@
-import type { AppointmentServiceSnapshot, AppointmentWithDetails } from './appointments.ts';
-import { parseTstzRange } from './appointments.ts';
 import type { ChairsideClient, Enums, SalonSettings, Tables } from './index.ts';
 
 export type NotificationOutboxRow = Tables<'notifications_outbox'>;
@@ -68,30 +66,4 @@ export async function registerPushToken(
 export async function unregisterPushToken(client: ChairsideClient, token: string): Promise<void> {
   const { error } = await client.from('push_tokens').delete().eq('token', token);
   if (error) throw error;
-}
-
-/** One appointment with client and segments (e.g. opened from a push), or null if not visible. */
-export async function getAppointment(
-  client: ChairsideClient,
-  appointmentId: string,
-): Promise<AppointmentWithDetails | null> {
-  const { data, error } = await client
-    .from('appointments')
-    .select(
-      `*,
-       client:clients(id, name, phone),
-       segments:appointment_segments(kind, label, range, position)`,
-    )
-    .eq('id', appointmentId)
-    .maybeSingle();
-  if (error) throw error;
-  if (!data) return null;
-  const { segments, services, ...row } = data;
-  return {
-    ...row,
-    services: (Array.isArray(services) ? services : []) as unknown as AppointmentServiceSnapshot[],
-    segments: [...segments]
-      .sort((a, b) => a.position - b.position)
-      .map((s) => ({ kind: s.kind, label: s.label, ...parseTstzRange(s.range) })),
-  };
 }

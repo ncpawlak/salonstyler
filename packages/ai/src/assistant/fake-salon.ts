@@ -95,7 +95,7 @@ export function appointment(
     salon_id: SALON,
     stylist_id: 'stylist',
     client_id: clientId,
-    client: client ? { id: client.id, name: client.name, phone: client.phone } : null,
+    client: client ? { id: client.id, name: client.name, phone: client.phone, notes: null } : null,
     starts_at: segments[0]!.start,
     ends_at: segments.at(-1)!.end,
     status: 'confirmed',
