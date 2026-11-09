@@ -2,7 +2,7 @@
  * In-memory salon for the assistant's unit tests (not exported from the package).
  * Studio K, America/Chicago, open Tue–Sat 9:00–5:00 with a 12:00–12:30 break.
  */
-import { buildWorkHours, type BookingSegment } from '@chairside/core';
+import { buildWorkHours, type BookingSegment, type ClientServiceOverride } from '@chairside/core';
 import type {
   AppointmentServiceSnapshot,
   AppointmentWithDetails,
@@ -128,6 +128,8 @@ export interface FakePort extends AssistantPort {
   clients: AssistantClient[];
   audits: { action: string; details: Record<string, unknown> }[];
   visits: Map<string, ClientVisit[]>;
+  overrides: Map<string, ClientServiceOverride[]>;
+  notes: { clientId: string; kind: 'note' | 'formula'; text: string }[];
 }
 
 export function createFakePort(): FakePort {
@@ -148,10 +150,14 @@ export function createFakePort(): FakePort {
     appointment(MARIA, [busy('2026-12-18T15:00:00Z', '2026-12-18T17:30:00Z')]),
     appointment(KAREN, [busy('2026-12-18T20:30:00Z', '2026-12-18T22:00:00Z')]),
   ];
+  // Tests opt in, e.g. `port.overrides.set(KARINA, [{ serviceId: COLOR, deltaMinutes: 20 }])`.
+  const overrides = new Map<string, ClientServiceOverride[]>();
   const port: FakePort = {
     appointments,
     clients,
     visits,
+    overrides,
+    notes: [],
     audits: [],
     async getSchedule() {
       return {
@@ -168,6 +174,11 @@ export function createFakePort(): FakePort {
     listClients: async () => clients,
     getClient: async (id) => clients.find((c) => c.id === id) ?? null,
     clientVisits: async (id, limit) => (visits.get(id) ?? []).slice(0, limit),
+    clientOverrides: async (id) => overrides.get(id) ?? [],
+    async addClientNote(input) {
+      port.notes.push(input);
+      return { id: `note-${port.notes.length}` };
+    },
     async listAppointments({ from, to }) {
       return appointments.filter(
         (a) =>

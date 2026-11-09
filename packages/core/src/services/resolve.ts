@@ -1,6 +1,7 @@
 import { applyDurationOverrides, validateSegments } from '../availability/segments.ts';
 import type { SegmentKind, ServiceSegment } from '../availability/types.ts';
 import type {
+  ClientDurationAdjustment,
   ComboItem,
   ResolvableService,
   ResolveComboOptions,
@@ -80,6 +81,27 @@ export function applyVariant(
   return out;
 }
 
+/**
+ * Applies a client's per-service duration change: to one segment when `segmentIndex` is set,
+ * otherwise spread over the hands-on segments like a variant. The result must stay valid
+ * (every segment at least a minute).
+ */
+export function applyClientAdjustment(
+  segments: readonly ServiceSegment[],
+  adjustment: ClientDurationAdjustment,
+): ServiceSegment[] {
+  const { deltaMinutes, segmentIndex } = adjustment;
+  if (!Number.isInteger(deltaMinutes))
+    throw new RangeError(`Override minutes must be an integer, got ${deltaMinutes}`);
+  if (segmentIndex == null) return applyVariant(segments, deltaMinutes);
+  const out = copy(segments);
+  const seg = out[segmentIndex];
+  if (!seg) throw new RangeError(`Override segment out of range: ${segmentIndex}`);
+  seg.minutes += deltaMinutes;
+  validateSegments(out);
+  return out;
+}
+
 /** Index where `before_finish` add-ons go: before the trailing run of `style` segments. */
 export function finishIndex(segments: readonly ServiceSegment[]): number {
   let i = segments.length;
@@ -146,6 +168,8 @@ function finalize(
     throw new RangeError('Buffers cannot be negative');
   let segments = base.segments;
   if (options.variant) segments = applyVariant(segments, options.variant.deltaMinutes);
+  if (options.clientAdjustment)
+    segments = applyClientAdjustment(segments, options.clientAdjustment);
   const addons = options.addons ?? [];
   if (addons.length > 0) segments = applyAddons(segments, addons);
   segments = applyDurationOverrides(segments, options.overrides);
@@ -169,7 +193,7 @@ function finalize(
 
 /**
  * Resolves a service (+ variant, add-ons, per-client overrides) into the segment list the
- * availability engine books. Order: variant → add-ons → overrides.
+ * availability engine books. Order: variant → client adjustment → add-ons → overrides.
  */
 export function resolveService(
   service: ResolvableService,

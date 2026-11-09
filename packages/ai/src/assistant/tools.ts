@@ -116,6 +116,11 @@ const schemas = {
   }),
   cancel_draft: z.object({ appointmentId: z.string().min(1) }),
   running_late: z.object({ minutes: z.int().min(1).max(MAX_RUNNING_LATE_MINUTES) }),
+  add_client_note: z.object({
+    clientId: z.string().min(1),
+    kind: z.enum(['note', 'formula']).nullish(),
+    text: z.string().trim().min(1).max(2000),
+  }),
 } as const;
 
 export type AssistantToolName = keyof typeof schemas;
@@ -214,6 +219,20 @@ export const ASSISTANT_TOOLS: ToolDefinition[] = [
       required: ['minutes'],
     },
   },
+  {
+    name: 'add_client_note',
+    description:
+      'Saves text the owner pasted or dictated to a client’s profile: a color formula (kind "formula", e.g. "7N + 7G 1:1, 20 vol, 35 min") or a general note. Only call when the owner asks to save it.',
+    parameters: {
+      type: 'object',
+      properties: {
+        clientId: { type: 'string', description: 'From find_client' },
+        kind: { type: 'string', enum: ['note', 'formula'], description: 'Default "note"' },
+        text: { type: 'string', description: 'The note or formula, as given (max 2000 chars)' },
+      },
+      required: ['clientId', 'text'],
+    },
+  },
 ];
 
 // ---------------------------------------------------------------------------------------------
@@ -231,7 +250,10 @@ async function itemsFor(
   clientId: string | null | undefined,
   given: BookingItem[] | null | undefined,
 ) {
-  const menu = await port.getMenu();
+  const [menu, overrides] = await Promise.all([
+    port.getMenu(),
+    clientId ? port.clientOverrides(clientId) : [],
+  ]);
   let items = given ?? null;
   if (!items && clientId) items = usualItems(menu, await port.clientVisits(clientId, 10));
   if (!items) {
@@ -241,7 +263,7 @@ async function itemsFor(
     );
   }
   try {
-    return { items, resolved: resolveItems(menu, items) };
+    return { items, resolved: resolveItems(menu, items, overrides) };
   } catch (e) {
     throw new ToolError('unknown_service', (e as Error).message);
   }
@@ -329,12 +351,15 @@ async function findClient(ctx: ToolContext, args: z.infer<typeof schemas.find_cl
   const confident = ranked.filter((m) => m.score >= CONFIDENT_MATCH);
   const matches = await Promise.all(
     confident.slice(0, 3).map(async ({ item, score }) => {
-      const visits = await port.clientVisits(item.id, 10);
+      const [visits, overrides] = await Promise.all([
+        port.clientVisits(item.id, 10),
+        port.clientOverrides(item.id),
+      ]);
       const usual = usualItems(menu, visits);
       let usualSummary: string | null = null;
       if (usual) {
         try {
-          usualSummary = resolveItems(menu, usual).summary;
+          usualSummary = resolveItems(menu, usual, overrides).summary;
         } catch {
           usualSummary = null;
         }
@@ -660,6 +685,28 @@ async function runningLate(
   };
 }
 
+async function addClientNoteTool(
+  ctx: ToolContext,
+  args: z.infer<typeof schemas.add_client_note>,
+): Promise<ToolOutput> {
+  const client = await requireClient(ctx.port, args.clientId);
+  const kind = args.kind ?? 'note';
+  const saved = await ctx.port.addClientNote({ clientId: client.id, kind, text: args.text });
+  await ctx.port.audit('assistant.client_note_added', {
+    clientId: client.id,
+    kind,
+    id: saved.id,
+  });
+  return {
+    result: {
+      saved: true,
+      kind,
+      client: { id: client.id, name: client.name },
+      note: `Saved to ${client.name}'s profile.`,
+    },
+  };
+}
+
 const HANDLERS: {
   [K in AssistantToolName]: (
     ctx: ToolContext,
@@ -673,6 +720,7 @@ const HANDLERS: {
   propose_booking: (ctx, args) => proposeBooking(ctx, args),
   cancel_draft: (ctx, args) => cancelDraft(ctx, args.appointmentId),
   running_late: runningLate,
+  add_client_note: addClientNoteTool,
 };
 
 /**

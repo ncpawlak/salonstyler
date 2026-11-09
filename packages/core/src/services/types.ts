@@ -77,8 +77,20 @@ export interface ComboItem {
   replacesPreviousFinish?: boolean;
 }
 
+/**
+ * A client's standing duration change for one service ("Karina's color +20m"). Applied after the
+ * variant and before add-ons, so `segmentIndex` indexes the service's (or combo's) own segments.
+ */
+export interface ClientDurationAdjustment {
+  deltaMinutes: number;
+  /** Add the minutes to this segment. Omit/null to spread them over the hands-on segments. */
+  segmentIndex?: number | null;
+}
+
 export interface ResolveOptions {
   variant?: Pick<ServiceVariant, 'deltaMinutes'> | null;
+  /** The client's per-service override, e.g. from `client_service_overrides`. */
+  clientAdjustment?: ClientDurationAdjustment | null;
   addons?: readonly Pick<ServiceAddon, 'segments' | 'placement' | 'priceCents'>[];
   /** Per-client overrides, indexed into the final resolved segment list. */
   overrides?: DurationOverride[];

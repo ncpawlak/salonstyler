@@ -1,9 +1,12 @@
 import { bookingRulesFromSettings, buildWorkHours } from '@chairside/core';
 import {
   addClient,
+  addClientFormula,
+  addClientNote,
   bookAppointment,
   getWorkHours,
   listAppointments,
+  listClientOverrides,
   listClients,
   listServiceMenu,
   setAppointmentStatus,
@@ -124,6 +127,16 @@ export function createSupabaseAssistantPort(
 
     async setStatus(id, status, reason) {
       await setAppointmentStatus(client, id, status, reason);
+    },
+
+    clientOverrides: (clientId) => listClientOverrides(client, clientId),
+
+    async addClientNote({ clientId, kind, text }) {
+      const row =
+        kind === 'formula'
+          ? await addClientFormula(client, { salonId, clientId, formula: text })
+          : await addClientNote(client, { salonId, clientId, body: text, source: 'ai' });
+      return { id: row.id };
     },
 
     async createClient(input) {

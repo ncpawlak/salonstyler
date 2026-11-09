@@ -19,7 +19,8 @@ import { supabase } from '@/lib/supabase';
 import { useCurrentSalon } from '@/providers/session-provider';
 
 const appointmentsKey = (salonId: string) => ['appointments', salonId] as const;
-const clientsKey = (salonId: string) => ['clients', salonId] as const;
+/** Prefix for every client query (list, profile, visits...), so one invalidation refreshes all. */
+export const clientsKey = (salonId: string) => ['clients', salonId] as const;
 
 /** Appointments overlapping `[from, to)` (ISO). Refreshes every minute so expired holds drop off. */
 export function useAppointments(range: { from: string; to: string }) {
@@ -34,7 +35,12 @@ export function useAppointments(range: { from: string; to: string }) {
 function useInvalidateAppointments() {
   const salon = useCurrentSalon();
   const queryClient = useQueryClient();
-  return () => queryClient.invalidateQueries({ queryKey: appointmentsKey(salon.id) });
+  // Client profiles show visit history and stats, so they refresh with the calendar.
+  return () =>
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: appointmentsKey(salon.id) }),
+      queryClient.invalidateQueries({ queryKey: clientsKey(salon.id) }),
+    ]);
 }
 
 /** Turns RPC errors (e.g. the overlap constraint) into a message for the UI. */

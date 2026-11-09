@@ -234,3 +234,66 @@ describe('drafts', () => {
     await expect(cancelDraft(ctx, manual.id)).rejects.toThrow(/Ask Chairside/);
   });
 });
+
+describe('client duration overrides', () => {
+  beforeEach(() => {
+    // Karina's thick hair: her color takes 20 minutes longer than the menu's 2h.
+    port.overrides.set(KARINA, [{ serviceId: COLOR, deltaMinutes: 20 }]);
+  });
+
+  it('find_client shows the usual service with her override', async () => {
+    const out = await runTool(ctx, 'find_client', { query: 'karina' });
+    const { matches } = out.result as { matches: { usualSummary: string }[] };
+    expect(matches[0]!.usualSummary).toBe('All-over Color · 2h20 (incl. +20m for this client)');
+  });
+
+  it('booking Karina automatically applies her +20m', async () => {
+    const card = await slotsFor({ clientId: KARINA, date: '2026-12-16' });
+    expect(card.serviceSummary).toContain('2h20');
+    const slot = card.days.find((d) => d.date === '2026-12-16')!.slots[0]!;
+    const draft = await proposeBooking(ctx, { clientId: KARINA, start: slot.start });
+    const held = port.appointments.find((a) => a.id === draft.card.appointmentId)!;
+    expect((Date.parse(held.ends_at) - Date.parse(held.starts_at)) / 60_000).toBe(140);
+    // Spread over hands-on time: processing stays 45m.
+    const processing = held.segments.find((s) => s.kind === 'processing')!;
+    expect((Date.parse(processing.end) - Date.parse(processing.start)) / 60_000).toBe(45);
+  });
+
+  it('a 2h gap no longer fits her color', async () => {
+    // Dec 18 has exactly 12:30–2:30 free; with +20m she doesn't fit.
+    const card = await slotsFor({ clientId: KARINA, date: '2026-12-18' });
+    expect(card.days.find((d) => d.date === '2026-12-18')!.slots).toEqual([]);
+  });
+
+  it('other clients and services are unaffected', () => {
+    const cut = resolveItems(MENU, [{ serviceId: CUT }], port.overrides.get(KARINA));
+    expect(cut.totalMinutes).toBe(60);
+    expect(cut.clientAdjustmentMinutes).toBe(0);
+  });
+});
+
+describe('add_client_note', () => {
+  it('saves a pasted formula to the client and audits it', async () => {
+    const out = await runTool(ctx, 'add_client_note', {
+      clientId: KARINA,
+      kind: 'formula',
+      text: '  7N + 7G 1:1, 20 vol, 35 min ',
+    });
+    expect(out.ok).toBe(true);
+    expect(port.notes).toEqual([
+      { clientId: KARINA, kind: 'formula', text: '7N + 7G 1:1, 20 vol, 35 min' },
+    ]);
+    expect(port.audits.at(-1)).toMatchObject({
+      action: 'assistant.client_note_added',
+      details: { clientId: KARINA, kind: 'formula' },
+    });
+  });
+
+  it('defaults to a note and rejects unknown clients', async () => {
+    await runTool(ctx, 'add_client_note', { clientId: KARINA, text: 'Prefers quiet appts' });
+    expect(port.notes[0]!.kind).toBe('note');
+    const bad = await runTool(ctx, 'add_client_note', { clientId: 'nope', text: 'x' });
+    expect(bad.ok).toBe(false);
+    expect(port.notes).toHaveLength(1);
+  });
+});
