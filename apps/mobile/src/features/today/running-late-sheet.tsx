@@ -1,6 +1,6 @@
 import { templateRunningLateDrafts, type ClientTextDraft } from '@chairside/ai/assistant';
 import type { RunningLatePlan, RunningLateStrategy, WorkHours } from '@chairside/core';
-import type { AppointmentWithDetails } from '@chairside/db';
+import type { AppointmentWithDetails, ClientReplySource } from '@chairside/db';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
@@ -14,6 +14,9 @@ import { useCurrentSalon } from '@/providers/session-provider';
 import { errorMessage, useApplyRunningLate } from '../appointments/api';
 import { formatTime } from '../appointments/format';
 import { assistantApi } from '../assistant/api';
+import { useRecordReply } from '../replies/api';
+import { replySource } from '../replies/compose';
+import { SEND_CHANNEL, SEND_ICON, SEND_LABEL, sendClientText } from '../replies/send';
 import {
   defaultLateAppointment,
   describePlan,
@@ -22,7 +25,6 @@ import {
   runningLateCandidates,
   strategyLabel,
 } from './running-late';
-import { SHARE_TEXT_LABEL, shareClientText } from './share-text';
 import { clientSpan } from './summary';
 
 export interface RunningLateSheetProps {
@@ -38,7 +40,8 @@ export interface RunningLateSheetProps {
 
 /**
  * "Running late" (issue #37): pick the delay, see who moves (computed by `@chairside/core`), review
- * the AI-drafted text for each client, then update the calendar in one go.
+ * the AI-drafted text for each client, then update the calendar in one go. Each text opens in
+ * Messages with one tap (issue #7).
  */
 export function RunningLateSheet({ open, onClose, initialDelay, ...rest }: RunningLateSheetProps) {
   return (
@@ -64,7 +67,9 @@ function useDebounced<T>(value: T, ms: number): T {
   return debounced;
 }
 
-type Applied = { plan: RunningLatePlan; drafts: ClientTextDraft[] };
+/** After Update, a text's source records whether the stylist edited it. */
+type SentDraft = Omit<ClientTextDraft, 'source'> & { source: ClientReplySource };
+type Applied = { plan: RunningLatePlan; drafts: SentDraft[] };
 
 function RunningLateBody({
   appointments,
@@ -76,6 +81,7 @@ function RunningLateBody({
   const salon = useCurrentSalon();
   const tz = hours.timeZone;
   const apply = useApplyRunningLate();
+  const record = useRecordReply();
 
   // Freeze the day as it was when the sheet opened, so a refetch can't reshuffle the options.
   const [day] = useState(() => appointments);
@@ -92,7 +98,7 @@ function RunningLateBody({
   });
   const [applied, setApplied] = useState<Applied | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [shared, setShared] = useState<Record<string, string>>({});
+  const [sent, setSent] = useState<Record<string, string>>({});
 
   const options = useMemo(
     () =>
@@ -147,7 +153,7 @@ function RunningLateBody({
     [plan, salon.name, tz, byId],
   );
   const ready = !!request && drafting.data && settled?.key === request.key;
-  const drafts: ClientTextDraft[] =
+  const drafts: SentDraft[] =
     applied?.drafts ??
     (ready ? drafting.data!.drafts : drafting.isError && request ? fallback : []);
   const draftsLoading = !applied && !!request && !ready && !drafting.isError;
@@ -167,17 +173,28 @@ function RunningLateBody({
       texts: { ...(e.key === movesKey ? e.texts : {}), [id]: text },
     }));
 
-  const share = async (id: string) => {
-    const text = textFor(id);
+  const send = async (id: string) => {
+    const text = textFor(id)?.trim();
+    const draft = drafts.find((d) => d.appointmentId === id) ?? null;
     if (!text) return;
+    setError(null);
+    const client = byId.get(id)?.client ?? null;
     try {
-      const result = await shareClientText(text);
-      if (result !== 'dismissed') {
-        haptics.success();
-        setShared((s) => ({ ...s, [id]: result === 'copied' ? 'Copied' : 'Shared' }));
-      }
+      const result = await sendClientText({ to: client?.phone ?? null, body: text });
+      if (result === 'cancelled') return;
+      haptics.success();
+      setSent((s) => ({ ...s, [id]: result === 'copied' ? 'Copied' : 'Sent' }));
+      await record.mutateAsync({
+        kind: 'running_late',
+        body: text,
+        channel: SEND_CHANNEL,
+        source: replySource(draft, text),
+        toPhone: client?.phone ?? null,
+        appointmentId: id,
+        clientId: client?.id ?? null,
+      });
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(errorMessage(e));
     }
   };
 
@@ -188,7 +205,8 @@ function RunningLateBody({
       const d =
         drafts.find((x) => x.appointmentId === m.id) ??
         fallback.find((x) => x.appointmentId === m.id)!;
-      return { ...d, text: textFor(m.id) ?? d.text };
+      const text = textFor(m.id) ?? d.text;
+      return { ...d, text, source: replySource(d, text) };
     });
     try {
       await apply.mutateAsync({
@@ -360,9 +378,10 @@ function RunningLateBody({
                       <Button
                         size="sm"
                         variant={applied ? 'primary' : 'outline'}
-                        icon={SHARE_TEXT_LABEL === 'Copy' ? 'copy-outline' : 'share-outline'}
-                        label={shared[m.id] ?? SHARE_TEXT_LABEL}
-                        onPress={() => share(m.id)}
+                        icon={sent[m.id] ? 'checkmark' : SEND_ICON}
+                        label={sent[m.id] ?? SEND_LABEL}
+                        accessibilityLabel={` text to ${appt?.client?.name ?? 'client'}`}
+                        onPress={() => void send(m.id)}
                       />
                     </View>
                   </>

@@ -3,6 +3,7 @@ import type {
   AppointmentServiceSnapshot,
   AppointmentWithDetails,
   CapturedRequestAppointment,
+  ClientReply,
 } from '@chairside/db';
 import { View } from 'react-native';
 import Animated, { FadeOut, LinearTransition, useReducedMotion } from 'react-native-reanimated';
@@ -10,11 +11,13 @@ import Animated, { FadeOut, LinearTransition, useReducedMotion } from 'react-nat
 import { Avatar, Badge, type BadgeTone, Button, Card, Icon, Text } from '@/components/ui';
 
 import { formatDay, formatTime } from '../appointments/format';
+import { replyStatusLabel } from '../replies/compose';
 import { formatPrice } from '../services/data';
 import { ServicePills } from '../today/service-pills';
 import type { InboxItem } from './api';
 
-export type InboxAction = 'approve' | 'decline' | 'other_time' | 'dismiss' | 'cancel_appointment';
+export type InboxAction =
+  'approve' | 'decline' | 'other_time' | 'dismiss' | 'cancel_appointment' | 'offer';
 
 const INTENT: Record<string, { label: string; tone: BadgeTone }> = {
   booking: { label: 'Booking', tone: 'warning' },
@@ -83,10 +86,13 @@ function describe(item: InboxItem) {
 export function InboxCard({
   item,
   timeZone,
+  reply,
   onAction,
 }: {
   item: InboxItem;
   timeZone: string;
+  /** The latest reply texted about this request, if any. */
+  reply?: Pick<ClientReply, 'kind' | 'status' | 'channel'> | null;
   onAction: (action: InboxAction) => void;
 }) {
   const reduceMotion = useReducedMotion();
@@ -166,6 +172,15 @@ export function InboxCard({
           </View>
         ) : null}
 
+        {reply ? (
+          <View className="flex-row items-center gap-2" testID="inbox-card-reply">
+            <Icon name="paper-plane-outline" size={16} color="success" />
+            <Text variant="footnote" tone="success" className="flex-1">
+              {replyStatusLabel(reply)}
+            </Text>
+          </View>
+        ) : null}
+
         {isCancel ? (
           <View className="flex-row gap-3">
             <Button
@@ -206,6 +221,17 @@ export function InboxCard({
               />
             </View>
             <View className="flex-row gap-3">
+              {item.kind === 'captured' ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  label={reply?.kind === 'offer' ? 'Resend' : 'Offer'}
+                  icon="chatbubble-ellipses-outline"
+                  grow
+                  accessibilityLabel={`Text ${d.name} this time and wait for a yes`}
+                  onPress={() => onAction('offer')}
+                />
+              ) : null}
               <Button
                 variant="ghost"
                 size="sm"

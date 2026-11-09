@@ -7,6 +7,7 @@ import type { DraftCard } from '../assistant/types.ts';
 import type { ChatMessage, ChatResult, LLMProvider } from '../types.ts';
 import {
   type AssistantMessageResponse,
+  type AssistantReplyResponse,
   type AssistantRunningLateResponse,
   type AssistantServiceDeps,
   handleAssistantRequest,
@@ -259,6 +260,78 @@ describe('draft_running_late', () => {
       deps,
     );
     expect(tooLong.status).toBe(400);
+  });
+});
+
+describe('draft_reply', () => {
+  const REQ = '00000000-0000-4000-8000-0000000000e1';
+
+  function withRequest(s: ReturnType<typeof setup>) {
+    for (const a of s.port.appointments) a.salon_id = SALON;
+    const appt = s.port.appointments[0]!;
+    s.port.requests.push({
+      id: REQ,
+      intent: 'booking',
+      status: 'pending',
+      sender: '+1 312 555 0199',
+      senderPhone: '+13125550199',
+      message: 'Chairside cut friday?',
+      clientId: appt.client_id,
+      appointmentId: appt.id,
+      targetAppointmentId: null,
+    });
+    return appt;
+  }
+
+  it('drafts an offer from the request, with the keyword and the opted-in link', async () => {
+    const s = setup();
+    const appt = withRequest(s);
+    Object.assign(s.port.replySettings, {
+      bridgeKeyword: 'Chairside',
+      bookingLink: 'https://book.example.com/k',
+      includeBookingLink: true,
+    });
+    const res = await handleAssistantRequest(
+      { action: 'draft_reply', salonId: SALON, kind: 'offer', requestId: REQ },
+      s.deps,
+    );
+    expect(res.status).toBe(200);
+    const body = res.body as AssistantReplyResponse;
+    expect(body).toMatchObject({ appointmentId: appt.id, clientId: appt.client_id, notice: null });
+    expect(body.draft.source).toBe('ai');
+    expect(body.draft.text).toContain('Reply "Chairside yes" to confirm.');
+    expect(body.draft.text).toContain('https://book.example.com/k');
+    expect(s.usage).toEqual([expect.objectContaining({ purpose: 'reply' })]);
+    expect(s.port.audits.at(-1)).toMatchObject({ action: 'assistant.reply_draft' });
+  });
+
+  it('leaves the link out unless opted in, and falls back to the template without a key', async () => {
+    const s = setup({ config: null });
+    withRequest(s);
+    s.port.replySettings.bookingLink = 'https://book.example.com/k';
+    const res = await handleAssistantRequest(
+      { action: 'draft_reply', salonId: SALON, kind: 'confirm', requestId: REQ },
+      s.deps,
+    );
+    const body = res.body as AssistantReplyResponse;
+    expect(body.draft.source).toBe('template');
+    expect(body.notice).toEqual(expect.any(String));
+    expect(body.draft.text).not.toContain('https://');
+    expect(body.draft.text).toMatch(/^Hi Maria! You're booked/);
+  });
+
+  it('rejects unknown requests and appointments', async () => {
+    const s = setup();
+    const missing = await handleAssistantRequest(
+      { action: 'draft_reply', salonId: SALON, kind: 'confirm', requestId: REQ },
+      s.deps,
+    );
+    expect(missing).toMatchObject({ status: 409, body: { error: { code: 'not_found' } } });
+    const noAppt = await handleAssistantRequest(
+      { action: 'draft_reply', salonId: SALON, kind: 'confirm', appointmentId: KARINA },
+      s.deps,
+    );
+    expect(noAppt.status).toBe(409);
   });
 });
 

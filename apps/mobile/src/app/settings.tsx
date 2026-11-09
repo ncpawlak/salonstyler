@@ -97,6 +97,12 @@ export default function SettingsScreen() {
             onPress={() => router.push('/settings/text-bridge')}
           />
           <ListRow
+            title="Client replies"
+            subtitle="Auto-send, your texting voice and booking link"
+            leading={<Icon name="paper-plane-outline" color="primary" />}
+            onPress={() => router.push('/settings/replies')}
+          />
+          <ListRow
             title="Payments"
             subtitle="Stripe account, card payments and payouts"
             leading={<Icon name="card-outline" color="primary" />}

@@ -1,13 +1,18 @@
 // Inbox agent: the endpoint the salon's iOS Shortcut forwards keyword texts to
 // (docs/spikes/ios-shortcut-keyword-bridge.md). The model only interprets the message; the
 // scheduling engine in @chairside/core picks the slot, and Postgres holds it as a `requested`
-// appointment for the stylist to approve. Nothing is ever sent back to the client (draft mode).
+// appointment for the stylist to approve. Replies (#7) are drafted by the model but only leave
+// through the stylist's Send tap, or, with the opt-in auto-send, in `replies` for the Shortcut.
 //
 // POST /functions/v1/inbox   X-Bridge-Token: csb_…   (no user JWT: verify_jwt = false)
 //   { "sender": "Karina M.", "senderPhone": "+1 555…", "text": "Chairside can I get…",
-//     "receivedAt": "2026-12-01T14:03:22-05:00", "bridgeVersion": "1" }
-// → 200 { ok, status: "captured" | "duplicate" | "ignored" | "test", requestId?, reply? }
-//   `reply` only in auto-reply mode: the Shortcut texts it back to the sender.
+//     "receivedAt": "2026-12-01T14:03:22-05:00", "bridgeVersion": "3" }
+//   or { "action": "outbox" } to collect queued replies (#7)
+// → 200 { ok, status: "captured" | "duplicate" | "ignored" | "test" | "confirmed" | "outbox",
+//         requestId?, reply?, replies: [{ id, to, text }] }
+//   `reply` only in the bridge's auto-reply mode (#6): the Shortcut texts it back to the sender.
+//   `replies`: approved confirmations queued by auto-send (#7), only for Shortcut v3+ or an outbox
+//   call; the Shortcut texts each one with Send Message.
 //   Empty text (a hand run) or "<keyword> test" records a bridge test; nothing is captured.
 //   401 unknown token · 429 rate limited / AI budget · 409 no AI provider
 //

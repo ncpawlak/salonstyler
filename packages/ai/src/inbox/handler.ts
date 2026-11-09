@@ -6,7 +6,15 @@ import { AiProviderError } from '../http.ts';
 import { createProvider as defaultCreateProvider } from '../registry.ts';
 import type { LLMProvider } from '../types.ts';
 import { CONFIDENT_MATCH, rankByName } from '../assistant/fuzzy.ts';
+import { DemoAssistantProvider } from '../assistant/demo-provider.ts';
 import { resolveItems, usualItems } from '../assistant/menu.ts';
+import {
+  draftReply,
+  type ReplyDraft,
+  type ReplyDraftInput,
+  type ReplyKind,
+  templateReply,
+} from '../assistant/reply.ts';
 import { formatDayLabel, formatTime } from '../assistant/tools.ts';
 import type { AssistantClient, AssistantPort, BookingItem } from '../assistant/types.ts';
 import { type AiErrorBody, type AiServiceDeps, providerFailure } from '../server/handler.ts';
@@ -24,7 +32,14 @@ import {
   phonesMatch,
   stripKeyword,
 } from './text.ts';
-import { helpReply, isTestMessage, receivedReply, TEST_REPLY } from './shortcut.ts';
+import {
+  helpReply,
+  isTestMessage,
+  OUTBOX_BRIDGE_VERSION,
+  parseBridgeVersion,
+  receivedReply,
+  TEST_REPLY,
+} from './shortcut.ts';
 
 const DAY = 86_400_000;
 /** Forwarded requests per bridge token per hour. */
@@ -45,6 +60,17 @@ export const inboxRequestSchema = z.object({
     .nullish(),
 });
 export type InboxRequest = z.infer<typeof inboxRequestSchema>;
+
+/**
+ * Body of the "outbox" call: a second Shortcut automation (e.g. when the Chairside app closes)
+ * collects auto-replies without forwarding a text.
+ */
+export const inboxOutboxSchema = z.object({ action: z.literal('outbox') });
+
+/** Replies handed to the Shortcut per call. */
+export const MAX_OUTBOX_REPLIES = 10;
+/** How long a client has to answer an offer with "yes". */
+export const OFFER_YES_WINDOW_MS = 7 * 86_400_000;
 
 export interface InboxBridge {
   salonId: string;
@@ -84,14 +110,55 @@ export interface CaptureResult {
   note?: string | null;
 }
 
+/** A reply queued by auto-send (client_replies.status = 'queued'), claimed for sending. */
+export interface QueuedReply {
+  id: string;
+  kind: ReplyKind | 'running_late';
+  toPhone: string;
+  capturedRequestId: string | null;
+  appointmentId: string | null;
+  clientId: string | null;
+}
+
+/** A text the Shortcut should send now. */
+export interface OutboundReply {
+  id: string;
+  to: string;
+  text: string;
+}
+
 /** The agent's data access for one salon (service role; every query is filtered by salon). */
 export interface InboxPort extends Pick<
   AssistantPort,
-  'getSchedule' | 'getMenu' | 'listClients' | 'clientVisits' | 'listAppointments'
+  | 'getSchedule'
+  | 'getMenu'
+  | 'listClients'
+  | 'clientVisits'
+  | 'listAppointments'
+  | 'getAppointment'
+  | 'getClient'
+  | 'getReplyContext'
 > {
   /** Id of an already captured request with this key, if any. */
   findCaptured(dedupeKey: string): Promise<string | null>;
   capture(input: CaptureInput): Promise<CaptureResult>;
+  /**
+   * The pending request whose held slot was offered (a sent offer reply since sinceIso) to
+   * this phone number, most recent first. Null if none.
+   */
+  findOpenOffer(
+    phone: string,
+    sinceIso: string,
+  ): Promise<{ requestId: string; appointmentId: string } | null>;
+  /** Confirms a held/requested appointment (approves its request via the status-sync trigger). */
+  confirmAppointment(appointmentId: string): Promise<void>;
+  /**
+   * Claims up to limit queued replies for sending. Empty when auto-send is off, so turning
+   * it off stops anything still queued.
+   */
+  claimQueuedReplies(limit: number): Promise<QueuedReply[]>;
+  /** Marks a claimed reply as handed to the bridge, with the text that was sent. */
+  completeReply(id: string, body: string, source: ReplyDraft['source']): Promise<void>;
 }
 
 export interface InboxServiceDeps extends Omit<AiServiceDeps, 'createProvider' | 'getMemberRole'> {
@@ -109,9 +176,10 @@ export interface InboxServiceDeps extends Omit<AiServiceDeps, 'createProvider' |
 }
 
 /**
- * `reply` is only present in auto-reply mode: the Shortcut texts it back to the sender as is.
+ * `reply` is only present in the bridge's auto-reply mode (#6): the Shortcut texts it back to the
+ * sender as is.
  */
-export type InboxResponse =
+type InboxOutcome =
   | { ok: true; status: 'ignored'; reason: 'empty' | 'not_a_request'; reply?: string }
   | { ok: true; status: 'test'; reply?: string }
   | { ok: true; status: 'duplicate'; requestId: string }
@@ -123,7 +191,16 @@ export type InboxResponse =
       appointmentId: string | null;
       clientCreated: boolean;
       reply?: string;
-    };
+    }
+  /** The client said yes to an offered slot; it is now booked. */
+  | { ok: true; status: 'confirmed'; requestId: string; appointmentId: string }
+  | { ok: true; status: 'outbox' };
+
+/**
+ * `replies`: queued texts the Shortcut (v3+) should send now (#7 auto-send). Always present,
+ * usually empty; the Shortcut sends each `text` to `to` with the Send Message action.
+ */
+export type InboxResponse = InboxOutcome & { replies: OutboundReply[] };
 
 export type InboxServiceResult =
   | { status: 200; body: InboxResponse }
@@ -145,7 +222,14 @@ function readVersion(rawBody: unknown): string | null {
 const isUnexpired = (a: AppointmentWithDetails) =>
   ['held', 'requested', 'confirmed'].includes(a.status);
 
-/** Handles one forwarded text: authenticate, parse, match the client, hold a slot, capture. */
+type OutcomeResult =
+  { status: 200; body: InboxOutcome } | Exclude<InboxServiceResult, { status: 200 }>;
+
+/**
+ * Handles one call from the salon's Shortcut: a forwarded text (parse, match the client, hold a
+ * slot, capture; or confirm an offer the client said yes to) or an outbox poll. Either way, the
+ * response carries any auto-replies waiting to be sent.
+ */
 export async function handleInboxRequest(
   token: string | null | undefined,
   rawBody: unknown,
@@ -156,6 +240,40 @@ export async function handleInboxRequest(
   if (!bridge) return fail(401, 'unauthorized', 'Unknown bridge token');
   if (bridge.rateLimited) return fail(429, 'rate_limited', 'Too many messages; try again later');
 
+  const port = deps.createPort(bridge.salonId);
+  const outbox = inboxOutboxSchema.safeParse(rawBody).success;
+  const outcome: OutcomeResult = outbox
+    ? { status: 200, body: { ok: true, status: 'outbox' } }
+    : await handleMessage(bridge, rawBody, port, deps);
+  if (outcome.status !== 200) return outcome;
+  // Older Shortcuts ignore `replies`; claiming would mark texts sent that never leave the phone.
+  const sendsReplies =
+    outbox || (parseBridgeVersion(readVersion(rawBody)) ?? 0) >= OUTBOX_BRIDGE_VERSION;
+  let replies: OutboundReply[] = [];
+  try {
+    if (sendsReplies) replies = await sendQueuedReplies(port, bridge.salonId, deps);
+  } catch (error) {
+    // A drafting hiccup must not lose the captured request; the replies stay queued.
+    console.warn('inbox outbox failed', error instanceof Error ? error.message : error);
+  }
+  return { status: 200, body: { ...outcome.body, replies } };
+}
+
+const AFFIRMATIVE =
+  /^(?:yes|yess+|yeah|yea|yep|yup|ya|sure|ok|okay|k|perfect|great|absolutely|definitely|confirm(?:ed)?|sounds (?:good|great|perfect)|that works|works for me|that'?s perfect|👍|✅)(?:[\s,.!]+(?:please|pls|thanks|thank you|that works|works|sounds good|perfect|see you then|❤️|😊|🙏|👍))*[\s.!]*$/iu;
+
+/** A short, unambiguous "yes" (what a client answers to "Reply 'Chairside yes' to confirm"). */
+export function isAffirmative(message: string): boolean {
+  const text = message.trim();
+  return text.length > 0 && text.length <= 60 && AFFIRMATIVE.test(text);
+}
+
+async function handleMessage(
+  bridge: InboxBridge,
+  rawBody: unknown,
+  port: InboxPort,
+  deps: InboxServiceDeps,
+): Promise<OutcomeResult> {
   const body = inboxRequestSchema.safeParse(rawBody);
   if (!body.success) return fail(400, 'invalid_request', z.prettifyError(body.error));
   const request = body.data;
@@ -181,7 +299,6 @@ export async function handleInboxRequest(
     };
   }
 
-  const port = deps.createPort(bridge.salonId);
   try {
     const receivedMs = request.receivedAt ? Date.parse(request.receivedAt) : NaN;
     const receivedAt = Number.isNaN(receivedMs) ? null : new Date(receivedMs).toISOString();
@@ -195,6 +312,26 @@ export async function handleInboxRequest(
     const existing = await port.findCaptured(dedupeKey);
     if (existing) {
       return { status: 200, body: { ok: true, status: 'duplicate', requestId: existing } };
+    }
+
+    const phone = normalizePhone(request.senderPhone) ?? normalizePhone(request.sender);
+    if (phone && isAffirmative(message)) {
+      const offer = await port.findOpenOffer(
+        phone,
+        new Date(now() - OFFER_YES_WINDOW_MS).toISOString(),
+      );
+      if (offer) {
+        try {
+          await port.confirmAppointment(offer.appointmentId);
+          return {
+            status: 200,
+            body: { ok: true, status: 'confirmed', ...offer },
+          };
+        } catch (error) {
+          // E.g. the hold expired meanwhile: treat the text like any other message.
+          console.warn('inbox yes-confirm failed', error instanceof Error ? error.message : error);
+        }
+      }
     }
 
     const today = toSalonDate(now(), 'UTC');
@@ -527,4 +664,79 @@ async function pickSlot(
 /** "Fri, Dec 4 · 1:00 PM" for an ISO start in the salon's time zone. */
 export function formatSlotLabel(startIso: string, timeZone: string): string {
   return `${formatDayLabel(toSalonDate(startIso, timeZone))} · ${formatTime(startIso, timeZone)}`;
+}
+
+type ReplyLlm = {
+  llm: LLMProvider;
+  meter?: (u: { inputTokens: number; outputTokens: number }, model: string) => Promise<void>;
+};
+
+/** The salon's model for drafting auto-replies, or null (no key / budget spent: use templates). */
+async function replyLlm(salonId: string, deps: InboxServiceDeps): Promise<ReplyLlm | null> {
+  if (deps.demo) return { llm: new DemoAssistantProvider() };
+  const config = await deps.loadConfig(salonId);
+  if (!config) return null;
+  if ((await deps.tokensUsedThisMonth(salonId)) >= config.monthlyTokenBudget) return null;
+  return {
+    llm: (deps.createProvider ?? defaultCreateProvider)(config.provider, {
+      apiKey: config.apiKey,
+      model: config.model,
+    }),
+    meter: (u, model) =>
+      deps.recordUsage({
+        salonId,
+        provider: config.provider,
+        model,
+        purpose: 'auto_reply',
+        inputTokens: u.inputTokens,
+        outputTokens: u.outputTokens,
+      }),
+  };
+}
+
+/**
+ * Drafts and hands over queued auto-replies. Handing a reply to the Shortcut counts as sent: the
+ * Shortcut has no way to report back, and resending risks texting a client twice.
+ */
+async function sendQueuedReplies(
+  port: InboxPort,
+  salonId: string,
+  deps: InboxServiceDeps,
+): Promise<OutboundReply[]> {
+  const queued = await port.claimQueuedReplies(MAX_OUTBOX_REPLIES);
+  if (queued.length === 0) return [];
+  const now = deps.now ?? (() => Date.now());
+  const today = toSalonDate(now(), 'UTC');
+  const [ctx, schedule, model] = await Promise.all([
+    port.getReplyContext(null),
+    port.getSchedule({ from: today, to: today }),
+    replyLlm(salonId, deps),
+  ]);
+  const out: OutboundReply[] = [];
+  for (const reply of queued) {
+    const appt = reply.appointmentId ? await port.getAppointment(reply.appointmentId) : null;
+    const client = appt?.client ?? (reply.clientId ? await port.getClient(reply.clientId) : null);
+    const input: ReplyDraftInput = {
+      kind: reply.kind === 'running_late' ? 'other' : reply.kind,
+      salonName: schedule.salonName,
+      timeZone: schedule.hours.timeZone,
+      clientName: client?.name ?? null,
+      start: appt ? new Date(appt.starts_at).toISOString() : null,
+      services: (appt?.services ?? []).map((s) => s.name),
+      toneExamples: ctx.toneExamples,
+      bookingLink: ctx.includeBookingLink ? ctx.bookingLink : null,
+      confirmKeyword: ctx.bridgeKeyword,
+      teachKeyword: ctx.bridgeKeyword,
+    };
+    let draft: ReplyDraft;
+    try {
+      draft = model ? await draftReply(model.llm, input, model.meter) : templateReply(input);
+    } catch (error) {
+      if (!(error instanceof AiProviderError)) throw error;
+      draft = templateReply(input);
+    }
+    await port.completeReply(reply.id, draft.text, draft.source);
+    out.push({ id: reply.id, to: reply.toPhone, text: draft.text });
+  }
+  return out;
 }

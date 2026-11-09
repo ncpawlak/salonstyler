@@ -1,6 +1,7 @@
 import type { AiProvider } from '../providers.ts';
 import type { ChatMessage, ChatResult, LLMProvider, ToolCall } from '../types.ts';
 import { nameMatchScore } from './fuzzy.ts';
+import { REPLY_PROMPT_TAG } from './reply.ts';
 import { RUNNING_LATE_PROMPT_TAG } from './running-late.ts';
 
 /**
@@ -63,6 +64,9 @@ export class DemoAssistantProvider implements LLMProvider {
     if (typeof system?.content === 'string' && system.content.startsWith(RUNNING_LATE_PROMPT_TAG)) {
       return this.runningLate(messages);
     }
+    if (typeof system?.content === 'string' && system.content.startsWith(REPLY_PROMPT_TAG)) {
+      return this.reply(messages);
+    }
     const today =
       (system && /\((\d{4}-\d{2}-\d{2})\)/.exec(system.content as string)?.[1]) ??
       new Date().toISOString().slice(0, 10);
@@ -99,6 +103,25 @@ export class DemoAssistantProvider implements LLMProvider {
       };
     });
     return this.say(JSON.stringify({ drafts }));
+  }
+
+  private reply(messages: ChatMessage[]): ChatResult {
+    const user = messages.find((m) => m.role === 'user');
+    const input = parse(typeof user?.content === 'string' ? user.content : '{}');
+    const name = typeof input.clientFirstName === 'string' ? input.clientFirstName : null;
+    const when = typeof input.when === 'string' ? input.when : null;
+    const hey = name ? `Hey ${name}!` : 'Hey!';
+    const text =
+      input.kind === 'confirm' && when
+        ? `${hey} You're all booked for ${when}. Can't wait to see you!`
+        : input.kind === 'offer' && when
+          ? `${hey} I could do ${when}. Would that work?`
+          : input.kind === 'cancelled'
+            ? `${hey} Got it, you're cancelled. Hope to see you soon!`
+            : input.kind === 'decline'
+              ? `${hey} So sorry, I'm all booked up then.`
+              : `${hey} Thanks for reaching out!`;
+    return this.say(JSON.stringify({ text }));
   }
 
   private call(name: string, args: Json): ChatResult {

@@ -1,8 +1,18 @@
 import type { ChairsideClient, Json } from '@chairside/db';
 
 import { createSupabaseAssistantPort } from '../assistant/supabase-port.ts';
-import type { CaptureInput, CaptureResult, InboxBridge, InboxPort } from './handler.ts';
+import type {
+  CaptureInput,
+  CaptureResult,
+  InboxBridge,
+  InboxPort,
+  QueuedReply,
+} from './handler.ts';
 import { INBOX_HOURLY_LIMIT } from './handler.ts';
+import { phonesMatch } from './text.ts';
+
+/** A claimed reply not completed within this long (e.g. the function crashed) is claimed again. */
+const CLAIM_TIMEOUT_MS = 2 * 60_000;
 
 /**
  * The inbox agent's data access over a **service-role** client (there is no signed-in user: the
@@ -17,6 +27,9 @@ export function createSupabaseInboxPort(client: ChairsideClient, salonId: string
     listClients: base.listClients,
     clientVisits: base.clientVisits,
     listAppointments: base.listAppointments,
+    getAppointment: base.getAppointment,
+    getClient: base.getClient,
+    getReplyContext: base.getReplyContext,
 
     async findCaptured(dedupeKey) {
       const { data, error } = await client
@@ -36,6 +49,86 @@ export function createSupabaseInboxPort(client: ChairsideClient, salonId: string
       });
       if (error) throw error;
       return data as unknown as CaptureResult;
+    },
+
+    async findOpenOffer(phone, sinceIso) {
+      const { data, error } = await client
+        .from('client_replies')
+        .select(
+          'to_phone, captured_request_id, request:captured_requests!client_replies_request_fkey(id, status, appointment_id, appointment:appointments!captured_requests_appointment_fkey(id, status))',
+        )
+        .eq('salon_id', salonId)
+        .eq('kind', 'offer')
+        .eq('status', 'sent')
+        .gte('sent_at', sinceIso)
+        .order('sent_at', { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      for (const row of data) {
+        const req = row.request;
+        if (!phonesMatch(row.to_phone, phone) || req?.status !== 'pending') continue;
+        const appt = req.appointment;
+        if (appt && ['held', 'requested'].includes(appt.status)) {
+          return { requestId: req.id, appointmentId: appt.id };
+        }
+      }
+      return null;
+    },
+
+    async confirmAppointment(appointmentId) {
+      await base.setStatus(appointmentId, 'confirmed');
+    },
+
+    async claimQueuedReplies(limit) {
+      const { data: settings, error: settingsError } = await client
+        .from('settings')
+        .select('auto_send_replies')
+        .eq('salon_id', salonId)
+        .single();
+      if (settingsError) throw settingsError;
+      if (!settings.auto_send_replies) return [];
+      const stale = new Date(Date.now() - CLAIM_TIMEOUT_MS).toISOString();
+      const { data: due, error } = await client
+        .from('client_replies')
+        .select('id')
+        .eq('salon_id', salonId)
+        .or(`status.eq.queued,and(status.eq.sending,claimed_at.lt.${stale})`)
+        .order('created_at')
+        .limit(limit);
+      if (error) throw error;
+      if (due.length === 0) return [];
+      // Claim atomically: a concurrent call only gets rows this update didn't take.
+      const { data: claimed, error: claimError } = await client
+        .from('client_replies')
+        .update({ status: 'sending', claimed_at: new Date().toISOString() })
+        .eq('salon_id', salonId)
+        .in(
+          'id',
+          due.map((r) => r.id),
+        )
+        .or(`status.eq.queued,and(status.eq.sending,claimed_at.lt.${stale})`)
+        .select('id, kind, to_phone, captured_request_id, appointment_id, client_id');
+      if (claimError) throw claimError;
+      return claimed
+        .filter((r) => r.to_phone)
+        .map((r): QueuedReply => ({
+          id: r.id,
+          kind: r.kind as QueuedReply['kind'],
+          toPhone: r.to_phone!,
+          capturedRequestId: r.captured_request_id,
+          appointmentId: r.appointment_id,
+          clientId: r.client_id,
+        }));
+    },
+
+    async completeReply(id, body, source) {
+      const { error } = await client
+        .from('client_replies')
+        .update({ status: 'sent', body, source, sent_at: new Date().toISOString() })
+        .eq('salon_id', salonId)
+        .eq('id', id)
+        .eq('status', 'sending');
+      if (error) throw error;
     },
   };
 }

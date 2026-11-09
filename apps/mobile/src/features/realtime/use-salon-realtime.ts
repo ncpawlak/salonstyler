@@ -55,6 +55,12 @@ export function useSalonRealtime() {
         { event: '*', schema: 'public', table: 'captured_requests', filter },
         () => schedule('appointments'),
       )
+      // Replies sent from another device or by the text bridge (#7).
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'client_replies', filter },
+        () => schedule('replies'),
+      )
       .subscribe();
 
     return () => {

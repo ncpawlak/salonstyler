@@ -55,6 +55,7 @@ const MANUAL_RECIPE = [
   'Format Date: Current Date, ISO 8601, include time (ReceivedAt).',
   `Get Contents of URL: InboxURL, POST, headers X-Bridge-Token = BridgeToken and Content-Type = application/json. JSON body: sender, senderPhone, text, receivedAt, and bridgeVersion = ${BRIDGE_SHORTCUT_VERSION}.`,
   'Get Dictionary Value “reply” from Contents of URL → If it has any value → Send Message (Show When Run off) to Shortcut Input → Sender.',
+  'Get Dictionary Value “replies” from Contents of URL → Repeat with Each → Send Message (Show When Run off): Repeat Item’s “text” to Repeat Item’s “to” → End Repeat.',
 ];
 
 function StepDots({ step }: { step: number }) {

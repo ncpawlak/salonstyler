@@ -17,7 +17,9 @@ import {
   type CaptureInput,
   type InboxPort,
   type InboxServiceDeps,
+  type QueuedReply,
   handleInboxRequest,
+  isAffirmative,
   matchClient,
 } from './handler.ts';
 import { demoParse, normalizeParsed, type InboxParseContext } from './parse.ts';
@@ -37,14 +39,65 @@ const KEY = 'sk-saved-key-0123456789abcdef';
 function fakeInboxPort() {
   const port = createFakePort();
   const captured: (CaptureInput & { id: string; appointmentId: string | null })[] = [];
-  const inbox: InboxPort & { captured: typeof captured; base: typeof port } = {
+  const offers: { phone: string; requestId: string; appointmentId: string; sentAt: string }[] = [];
+  const replies: (QueuedReply & { status: string; body?: string; source?: string })[] = [];
+  const inbox: InboxPort & {
+    captured: typeof captured;
+    base: typeof port;
+    offers: typeof offers;
+    replies: typeof replies;
+  } = {
     base: port,
     captured,
+    offers,
+    replies,
     getSchedule: port.getSchedule,
     getMenu: port.getMenu,
     listClients: port.listClients,
     clientVisits: port.clientVisits,
     listAppointments: port.listAppointments,
+    getAppointment: port.getAppointment,
+    getClient: port.getClient,
+    getReplyContext: port.getReplyContext,
+    async findOpenOffer(phone, sinceIso) {
+      const offer = offers.find(
+        (o) =>
+          phonesMatch(o.phone, phone) &&
+          o.sentAt >= sinceIso &&
+          ['held', 'requested'].includes(
+            port.appointments.find((a) => a.id === o.appointmentId)?.status ?? '',
+          ),
+      );
+      return offer ? { requestId: offer.requestId, appointmentId: offer.appointmentId } : null;
+    },
+    async confirmAppointment(id) {
+      await port.setStatus(id, 'confirmed');
+      // What the auto-send trigger does when the request is approved.
+      const offer = offers.find((o) => o.appointmentId === id);
+      if (offer && port.replySettings.autoSendReplies && port.replySettings.bridgeKeyword) {
+        replies.push({
+          id: `reply-${replies.length + 1}`,
+          kind: 'confirm',
+          toPhone: offer.phone,
+          capturedRequestId: offer.requestId,
+          appointmentId: id,
+          clientId: null,
+          status: 'queued',
+        });
+      }
+    },
+    async claimQueuedReplies(limit) {
+      if (!port.replySettings.autoSendReplies) return [];
+      const due = replies.filter((r) => r.status === 'queued').slice(0, limit);
+      for (const r of due) r.status = 'sending';
+      return due.map(({ status: _s, body: _b, source: _src, ...r }) => r);
+    },
+    async completeReply(id, body, source) {
+      Object.assign(
+        replies.find((r) => r.id === id)!,
+        { status: 'sent', body, source },
+      );
+    },
     findCaptured: async (key) => captured.find((c) => c.dedupeKey === key)?.id ?? null,
     async capture(input) {
       const dup = captured.find((c) => c.dedupeKey === input.dedupeKey);
@@ -406,7 +459,7 @@ describe('handleInboxRequest', () => {
     const res = await handleInboxRequest(TOKEN, body('Chairside thank you so much!'), deps);
     expect(res).toEqual({
       status: 200,
-      body: { ok: true, status: 'ignored', reason: 'not_a_request' },
+      body: { ok: true, status: 'ignored', reason: 'not_a_request', replies: [] },
     });
     expect(port.captured).toHaveLength(0);
     expect(port.base.appointments).toHaveLength(2);
@@ -431,7 +484,7 @@ describe('handleInboxRequest', () => {
   it('treats a hand run and "<keyword> test" as a bridge test, capturing nothing', async () => {
     const { deps, port, usage, tested } = setup({ autoReply: true });
     const handRun = await handleInboxRequest(TOKEN, body(''), deps);
-    expect(handRun).toEqual({ status: 200, body: { ok: true, status: 'test' } });
+    expect(handRun).toEqual({ status: 200, body: { ok: true, status: 'test', replies: [] } });
     const texted = await handleInboxRequest(TOKEN, body('Chair side TEST!'), deps);
     expect(texted.body).toMatchObject({ status: 'test', reply: expect.stringContaining('✅') });
     expect(tested).toEqual([SALON, SALON]);
@@ -600,4 +653,160 @@ describe('handleInboxRequest', () => {
     expect(JSON.stringify(res.body)).not.toContain(KEY);
     expect(port.captured).toHaveLength(0);
   });
+
+  describe('replies (#7)', () => {
+    async function offered(deps: InboxServiceDeps, port: ReturnType<typeof fakeInboxPort>) {
+      const res = await handleInboxRequest(TOKEN, body('Chairside cut sat?'), deps);
+      const { requestId, appointmentId } = res.body as { requestId: string; appointmentId: string };
+      port.offers.push({
+        phone: '+15550101',
+        requestId,
+        appointmentId,
+        sentAt: new Date(NOW - 3_600_000).toISOString(),
+      });
+      return { requestId, appointmentId };
+    }
+
+    it('a "yes" to an offer books the held slot', async () => {
+      const { deps, port } = setup({ demo: true });
+      const { requestId, appointmentId } = await offered(deps, port);
+      const res = await handleInboxRequest(
+        TOKEN,
+        body('Chairside yes please!', { receivedAt: '2026-12-01T10:00:00-06:00' }),
+        deps,
+      );
+      expect(res.body).toEqual({
+        ok: true,
+        status: 'confirmed',
+        requestId,
+        appointmentId,
+        replies: [],
+      });
+      expect(port.base.appointments.find((a) => a.id === appointmentId)!.status).toBe('confirmed');
+      expect(port.captured).toHaveLength(1);
+    });
+
+    it('does not confirm for another number or an offer that is too old', async () => {
+      const { deps, port } = setup({ demo: true });
+      const { appointmentId } = await offered(deps, port);
+      const other = await handleInboxRequest(
+        TOKEN,
+        body('Chairside yes', { sender: 'Dana', senderPhone: '312-555-0199', receivedAt: 'x1' }),
+        deps,
+      );
+      expect(other.body).not.toMatchObject({ status: 'confirmed' });
+      port.offers[0]!.sentAt = new Date(NOW - 8 * 86_400_000).toISOString();
+      const stale = await handleInboxRequest(
+        TOKEN,
+        body('Chairside yes', { receivedAt: 'x2' }),
+        deps,
+      );
+      expect(stale.body).not.toMatchObject({ status: 'confirmed' });
+      expect(port.base.appointments.find((a) => a.id === appointmentId)!.status).toBe('requested');
+    });
+
+    it('auto-send: hands queued replies to the Shortcut and marks them sent', async () => {
+      const { deps, port } = setup({ demo: true });
+      Object.assign(port.base.replySettings, { autoSendReplies: true, bridgeKeyword: 'Chairside' });
+      await offered(deps, port);
+      const res = await handleInboxRequest(
+        TOKEN,
+        body('Chairside yep', { receivedAt: 'y', bridgeVersion: '3' }),
+        deps,
+      );
+      const { replies } = res.body as { replies: { id: string; to: string; text: string }[] };
+      expect(replies).toHaveLength(1);
+      expect(replies[0]!.to).toBe('+15550101');
+      expect(replies[0]!.text).toMatch(/booked/i);
+      expect(port.replies[0]).toMatchObject({ status: 'sent', source: 'ai' });
+
+      const again = await handleInboxRequest(TOKEN, { action: 'outbox' }, deps);
+      expect(again.body).toEqual({ ok: true, status: 'outbox', replies: [] });
+    });
+
+    it('outbox: drafts from the template without an AI provider, adding the booking link', async () => {
+      const { deps, port } = setup({ config: null });
+      Object.assign(port.base.replySettings, {
+        autoSendReplies: true,
+        bridgeKeyword: 'Chairside',
+        bookingLink: 'https://book.example.com/k',
+        includeBookingLink: true,
+      });
+      port.replies.push({
+        id: 'r1',
+        kind: 'confirm',
+        toPhone: '+15550101',
+        capturedRequestId: null,
+        appointmentId: port.base.appointments[0]!.id,
+        clientId: null,
+        status: 'queued',
+      });
+      const res = await handleInboxRequest(TOKEN, { action: 'outbox' }, deps);
+      expect(res.status).toBe(200);
+      const [reply] = (res.body as { replies: { text: string }[] }).replies;
+      expect(reply!.text).toMatch(/^Hi Maria! You're booked/);
+      expect(reply!.text).toContain('https://book.example.com/k');
+      expect(port.replies[0]).toMatchObject({ status: 'sent', source: 'template' });
+    });
+
+    it('a pre-v3 Shortcut is not handed queued replies (it has no step to send them)', async () => {
+      const { deps, port } = setup({ demo: true });
+      Object.assign(port.base.replySettings, { autoSendReplies: true, bridgeKeyword: 'Chairside' });
+      await offered(deps, port);
+      const res = await handleInboxRequest(
+        TOKEN,
+        body('Chairside yep', { receivedAt: 'y', bridgeVersion: '2' }),
+        deps,
+      );
+      expect(res.body).toMatchObject({ status: 'confirmed', replies: [] });
+      expect(port.replies[0]!.status).toBe('queued');
+
+      const v3 = await handleInboxRequest(
+        TOKEN,
+        body('Chairside hi', { receivedAt: 'z', bridgeVersion: '3' }),
+        deps,
+      );
+      expect((v3.body as { replies: unknown[] }).replies).toHaveLength(1);
+      expect(port.replies[0]!.status).toBe('sent');
+    });
+
+    it('auto-send off: queued replies stay unsent', async () => {
+      const { deps, port } = setup({ demo: true });
+      port.replies.push({
+        id: 'r1',
+        kind: 'confirm',
+        toPhone: '+15550101',
+        capturedRequestId: null,
+        appointmentId: null,
+        clientId: null,
+        status: 'queued',
+      });
+      const res = await handleInboxRequest(TOKEN, { action: 'outbox' }, deps);
+      expect(res.body).toMatchObject({ replies: [] });
+      expect(port.replies[0]!.status).toBe('queued');
+    });
+
+    it('outbox calls still need a valid token', async () => {
+      const { deps } = setup({ demo: true });
+      const res = await handleInboxRequest('csb_wrong', { action: 'outbox' }, deps);
+      expect(res.status).toBe(401);
+    });
+  });
+});
+
+describe('isAffirmative', () => {
+  it.each([
+    'yes',
+    'Yes!',
+    'yes please',
+    'Yep, sounds good',
+    'ok thanks',
+    'perfect',
+    '👍',
+    'Sounds great!',
+  ])('accepts %j', (text) => expect(isAffirmative(text)).toBe(true));
+  it.each(['no', 'yes but can we do 3 instead?', 'not yet', 'yes for my sister on monday', ''])(
+    'rejects %j',
+    (text) => expect(isAffirmative(text)).toBe(false),
+  );
 });
