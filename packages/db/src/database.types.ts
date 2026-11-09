@@ -2304,6 +2304,7 @@ export type Database = {
           hold_expires_at: string | null;
           id: string;
           import_key: string | null;
+          manage_token: string;
           notes: string | null;
           price_cents: number | null;
           requested_at: string | null;
@@ -2313,6 +2314,7 @@ export type Database = {
           starts_at: string;
           status: Database['public']['Enums']['appointment_status'];
           stylist_id: string;
+          text_reminder_sent_at: string | null;
           updated_at: string;
         };
         SetofOptions: {
