@@ -1,9 +1,15 @@
-import { addDays, formatLocalDate, parseLocalDate, toSalonDate, zonedToUtc } from '@chairside/core';
+import {
+  addDays,
+  dayUtilization,
+  formatLocalDate,
+  parseLocalDate,
+  toSalonDate,
+  zonedToUtc,
+} from '@chairside/core';
 import type { AppointmentWithDetails } from '@chairside/db';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
 
-import { MonthView, WeekView } from '@/components/mockups/calendar-views';
 import { Screen } from '@/components/shell/screen';
 import { Button, EmptyState, SegmentedControl, Skeleton, Text } from '@/components/ui';
 import { useAppointments } from '@/features/appointments/api';
@@ -12,6 +18,10 @@ import { BookingSheet, type BookingTarget } from '@/features/appointments/bookin
 import { DayTimeline } from '@/features/appointments/day-timeline';
 import { formatLocalDateLong } from '@/features/appointments/format';
 import { useMoveAppointment } from '@/features/appointments/use-move';
+import { DaySummary } from '@/features/calendar/day-summary';
+import { MonthView } from '@/features/calendar/month-view';
+import { useAppointmentsRealtime } from '@/features/calendar/use-calendar-data';
+import { WeekView } from '@/features/calendar/week-view';
 import { useWorkHours } from '@/features/hours/use-work-hours';
 import { haptics } from '@/lib/haptics';
 import { useCurrentSalon } from '@/providers/session-provider';
@@ -42,16 +52,24 @@ export default function CalendarScreen() {
 
   const [mode, setMode] = useState<Mode>('day');
   const [date, setDate] = useState(today);
+  useAppointmentsRealtime();
 
-  const pickDay = (d: Date) => {
-    setDate(formatLocalDate({ year: d.getFullYear(), month: d.getMonth() + 1, day: d.getDate() }));
+  const pickDay = (d: string) => {
+    setDate(d);
     setMode('day');
   };
+
+  const subtitle =
+    mode === 'day'
+      ? formatLocalDateLong(date)
+      : mode === 'week'
+        ? 'How busy each day is'
+        : 'Busier days are darker';
 
   return (
     <Screen
       title="Calendar"
-      subtitle={mode === 'day' ? formatLocalDateLong(date) : mode === 'week' ? 'This week' : ''}
+      subtitle={subtitle}
       toolbar={
         <SegmentedControl
           accessibilityLabel="Calendar view"
@@ -64,8 +82,12 @@ export default function CalendarScreen() {
       {mode === 'day' ? (
         <DayMode date={date} today={today} now={now} onDateChange={setDate} />
       ) : null}
-      {mode === 'week' ? <WeekView onPickDay={pickDay} /> : null}
-      {mode === 'month' ? <MonthView onPickDay={pickDay} /> : null}
+      {mode === 'week' ? (
+        <WeekView date={date} today={today} now={now} onDateChange={setDate} onPickDay={pickDay} />
+      ) : null}
+      {mode === 'month' ? (
+        <MonthView date={date} today={today} onDateChange={setDate} onPickDay={pickDay} />
+      ) : null}
     </Screen>
   );
 }
@@ -96,6 +118,10 @@ function DayMode({
   }, [date, tz]);
   const appointments = useAppointments(range);
   const list = useMemo(() => appointments.data ?? [], [appointments.data]);
+  const utilization = useMemo(
+    () => (hours && appointments.data ? dayUtilization(hours, date, appointments.data) : null),
+    [hours, appointments.data, date],
+  );
 
   const [booking, setBooking] = useState<BookingTarget | null>(null);
   const [selected, setSelected] = useState<AppointmentWithDetails | null>(null);
@@ -212,6 +238,7 @@ function DayMode({
         />
       ) : (
         <>
+          {utilization ? <DaySummary day={utilization} now={now} /> : null}
           {list.length === 0 ? (
             <Text variant="footnote" tone="muted">
               Nothing booked. Long-press a time or tap New to book.
