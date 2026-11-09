@@ -1,26 +1,6 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type Database = {
-  graphql_public: {
-    Tables: {
-      [_ in never]: never;
-    };
-    Views: {
-      [_ in never]: never;
-    };
-    Functions: {
-      graphql: {
-        Args: { extensions?: Json; operationName?: string; query?: string; variables?: Json };
-        Returns: Json;
-      };
-    };
-    Enums: {
-      [_ in never]: never;
-    };
-    CompositeTypes: {
-      [_ in never]: never;
-    };
-  };
   public: {
     Tables: {
       ai_provider_config: {
@@ -930,6 +910,7 @@ export type Database = {
           salon_id: string;
           tags: string[];
           updated_at: string;
+          user_id: string | null;
         };
         ComputedFields: never;
         Insert: {
@@ -948,6 +929,7 @@ export type Database = {
           salon_id: string;
           tags?: string[];
           updated_at?: string;
+          user_id?: string | null;
         };
         Update: {
           birthday?: string | null;
@@ -965,6 +947,7 @@ export type Database = {
           salon_id?: string;
           tags?: string[];
           updated_at?: string;
+          user_id?: string | null;
         };
         Relationships: [
           {
@@ -1556,6 +1539,8 @@ export type Database = {
           auto_send_replies: boolean;
           autonomy: string;
           booking_link: string | null;
+          booking_page_faq: string | null;
+          booking_page_intro: string | null;
           booking_window_days: number;
           created_at: string;
           currency: string;
@@ -1565,6 +1550,7 @@ export type Database = {
           min_notice_minutes: number;
           payout_summary_enabled: boolean;
           preferences: NonNullable<Json>;
+          public_booking_enabled: boolean;
           quiet_hours_enabled: boolean;
           quiet_hours_end: string;
           quiet_hours_start: string;
@@ -1579,6 +1565,8 @@ export type Database = {
           auto_send_replies?: boolean;
           autonomy?: string;
           booking_link?: string | null;
+          booking_page_faq?: string | null;
+          booking_page_intro?: string | null;
           booking_window_days?: number;
           created_at?: string;
           currency?: string;
@@ -1588,6 +1576,7 @@ export type Database = {
           min_notice_minutes?: number;
           payout_summary_enabled?: boolean;
           preferences?: NonNullable<Json>;
+          public_booking_enabled?: boolean;
           quiet_hours_enabled?: boolean;
           quiet_hours_end?: string;
           quiet_hours_start?: string;
@@ -1601,6 +1590,8 @@ export type Database = {
           auto_send_replies?: boolean;
           autonomy?: string;
           booking_link?: string | null;
+          booking_page_faq?: string | null;
+          booking_page_intro?: string | null;
           booking_window_days?: number;
           created_at?: string;
           currency?: string;
@@ -1610,6 +1601,7 @@ export type Database = {
           min_notice_minutes?: number;
           payout_summary_enabled?: boolean;
           preferences?: NonNullable<Json>;
+          public_booking_enabled?: boolean;
           quiet_hours_enabled?: boolean;
           quiet_hours_end?: string;
           quiet_hours_start?: string;
@@ -1864,6 +1856,10 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      book_public_appointment: {
+        Args: { p_booking: Json; p_max_upcoming?: number; p_salon_id: string; p_user_id: string };
+        Returns: Json;
+      };
       capture_inbox_request: { Args: { p_request: Json; p_salon_id: string }; Returns: Json };
       claim_notifications: {
         Args: { p_limit?: number };
@@ -1959,6 +1955,10 @@ export type Database = {
         }[];
       };
       get_receipt: { Args: { p_token: string }; Returns: Json };
+      hit_rate_limit: {
+        Args: { p_key: string; p_limit: number; p_window_seconds: number };
+        Returns: boolean;
+      };
       import_appointments: { Args: { p_appointments: Json; p_salon_id: string }; Returns: Json };
       import_clients: { Args: { p_clients: Json; p_salon_id: string }; Returns: Json };
       inbox_bridge_for_token: {
@@ -2004,6 +2004,8 @@ export type Database = {
         };
       };
       payout_summary: { Args: { p_day?: string; p_salon_id: string }; Returns: Json };
+      public_booking_page: { Args: { p_slug: string }; Returns: Json };
+      public_client_bookings: { Args: { p_salon_id: string; p_user_id: string }; Returns: Json };
       record_client_reply: {
         Args: { p_reply: Json; p_salon_id: string };
         Returns: {
@@ -2266,7 +2268,12 @@ export type Database = {
       checkout_method: 'card' | 'cash' | 'other';
       checkout_status: 'open' | 'paid' | 'canceled';
       notification_kind:
-        'request' | 'request_nudge' | 'cancellation' | 'daily_agenda' | 'payout_summary';
+        | 'request'
+        | 'request_nudge'
+        | 'cancellation'
+        | 'daily_agenda'
+        | 'payout_summary'
+        | 'public_booking';
       notification_status: 'pending' | 'sending' | 'sent' | 'skipped' | 'failed';
       payment_status:
         | 'pending'
@@ -2389,9 +2396,6 @@ export type CompositeTypes<
     : never;
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       addon_placement: ['before_finish', 'end'],
@@ -2410,6 +2414,7 @@ export const Constants = {
         'cancellation',
         'daily_agenda',
         'payout_summary',
+        'public_booking',
       ],
       notification_status: ['pending', 'sending', 'sent', 'skipped', 'failed'],
       payment_status: [

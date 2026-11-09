@@ -56,6 +56,7 @@ function RootNavigator() {
           <Stack.Screen name="settings/text-bridge-setup" />
           <Stack.Screen name="settings/station-card" />
           <Stack.Screen name="settings/replies" />
+          <Stack.Screen name="settings/booking-page" />
           <Stack.Screen name="settings/payments" />
           <Stack.Screen name="settings/notifications" />
           <Stack.Screen name="requests/[id]" options={{ presentation: 'modal' }} />
@@ -68,8 +69,9 @@ function RootNavigator() {
           <Stack.Screen name="checkout/index" options={{ presentation: 'modal' }} />
           <Stack.Screen name="checkout/[appointmentId]" options={{ presentation: 'modal' }} />
         </Stack.Protected>
-        {/* Public: clients open their receipt link without an account. */}
+        {/* Public: clients open their receipt link and the salon's booking page without an account. */}
         <Stack.Screen name="receipt/[token]" />
+        <Stack.Screen name="b/[slug]" />
       </Stack>
       <AskChairsideButton />
     </>

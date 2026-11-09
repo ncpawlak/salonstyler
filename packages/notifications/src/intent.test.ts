@@ -59,6 +59,15 @@ describe('notificationIntent', () => {
     ).toEqual({ kind: 'open', href: '/settings/payments' });
   });
 
+  it('opens the calendar for a confirmed online booking', () => {
+    expect(
+      notificationIntent(DEFAULT_ACTION_ID, { type: 'public_booking', appointmentId: 'a1' }),
+    ).toEqual({ kind: 'open', href: '/calendar' });
+    expect(notificationIntent('approve', { type: 'public_booking', appointmentId: 'a1' })).toEqual({
+      kind: 'none',
+    });
+  });
+
   it('ignores malformed payloads and unknown actions', () => {
     expect(notificationIntent('approve', null)).toEqual({ kind: 'none' });
     expect(notificationIntent('approve', { type: 'cancellation', appointmentId: 'a1' })).toEqual({

@@ -162,6 +162,25 @@ In the app the editor opens after Approve, Decline or Cancel appointment in the 
 
 **"Yes" to an offer:** if a known number replies affirmatively (`"<keyword> yes"`, "sounds good", 👍 …) within 7 days of an offer for a still-held slot, `inbox` confirms that appointment instead of capturing a new request (`status: "confirmed"`). This works with auto-send off, since the stylist made the offer.
 
+### Public booking page (`functions/public-booking`, #14)
+
+The signed-out booking page at `/b/<salon-slug>` (Expo web). The owner turns it on in Settings → Booking page (`settings.public_booking_enabled`, `booking_page_intro`, `booking_page_faq`). The function has no salon JWT (`verify_jwt = false`) and uses the service role, but only through the service-role-only RPCs in `20261109320000_public_booking.sql`. `anon` and `authenticated` can't call them. Logic lives in `@chairside/ai/public-booking` and is unit-tested.
+
+| Action | What it returns |
+| --- | --- |
+| `page` | Salon name, timezone, intro, FAQ and the **bookable-online** menu (`public_booking_page`). No salon id and no client data |
+| `slots` | Open times for the chosen services on one day, from the `packages/core` engine (booking window, min notice, Tentative flag) |
+| `send_code` | Emails a 6-digit sign-in code (Supabase Auth OTP). The page verifies it on its own client, stored apart from the owner session |
+| `book` | Requires the verified client's JWT. Re-runs the engine for the exact start, then `book_public_appointment` links or creates the client's own profile by verified email (`clients.user_id`) and writes a `confirmed` (Autonomy Auto, Open hours) or `requested` (Draft, Tentative hours or consultation) appointment. Each client may have 3 upcoming public bookings |
+| `my_bookings` | The verified client's own upcoming bookings (`public_client_bookings`) |
+| `chat` | The client concierge. It uses the salon's key and budget (`purpose = 'concierge'`) with a read-only toolset: `list_services` (bookable-online only), `find_slots` (engine), `get_salon_info` (the FAQ) and `my_bookings` (verified only). It can't book. It returns slot cards, and the client confirms through `book` |
+
+**Abuse protection:** fixed-window limits in `hit_rate_limit` with hashed keys. They cover IP, the email and phone on `send_code`, the user and phone on `book`, and a daily cap on concierge turns per salon. Limited calls return `429`. The IP comes from `CF-Connecting-IP`, then `X-Forwarded-For`; the per-email, phone, user and salon limits backstop spoofed IPs. A confirmed booking pushes **New booking** (`public_booking`) to the owner. A request uses the existing Approve/Decline push (#62).
+
+Local check: serve with `CHAIRSIDE_AI_DEMO=1` (same env file as above) for a rule-based concierge. Read the code from Mailpit (`http://127.0.0.1:54324`).
+
+Deploy: `npx supabase functions deploy public-booking --no-verify-jwt`.
+
 ## Import from Vagaro (#15)
 
 The Settings → Import from Vagaro wizard (`apps/mobile/src/app/import`) reads a Vagaro **Customers** or **Appointments Summary** export (.xlsx or CSV) on the device. The only AI step is the column mapping: the `ai` function's `map_columns` action gets the headers plus 3 **masked** samples per column (`redactSample`) and returns `{ mapping, source }`. Masking keeps an email's domain only and replaces digits with `#` and most letters with `x`. `sanitizeColumnMapping` drops unknown fields and out-of-range or duplicate columns. Usage is metered as `purpose = 'import_mapping'`. If there's no key (`409 not_configured`), the budget is spent, or the provider fails, the app falls back to `guessColumnMapping` (header synonyms) and the owner confirms or fixes every column. Parsing and validation (names, phones, dates, Excel serials, durations, prices, cancelled/past rows) are deterministic code in `packages/core/src/import`.

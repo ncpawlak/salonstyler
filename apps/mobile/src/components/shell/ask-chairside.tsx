@@ -27,13 +27,15 @@ export function AskChairsideButton() {
   const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
   const first = segments[0] as string | undefined;
-  // Hidden on client-facing screens (checkout is shown to the client; receipts are public).
+  // Hidden on client-facing screens (checkout is shown to the client; receipts and the booking
+  // page are public).
   if (
     first === '(auth)' ||
     first === '(onboarding)' ||
     first === 'assistant' ||
     first === 'checkout' ||
-    first === 'receipt'
+    first === 'receipt' ||
+    first === 'b'
   ) {
     return null;
   }
