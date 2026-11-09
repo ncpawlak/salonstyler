@@ -1,4 +1,4 @@
-import type { Interval } from './types';
+import type { Interval } from './types.ts';
 
 /** Sorts and merges overlapping or touching intervals; drops empty ones. */
 export function mergeIntervals(intervals: readonly Interval[]): Interval[] {

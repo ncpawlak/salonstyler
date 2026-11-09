@@ -3,7 +3,7 @@ export {
   rangeUtilization,
   summarizeUtilization,
   utilizationLevel,
-} from './utilization';
+} from './utilization.ts';
 export type {
   DayUtilization,
   HourUtilization,
@@ -12,4 +12,4 @@ export type {
   UtilizationRun,
   UtilizationState,
   UtilizationSummary,
-} from './utilization';
+} from './utilization.ts';

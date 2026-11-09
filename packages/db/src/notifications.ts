@@ -1,6 +1,6 @@
-import type { AppointmentServiceSnapshot, AppointmentWithDetails } from './appointments';
-import { parseTstzRange } from './appointments';
-import type { ChairsideClient, Enums, SalonSettings, Tables } from './index';
+import type { AppointmentServiceSnapshot, AppointmentWithDetails } from './appointments.ts';
+import { parseTstzRange } from './appointments.ts';
+import type { ChairsideClient, Enums, SalonSettings, Tables } from './index.ts';
 
 export type NotificationOutboxRow = Tables<'notifications_outbox'>;
 export type NotificationKind = Enums<'notification_kind'>;

@@ -1,5 +1,5 @@
-import { applyDurationOverrides, validateSegments } from '../availability/segments';
-import type { SegmentKind, ServiceSegment } from '../availability/types';
+import { applyDurationOverrides, validateSegments } from '../availability/segments.ts';
+import type { SegmentKind, ServiceSegment } from '../availability/types.ts';
 import type {
   ComboItem,
   ResolvableService,
@@ -7,7 +7,7 @@ import type {
   ResolvedService,
   ResolveOptions,
   ServiceAddon,
-} from './types';
+} from './types.ts';
 
 const VARIANT_KINDS: ReadonlySet<SegmentKind> = new Set(['busy', 'style']);
 

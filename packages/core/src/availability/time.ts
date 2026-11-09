@@ -1,4 +1,4 @@
-import type { InstantInput } from './types';
+import type { InstantInput } from './types.ts';
 
 export const MINUTE = 60_000;
 export const DAY_MS = 86_400_000;

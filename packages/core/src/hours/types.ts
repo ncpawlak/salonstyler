@@ -5,7 +5,7 @@ import type {
   Interval,
   TimeRange,
   WorkHours,
-} from '../availability/types';
+} from '../availability/types.ts';
 
 /** `work_hours_template` row (snake_case, as returned by `@chairside/db`). */
 export interface WorkHoursTemplateRow {

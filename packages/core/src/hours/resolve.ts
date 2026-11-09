@@ -1,5 +1,5 @@
-import { dayAvailability } from '../availability/hours';
-import { subtractIntervals } from '../availability/intervals';
+import { dayAvailability } from '../availability/hours.ts';
+import { subtractIntervals } from '../availability/intervals.ts';
 import {
   addDays,
   assertTimeZone,
@@ -11,9 +11,15 @@ import {
   toMs,
   weekday,
   zonedParts,
-} from '../availability/time';
-import type { DaySchedule, InstantInput, Interval } from '../availability/types';
-import type { DayStatus, HoursBlock, WorkHours, WorkHoursOverride, WorkingBlocks } from './types';
+} from '../availability/time.ts';
+import type { DaySchedule, InstantInput, Interval } from '../availability/types.ts';
+import type {
+  DayStatus,
+  HoursBlock,
+  WorkHours,
+  WorkHoursOverride,
+  WorkingBlocks,
+} from './types.ts';
 
 const LOCAL_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const MINUTE = 60_000;

@@ -95,6 +95,22 @@ Deploy: `npx supabase functions deploy ai`. The function imports `packages/ai/sr
 
 Provider contract tests replay fixtures in `packages/ai/fixtures` (no network in CI). To re-record against the live APIs: `OPENAI_API_KEY=… ANTHROPIC_API_KEY=… GEMINI_API_KEY=… npm run record:fixtures --workspace @chairside/ai` (keys are redacted from fixtures; review the diff before committing).
 
+### Ask Chairside (`functions/ai-assistant`)
+
+The owner's chat assistant. It uses the same JWT, membership, Vault-key and budget wiring as `ai` (shared in `functions/_shared/ai-deps.ts`) and runs the tool-calling loop from `@chairside/ai/assistant` server-side. Tools read and write through the **caller's JWT**, so RLS scopes them to their salon. The model only interprets the request and calls tools: `find_client`, `list_services`, `find_slots` (the `packages/core` engine on the requested day and the days around it), `get_day_summary`, `propose_booking` (a `held` appointment with notes `Drafted by Ask Chairside`) and `cancel_draft`. Confirming is **not** a model tool; the app calls it when the owner taps Confirm. Every tool call is written to `audit_log` (`entity_type = 'ai_assistant'`).
+
+Actions: `status`, `message` (`{history, text}`; the app resends the returned `messages` as history, so nothing is stored server-side), `propose`, `confirm`, `discard`, `create_client`. With no key, `message` returns `409 not_configured` and the app links to Settings → AI assistant.
+
+```bash
+npx supabase functions serve                     # serves ai + ai-assistant
+# Local demo without a key: a scripted, rule-based provider (never in production; it only turns on
+# when SUPABASE_URL is a local stack). Put CHAIRSIDE_AI_DEMO=1 in an env file outside the repo:
+npx supabase functions serve --env-file /tmp/chairside-demo.env
+SUPABASE_ANON_KEY=… npm run smoke:assistant --workspace @chairside/ai   # end-to-end check
+```
+
+Deploy: `npx supabase functions deploy ai-assistant` (from the repo root, like `ai`).
+
 ## Payments (Stripe Connect)
 
 Each salon gets a **Stripe Connect Express** account (the platform is Chairside's Stripe account). Owners connect it in **Settings → Payments** (`apps/mobile/src/app/settings/payments.tsx`), which opens Stripe's hosted onboarding (business details, ID, bank account). Stripe pays out to the salon's bank; Chairside never handles bank details. See [`docs/PLAN.md` §9](../docs/PLAN.md).

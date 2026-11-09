@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { evaluateStart, findSlots } from './engine';
-import { findBusyConflicts } from './segments';
+import { evaluateStart, findSlots } from './engine.ts';
+import { findBusyConflicts } from './segments.ts';
 import {
   EARLY_NOW,
   FRI,
@@ -10,8 +10,8 @@ import {
   appt,
   at,
   weekdayHours,
-} from './test-helpers';
-import type { ExistingAppointment, FindSlotsInput, SlotCandidate, WorkHours } from './types';
+} from './test-helpers.ts';
+import type { ExistingAppointment, FindSlotsInput, SlotCandidate, WorkHours } from './types.ts';
 
 const base = (over: Partial<FindSlotsInput> = {}): FindSlotsInput => ({
   service: { segments: MENS_CUT },

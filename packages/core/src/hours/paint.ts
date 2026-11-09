@@ -4,9 +4,9 @@ import {
   parseClock,
   parseLocalDate,
   weekday,
-} from '../availability/time';
-import type { WeeklyTemplate } from '../availability/types';
-import type { HoursBlock, TimeRange, WorkHours, WorkHoursOverride } from './types';
+} from '../availability/time.ts';
+import type { WeeklyTemplate } from '../availability/types.ts';
+import type { HoursBlock, TimeRange, WorkHours, WorkHoursOverride } from './types.ts';
 
 export type Weekday = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 /** What the stylist "paints" on a day. */

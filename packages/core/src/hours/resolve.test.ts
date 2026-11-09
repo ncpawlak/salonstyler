@@ -1,11 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { findSlots } from '../availability/engine';
-import { dayAvailability } from '../availability/hours';
-import { addDays, formatLocalDate, parseClock, parseLocalDate } from '../availability/time';
-import { at } from '../availability/test-helpers';
-import { getWorkingBlocks, getWorkingBlocksRange, toSalonDate } from './resolve';
-import { bookingRulesFromSettings, buildWorkHours, parseHoursBlocks, sortOverrides } from './rows';
-import type { WorkHoursOverrideRow, WorkHoursTemplateRow } from './types';
+import { findSlots } from '../availability/engine.ts';
+import { dayAvailability } from '../availability/hours.ts';
+import { addDays, formatLocalDate, parseClock, parseLocalDate } from '../availability/time.ts';
+import { at } from '../availability/test-helpers.ts';
+import { getWorkingBlocks, getWorkingBlocksRange, toSalonDate } from './resolve.ts';
+import {
+  bookingRulesFromSettings,
+  buildWorkHours,
+  parseHoursBlocks,
+  sortOverrides,
+} from './rows.ts';
+import type { WorkHoursOverrideRow, WorkHoursTemplateRow } from './types.ts';
 
 const CHI = 'America/Chicago';
 const iso = (i: { start: number; end: number }) => [

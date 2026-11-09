@@ -217,6 +217,7 @@ Profile, contact, notes, **color formulas**, before/after photos, visit history,
 
 - **Provider adapter** interface with OpenAI, Anthropic, and Gemini implementations (all support tool calling + vision for screenshots).
 - **Owner assistant tools:** `parse_request`, `find_client`, `get_services`, `find_available_slots`, `hold_slot`, `create/reschedule/cancel_appointment`, `set_work_hours`, `get_day_summary`, `inventory_lookup/adjust`, `draft_client_reply`.
+  - **Shipped (#29):** the `ai-assistant` Edge Function runs the tool loop server-side with `find_client` (fuzzy), `list_services`, `find_slots` (the engine on the requested day ± 3 days), `get_day_summary`, `propose_booking` (creates a **held draft**) and `cancel_draft`. The model only interprets and calls tools; `packages/core` does all slot math. **Confirm is never a model tool**; only the owner's tap books. The chat lives at `/assistant`, opened from the Ask button.
 - **Client concierge** (public page): only open slots, its own bookings, and FAQ. Server-side permission checks, not just the prompt.
 - All tool calls go to `audit_log`. Per-salon monthly token budget.
 

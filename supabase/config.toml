@@ -448,3 +448,5 @@ verify_jwt = false
 [functions.notifier]
 verify_jwt = false
 
+[functions.ai-assistant]
+verify_jwt = true

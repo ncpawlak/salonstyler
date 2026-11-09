@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { appt, at, FRI, MENS_CUT, ROOT_TOUCH_UP, weekdayHours } from '../availability/test-helpers';
-import { bookingErrorMessage, planBooking, serviceFromSegments, snapToGrid } from './plan';
+import {
+  appt,
+  at,
+  FRI,
+  MENS_CUT,
+  ROOT_TOUCH_UP,
+  weekdayHours,
+} from '../availability/test-helpers.ts';
+import { bookingErrorMessage, planBooking, serviceFromSegments, snapToGrid } from './plan.ts';
 
 const hours = weekdayHours();
 const color = appt('color', at(FRI, '10:00'), [

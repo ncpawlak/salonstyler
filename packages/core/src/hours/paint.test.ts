@@ -7,16 +7,16 @@ import {
   setTemplateDay,
   withOverride,
   withoutOverride,
-} from './paint';
-import { getWorkingBlocks } from './resolve';
+} from './paint.ts';
+import { getWorkingBlocks } from './resolve.ts';
 import {
   buildWorkHours,
   diffOverrides,
   overrideFromRow,
   overrideToRow,
   templateToRows,
-} from './rows';
-import type { WorkHours, WorkHoursOverride } from './types';
+} from './rows.ts';
+import type { WorkHours, WorkHoursOverride } from './types.ts';
 
 const CHI = 'America/Chicago';
 const lunch = [{ start: '12:00', end: '13:00' }];

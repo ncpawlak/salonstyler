@@ -1,4 +1,4 @@
-import { mergeIntervals, subtractIntervals } from './intervals';
+import { mergeIntervals, subtractIntervals } from './intervals.ts';
 import {
   formatLocalDate,
   parseClock,
@@ -6,8 +6,8 @@ import {
   weekday,
   zonedToUtc,
   type LocalDate,
-} from './time';
-import type { DaySchedule, Interval, WorkHours } from './types';
+} from './time.ts';
+import type { DaySchedule, Interval, WorkHours } from './types.ts';
 
 export interface DayAvailability {
   date: string;

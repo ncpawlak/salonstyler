@@ -1,4 +1,4 @@
-export * from './types';
+export * from './types.ts';
 export {
   DEFAULT_SEGMENT_LABELS,
   applyAddons,
@@ -12,12 +12,12 @@ export {
   segmentLabel,
   totalMinutes,
   validateAddonSegments,
-} from './resolve';
-export { HAIR_LENGTH_VARIANTS, STARTER_CATEGORIES, STARTER_MENU } from './starter-menu';
+} from './resolve.ts';
+export { HAIR_LENGTH_VARIANTS, STARTER_CATEGORIES, STARTER_MENU } from './starter-menu.ts';
 export type {
   StarterAddon,
   StarterCombo,
   StarterComboItem,
   StarterMenu,
   StarterService,
-} from './starter-menu';
+} from './starter-menu.ts';
