@@ -181,6 +181,7 @@ Vagaro has no one-click export to other apps, and its API needs manual approval 
 
 - Vagaro API live sync isn't worth it for a one-time move. Revisit only if salons need to run both apps side by side during a long switch.
 - Plan a 1–2 week overlap: new bookings go to SalonStyler while existing Vagaro appointments finish.
+- **Status (#15):** the clients and future-appointments importer is built (Settings → Import from Vagaro, or the Clients tab). It reads .xlsx or CSV. The AI proposes the column mapping from headers and masked samples; with no key, columns are matched by header and he confirms them. Parsing and validation are deterministic (`packages/core/src/import`). Re-imports are idempotent: clients are deduped on email, then phone; appointments on a key from the export. Vagaro service names map to his menu, or "block the time only". Overlaps aren't booked; they're listed after the import. Old .xls files, service import, and notes import are still to do.
 
 ## 9. Payments (v1 must-have, so he can actually cancel Vagaro)
 - **Stripe Connect** (Express account per salon; onboarding happens in-app via Stripe's hosted flow). Payouts go to his bank.

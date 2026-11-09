@@ -1,6 +1,26 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type Database = {
+  graphql_public: {
+    Tables: {
+      [_ in never]: never;
+    };
+    Views: {
+      [_ in never]: never;
+    };
+    Functions: {
+      graphql: {
+        Args: { extensions?: Json; operationName?: string; query?: string; variables?: Json };
+        Returns: Json;
+      };
+    };
+    Enums: {
+      [_ in never]: never;
+    };
+    CompositeTypes: {
+      [_ in never]: never;
+    };
+  };
   public: {
     Tables: {
       ai_provider_config: {
@@ -158,6 +178,7 @@ export type Database = {
           ends_at: string;
           hold_expires_at: string | null;
           id: string;
+          import_key: string | null;
           notes: string | null;
           price_cents: number | null;
           requested_at: string | null;
@@ -179,6 +200,7 @@ export type Database = {
           ends_at: string;
           hold_expires_at?: string | null;
           id?: string;
+          import_key?: string | null;
           notes?: string | null;
           price_cents?: number | null;
           requested_at?: string | null;
@@ -199,6 +221,7 @@ export type Database = {
           ends_at?: string;
           hold_expires_at?: string | null;
           id?: string;
+          import_key?: string | null;
           notes?: string | null;
           price_cents?: number | null;
           requested_at?: string | null;
@@ -892,9 +915,12 @@ export type Database = {
       };
       clients: {
         Row: {
+          birthday: string | null;
           created_at: string;
           email: string | null;
           id: string;
+          imported_last_visit_on: string | null;
+          imported_no_show_count: number;
           marketing_opt_in: boolean;
           name: string;
           notes: string | null;
@@ -907,9 +933,12 @@ export type Database = {
         };
         ComputedFields: never;
         Insert: {
+          birthday?: string | null;
           created_at?: string;
           email?: string | null;
           id?: string;
+          imported_last_visit_on?: string | null;
+          imported_no_show_count?: number;
           marketing_opt_in?: boolean;
           name: string;
           notes?: string | null;
@@ -921,9 +950,12 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          birthday?: string | null;
           created_at?: string;
           email?: string | null;
           id?: string;
+          imported_last_visit_on?: string | null;
+          imported_no_show_count?: number;
           marketing_opt_in?: boolean;
           name?: string;
           notes?: string | null;
@@ -1773,6 +1805,7 @@ export type Database = {
           ends_at: string;
           hold_expires_at: string | null;
           id: string;
+          import_key: string | null;
           notes: string | null;
           price_cents: number | null;
           requested_at: string | null;
@@ -1812,6 +1845,7 @@ export type Database = {
           ends_at: string;
           hold_expires_at: string | null;
           id: string;
+          import_key: string | null;
           notes: string | null;
           price_cents: number | null;
           requested_at: string | null;
@@ -1925,6 +1959,8 @@ export type Database = {
         }[];
       };
       get_receipt: { Args: { p_token: string }; Returns: Json };
+      import_appointments: { Args: { p_appointments: Json; p_salon_id: string }; Returns: Json };
+      import_clients: { Args: { p_clients: Json; p_salon_id: string }; Returns: Json };
       inbox_bridge_for_token: {
         Args: { p_bridge_version?: string; p_hourly_limit?: number; p_token: string };
         Returns: {
@@ -2032,6 +2068,7 @@ export type Database = {
           ends_at: string;
           hold_expires_at: string | null;
           id: string;
+          import_key: string | null;
           notes: string | null;
           price_cents: number | null;
           requested_at: string | null;
@@ -2136,6 +2173,7 @@ export type Database = {
           ends_at: string;
           hold_expires_at: string | null;
           id: string;
+          import_key: string | null;
           notes: string | null;
           price_cents: number | null;
           requested_at: string | null;
@@ -2351,6 +2389,9 @@ export type CompositeTypes<
     : never;
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       addon_placement: ['before_finish', 'end'],

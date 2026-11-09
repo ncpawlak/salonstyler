@@ -1,0 +1,12 @@
+Appointments Summary
+Business: Example Hair Studio,Date Range: 10/01/2026 - 02/28/2027
+Appointment Date,Start Time,End Time,Customer,Cell Phone,Email,Service,Service Provider,Status,Price,Appointment Notes
+10/20/2026,10:00 AM,11:00 AM,Jordan Ellis,555.201.7788,jordan.ellis@example.com,Women's Haircut,Dana,Completed,$55.00,
+12/03/2026,9:00 AM,10:30 AM,Avery Brooks,(555) 201-3344,avery.brooks@example.com,Root Touch-Up,Dana,Confirmed,$85.00,Formula on file
+12/03/2026,10:30 AM,11:15 AM,Avery Brooks,(555) 201-3344,avery.brooks@example.com,Blowout,Dana,Confirmed,$45.00,
+12/03/2026,11:00 AM,12:00 PM,Jordan Ellis,555.201.7788,jordan.ellis@example.com,Women's Haircut,Dana,Confirmed,$55.00,
+12/04/2026,2:00 PM,2:30 PM,"Ortiz, Sam",(555) 201-1200,sam.ortiz@example.net,Men's Cut,Dana,Booked,$35.00,
+12/05/2026,1:00 PM,3:00 PM,Riley Chen,555-201-4455,riley.chen@example.org,Keratin Smoothing Treatment,Dana,Confirmed,"$250.00",Bring own brush
+12/06/2026,10:00 AM,11:00 AM,Casey Nguyen,5552016622,casey.n@example.com,Blowout,Dana,Cancelled,$45.00,
+12/07/2026,9:00 AM,9:45 AM,Morgan Patel,+1 555-201-9911,,Men's Cut,Dana,No Show,$35.00,
+12/08/2026,3:00 PM,4:15 PM,Pat Example,(555) 201-7070,pat@example.com,Scalp Detox Ritual,Dana,Confirmed,$95.00,New client from referral

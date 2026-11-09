@@ -1,6 +1,8 @@
+import { type ColumnMapping, guessColumnMapping } from '@chairside/core';
 import { z } from 'zod';
 
 import { AiProviderError, redactSecrets } from '../http.ts';
+import { columnMappingPrompt, columnMappingTool, readColumnMapping } from '../import/mapping.ts';
 import { type AiProvider, aiProviderSchema } from '../providers.ts';
 import { createProvider as defaultCreateProvider } from '../registry.ts';
 import type { ChatMessage, ChatResult, ToolDefinition } from '../types.ts';
@@ -67,6 +69,14 @@ export const aiRequestSchema = z.discriminatedUnion('action', [
       .regex(/^[a-z][a-z0-9_.-]{0,39}$/)
       .optional(),
   }),
+  z.object({
+    action: z.literal('map_columns'),
+    salonId: z.uuid(),
+    kind: z.enum(['clients', 'appointments']),
+    headers: z.array(z.string().max(120)).min(1).max(100),
+    /** Redacted sample values per column (see `redactedColumnSamples` in @chairside/core). */
+    samples: z.array(z.array(z.string().max(60)).max(5)).max(100),
+  }),
 ]);
 export type AiRequest = z.infer<typeof aiRequestSchema>;
 
@@ -96,6 +106,11 @@ export interface AiServiceDeps {
   recordUsage(entry: UsageEntry): Promise<void>;
   createProvider?: typeof defaultCreateProvider;
   now?: () => number;
+  /**
+   * Local development only (CHAIRSIDE_AI_DEMO): `map_columns` answers with the deterministic
+   * header guess instead of calling a model. Never set in production.
+   */
+  demoMapping?: boolean;
 }
 
 export type AiErrorBody = { error: { code: string; message: string } };
@@ -105,9 +120,13 @@ export type AiChatResponse = {
   result: ChatResult;
   usage: { usedThisMonth: number; monthlyTokenBudget: number };
 };
+export type AiMapColumnsResponse = {
+  mapping: ColumnMapping;
+  source: 'ai' | 'demo';
+};
 
 export type AiServiceResult =
-  | { status: 200; body: AiTestResponse | AiChatResponse }
+  | { status: 200; body: AiTestResponse | AiChatResponse | AiMapColumnsResponse }
   | { status: 400 | 401 | 403 | 409 | 429 | 500 | 502; body: AiErrorBody };
 
 const fail = (
@@ -178,6 +197,12 @@ export async function handleAiRequest(
   }
 
   const config = await deps.loadConfig(request.salonId);
+  if (request.action === 'map_columns' && deps.demoMapping) {
+    return {
+      status: 200,
+      body: { mapping: guessColumnMapping(request.kind, request.headers), source: 'demo' },
+    };
+  }
   if (!config) {
     return fail(
       409,
@@ -192,6 +217,24 @@ export async function handleAiRequest(
 
   try {
     const llm = create(config.provider, { apiKey: config.apiKey, model: config.model });
+    if (request.action === 'map_columns') {
+      const result = await llm.chat(
+        columnMappingPrompt(request.kind, request.headers, request.samples),
+        [columnMappingTool(request.kind)],
+        { maxOutputTokens: 1024, temperature: 0 },
+      );
+      await deps.recordUsage({
+        salonId: request.salonId,
+        provider: config.provider,
+        model: result.model,
+        purpose: 'import_mapping',
+        inputTokens: result.usage.inputTokens,
+        outputTokens: result.usage.outputTokens,
+      });
+      const mapping = readColumnMapping(request.kind, request.headers, result);
+      if (!mapping) return fail(502, 'provider_bad_response', 'The model did not return a mapping');
+      return { status: 200, body: { mapping, source: 'ai' } };
+    }
     const result = await llm.chat(
       request.messages as ChatMessage[],
       (request.tools ?? []) as ToolDefinition[],

@@ -117,6 +117,7 @@ export function appointment(
     created_at: '2026-11-01T00:00:00Z',
     created_by: null,
     updated_at: '2026-11-01T00:00:00Z',
+    import_key: null,
     ...overrides,
   };
 }

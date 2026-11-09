@@ -107,6 +107,12 @@ export default function SettingsScreen() {
             subtitle="Stripe account, card payments and payouts"
             leading={<Icon name="card-outline" color="primary" />}
             onPress={() => router.push('/settings/payments')}
+          />
+          <ListRow
+            title="Import from Vagaro"
+            subtitle="Clients and upcoming appointments from a spreadsheet"
+            leading={<Icon name="cloud-download-outline" color="primary" />}
+            onPress={() => router.push('/import')}
             last
           />
         </ListGroup>

@@ -1,4 +1,10 @@
-import type { AiChatResponse, AiErrorBody, AiRequest, AiTestResponse } from '@chairside/ai';
+import type {
+  AiChatResponse,
+  AiErrorBody,
+  AiMapColumnsResponse,
+  AiRequest,
+  AiTestResponse,
+} from '@chairside/ai';
 import type { ChairsideClient } from '@chairside/db';
 
 export class AiRequestError extends Error {
@@ -35,9 +41,15 @@ export async function invokeAi(
 ): Promise<AiChatResponse>;
 export async function invokeAi(
   supabase: ChairsideClient,
+  request: Extract<AiRequest, { action: 'map_columns' }>,
+): Promise<AiMapColumnsResponse>;
+export async function invokeAi(
+  supabase: ChairsideClient,
   request: AiRequest,
-): Promise<AiTestResponse | AiChatResponse> {
-  const { data, error } = await supabase.functions.invoke<AiTestResponse | AiChatResponse>('ai', {
+): Promise<AiTestResponse | AiChatResponse | AiMapColumnsResponse> {
+  const { data, error } = await supabase.functions.invoke<
+    AiTestResponse | AiChatResponse | AiMapColumnsResponse
+  >('ai', {
     body: request,
   });
   if (error) throw await readError(error);

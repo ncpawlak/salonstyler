@@ -20,7 +20,7 @@ Stylists get texts like *"can I get a balayage + trim next Friday afternoon?"* a
 - 📲 **Agentic Inbox:** iOS Shortcut bridge, push approvals, editable replies, 1-day follow-up nudges (adjustable), auto-reply toggle.
 - 🌐 **Public booking page:** clients self-book, get confirmations and reminders, and can cancel.
 - 💳 **Payments:** Tap to Pay on iPhone checkout after the service (Stripe), plus optional deposits.
-- 📥 **Import from Vagaro:** clients, services, and upcoming appointments.
+- 📥 **Import from Vagaro:** clients and upcoming appointments from Excel/CSV exports, with AI column mapping, a preview, and no duplicates on re-import (services next).
 - 🧴 **Inventory:** products, barcode scanning, low-stock alerts, per-service product usage.
 - ⏱️ **Processing timers** on the lock screen / Dynamic Island, plus home-screen widgets.
 - 🏃 **Running late?** One tap or "I'm 15 late" and Chairside drafts texts to every affected client.

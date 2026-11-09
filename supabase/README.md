@@ -85,7 +85,7 @@ RPCs:
 - `ai_tokens_used_this_month(p_salon_id)`: members; calendar month in the salon's timezone.
 - `get_ai_provider_secret(p_salon_id)`: **service role only** (the Edge Function). Returns the decrypted key.
 
-All LLM calls go through the `ai` Edge Function (`functions/ai`), which verifies the user's JWT, checks membership, enforces the monthly budget, loads the key server-side, calls the provider via `@chairside/ai`, and records usage. Provider errors are returned with the key redacted. Actions: `test` (owner; tests the saved key, or a pasted key before saving) and `chat` (any member).
+All LLM calls go through the `ai` Edge Function (`functions/ai`), which verifies the user's JWT, checks membership, enforces the monthly budget, loads the key server-side, calls the provider via `@chairside/ai`, and records usage. Provider errors are returned with the key redacted. Actions: `test` (owner; tests the saved key, or a pasted key before saving), `chat` (any member) and `map_columns` (any member; see Import from Vagaro below).
 
 ```bash
 npx supabase functions serve ai   # local; uses the local stack's URL and keys automatically
@@ -161,6 +161,22 @@ In the app the editor opens after Approve, Decline or Cancel appointment in the 
 **Auto-send** (`settings.auto_send_replies`, off by default, owner opt-in in Settings → Client replies) needs the text bridge. It is separate from the bridge's auto-reply above, which only acknowledges. When a texted request is approved, the `captured_requests_queue_auto_reply` trigger queues a `bridge` reply (`confirm`, or `cancelled` for an approved cancel). The next `inbox` call from a v3+ Shortcut (a new text, or `{"action":"outbox"}` from an optional second automation) claims up to 10 queued replies, drafts them (`purpose = 'auto_reply'`, template fallback) and returns them in `replies`; the Shortcut sends each with **Send Message**. Older Shortcuts (`bridgeVersion` < 3, see `OUTBOX_BRIDGE_VERSION`) get no `replies`, so nothing is marked sent that they would drop. Handing a reply to the Shortcut marks it sent (at most once). Stale claims are retried after 2 minutes.
 
 **"Yes" to an offer:** if a known number replies affirmatively (`"<keyword> yes"`, "sounds good", 👍 …) within 7 days of an offer for a still-held slot, `inbox` confirms that appointment instead of capturing a new request (`status: "confirmed"`). This works with auto-send off, since the stylist made the offer.
+
+## Import from Vagaro (#15)
+
+The Settings → Import from Vagaro wizard (`apps/mobile/src/app/import`) reads a Vagaro **Customers** or **Appointments Summary** export (.xlsx or CSV) on the device. The only AI step is the column mapping: the `ai` function's `map_columns` action gets the headers plus 3 **masked** samples per column (`redactSample`) and returns `{ mapping, source }`. Masking keeps an email's domain only and replaces digits with `#` and most letters with `x`. `sanitizeColumnMapping` drops unknown fields and out-of-range or duplicate columns. Usage is metered as `purpose = 'import_mapping'`. If there's no key (`409 not_configured`), the budget is spent, or the provider fails, the app falls back to `guessColumnMapping` (header synonyms) and the owner confirms or fixes every column. Parsing and validation (names, phones, dates, Excel serials, durations, prices, cancelled/past rows) are deterministic code in `packages/core/src/import`.
+
+| Object | Purpose |
+|---|---|
+| `clients.birthday`, `imported_last_visit_on`, `imported_no_show_count` | Vagaro history. `client_summaries` uses the imported last visit and no-shows until real visits exist. |
+| `appointments.import_key` | Unique per salon (partial index). Makes appointment imports idempotent. |
+| `private.phone_key(text)` | Last 10 digits; indexed on `clients` for phone dedupe. |
+
+RPCs (members; `security definer`, salon membership checked):
+- `import_clients(p_salon_id, p_clients jsonb)` (≤500 per call): matches by email, then phone, then exact name when neither is given. Creates missing clients; for existing ones it only **fills empty fields** and adds tags (notes are appended once). Per row it returns `created | updated | unchanged | invalid` with the `clientId`.
+- `import_appointments(p_salon_id, p_appointments jsonb)` (≤200 per call): books each one through `book_appointment` as `confirmed`, `source = 'import'`, on the caller's calendar. Per row it returns `booked | duplicate` (same `import_key`) `| past | conflict | invalid`. A conflict (the busy-time exclusion constraint) isn't booked; it reports the clashing appointment's id, start and client name so the app can list it. Writes one `audit_log` row per call.
+
+Local check without a key: serve `ai` with `CHAIRSIDE_AI_DEMO=1` (same env file as above). `map_columns` then returns the header-synonym mapping with `source: "demo"`. Sample exports are in `packages/core/src/import/fixtures`.
 
 ## Payments (Stripe Connect)
 
