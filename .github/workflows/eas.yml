@@ -1,0 +1,151 @@
+name: EAS
+
+# Native builds and OTA updates for the iOS app (apps/mobile). See docs/release.md.
+# - Pull requests that touch native config: validate it (Expo config per variant, iOS prebuild,
+#   expo-doctor). No Expo account needed.
+# - Manual run (Actions → EAS → Run workflow): build a profile, or publish an OTA update.
+# - Tag `v*` (e.g. v0.1.0): production build, auto-submitted to TestFlight.
+# Builds and updates skip cleanly (green, with a notice) until the EXPO_TOKEN repo secret exists.
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: Build a binary, or publish an OTA update to the profile's channel
+        type: choice
+        options: [build, update]
+        default: build
+      profile:
+        description: EAS profile (eas.json) / update channel
+        type: choice
+        options: [preview, production, development]
+        default: preview
+      submit:
+        description: Production builds only, submit to TestFlight when done
+        type: boolean
+        default: true
+      message:
+        description: Update message (OTA updates only)
+        type: string
+        default: ''
+  push:
+    tags: ['v*']
+  pull_request:
+    paths:
+      - apps/mobile/app.json
+      - apps/mobile/app.config.ts
+      - apps/mobile/eas.json
+      - apps/mobile/metro.config.js
+      - apps/mobile/index.ts
+      - apps/mobile/package.json
+      - apps/mobile/assets/**
+      - package-lock.json
+      - .github/workflows/eas.yml
+
+concurrency:
+  group: eas-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+defaults:
+  run:
+    working-directory: apps/mobile
+
+jobs:
+  validate:
+    name: Validate native config
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+        working-directory: .
+      - name: expo-doctor
+        run: npx expo-doctor
+      - name: Resolve config and prebuild iOS for each variant
+        env:
+          # Dummy, non-secret values so the optional features are exercised too.
+          EAS_PROJECT_ID: 00000000-0000-0000-0000-000000000000
+          EXPO_PUBLIC_WEB_URL: https://book.example.com
+        run: |
+          set -euo pipefail
+          for variant in development preview production; do
+            echo "::group::$variant"
+            export APP_VARIANT=$variant
+            npx expo config --type public --json > /tmp/config.json
+            node -e '
+              const c = require("/tmp/config.json");
+              console.log(c.name, c.ios.bundleIdentifier, c.version, JSON.stringify(c.runtimeVersion));
+              if (!c.ios.bundleIdentifier) throw new Error("missing ios.bundleIdentifier");
+              if (!c.updates?.url) throw new Error("EAS Update URL missing");
+            '
+            npx expo prebuild --platform ios --no-install --clean
+            ent=$(find ios -name '*.entitlements' | head -1)
+            plist=$(find ios -path '*/Info.plist' -not -path '*/Pods/*' | head -1)
+            expected_aps=production; [ "$variant" = development ] && expected_aps=development
+            grep -A1 'aps-environment' "$ent" | grep -q "$expected_aps"
+            grep -q 'applinks:book.example.com' "$ent"
+            grep -q 'com.apple.developer.applesignin' "$ent"
+            grep -A1 'ITSAppUsesNonExemptEncryption' "$plist" | grep -q '<false/>'
+            grep -q 'NSCameraUsageDescription' "$plist"
+            grep -q 'NSPhotoLibraryUsageDescription' "$plist"
+            grep -q 'u.expo.dev/00000000-0000-0000-0000-000000000000' ios/*/Supporting/Expo.plist
+            echo "::endgroup::"
+          done
+
+  eas:
+    name: EAS ${{ github.event_name == 'push' && 'production build' || format('{0} {1}', inputs.action, inputs.profile) }}
+    if: github.event_name != 'pull_request'
+    needs: validate
+    runs-on: ubuntu-latest
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      ACTION: ${{ github.event_name == 'push' && 'build' || inputs.action }}
+      PROFILE: ${{ github.event_name == 'push' && 'production' || inputs.profile }}
+      SUBMIT: ${{ github.event_name == 'push' || inputs.submit }}
+      MESSAGE: ${{ inputs.message }}
+    steps:
+      - name: Check for EXPO_TOKEN
+        id: token
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "::notice title=EAS skipped::EXPO_TOKEN secret is not set, so nothing was built. See docs/release.md (one-time setup)."
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          fi
+        working-directory: .
+      - uses: actions/checkout@v4
+        if: steps.token.outputs.present == 'true'
+      - uses: actions/setup-node@v4
+        if: steps.token.outputs.present == 'true'
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+        if: steps.token.outputs.present == 'true'
+        working-directory: .
+      - uses: expo/expo-github-action@v8
+        if: steps.token.outputs.present == 'true'
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - name: Check the EAS project is linked
+        if: steps.token.outputs.present == 'true'
+        run: |
+          node -e 'if (!require("./app.json").expo.extra?.eas?.projectId) { console.error("::error::app.json has no expo.extra.eas.projectId. Run `npx eas-cli@latest init` in apps/mobile and commit it (docs/release.md)."); process.exit(1); }'
+      - name: Build
+        if: steps.token.outputs.present == 'true' && env.ACTION == 'build'
+        run: |
+          args=(--platform ios --profile "$PROFILE" --non-interactive --no-wait)
+          if [ "$PROFILE" = production ] && [ "$SUBMIT" = true ]; then args+=(--auto-submit); fi
+          eas build "${args[@]}"
+      - name: Publish OTA update
+        if: steps.token.outputs.present == 'true' && env.ACTION == 'update'
+        env:
+          APP_VARIANT: ${{ inputs.profile }}
+        run: |
+          eas update --platform ios --channel "$PROFILE" --environment "$PROFILE" \
+            --message "${MESSAGE:-$(git log -1 --pretty=%s)}" --non-interactive

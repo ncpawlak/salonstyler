@@ -74,6 +74,8 @@ CI (`.github/workflows/ci.yml`) runs typecheck, lint, format check, and tests on
 
 **Running the app against local Supabase:** copy `apps/mobile/.env.example` to `apps/mobile/.env` and paste the API URL plus the publishable (anon) key from `npx supabase status`. Then run `npm run dev`. To sign in, enter any email and read the 6-digit code from Mailpit at <http://127.0.0.1:54324>. On first sign-in you create a salon (name, booking link, timezone) and land on home. In code, `useSession()` / `useCurrentSalon()` (`apps/mobile/src/providers/session-provider.tsx`) give you the signed-in user and the current `salon_id`. Sign in with Apple appears only in iOS builds. It needs the Apple capability and the Supabase Apple provider, configured as described in [`supabase/docs/sign-in-with-apple.md`](supabase/docs/sign-in-with-apple.md).
 
+**Shipping to an iPhone:** EAS Build profiles, TestFlight and OTA updates are in [`docs/release.md`](docs/release.md); the pilot and Vagaro cutover runbook is [`docs/pilot-cutover.md`](docs/pilot-cutover.md).
+
 ## Roadmap
 Work is tracked as GitHub issues, one per feature, each landing as its own PR. Phases:
 0 Foundation → 1 Services + Calendar → 2 Agentic Inbox → 3 Payments → 4 Public booking → 5 Vagaro import + Clients → 6 TestFlight pilot → 7 Inventory → 8 SaaS launch → v2.

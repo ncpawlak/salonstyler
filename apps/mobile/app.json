@@ -7,13 +7,21 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "ios": {
-      "supportsTablet": true,
-      "usesAppleSignIn": true
+      "bundleIdentifier": "com.chairside.app",
+      "supportsTablet": false,
+      "usesAppleSignIn": true,
+      "config": {
+        "usesNonExemptEncryption": false
+      }
     },
     "android": {
+      "package": "com.chairside.app",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#4F46E5",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -29,12 +37,25 @@
       "expo-router",
       "expo-localization",
       "expo-apple-authentication",
-      "expo-notifications",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 160,
+          "resizeMode": "contain",
+          "backgroundColor": "#F7F7F5",
+          "dark": {
+            "image": "./assets/splash-icon-dark.png",
+            "backgroundColor": "#0A0A0B"
+          }
+        }
+      ],
       [
         "expo-image-picker",
         {
           "photosPermission": "Chairside saves before and after photos to your clients' profiles.",
-          "cameraPermission": "Chairside takes before and after photos for your clients' profiles."
+          "cameraPermission": "Chairside takes before and after photos for your clients' profiles.",
+          "microphonePermission": false
         }
       ]
     ],

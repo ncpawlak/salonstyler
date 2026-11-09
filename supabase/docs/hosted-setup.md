@@ -9,3 +9,5 @@
 7. Put the project URL + anon/publishable key in the app's `.env` (`EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`). Never ship the service role key.
 8. Deploy the AI gateway: `npx supabase functions deploy ai` (see [AI providers](ai-providers.md)). Vault is enabled by the migration.
 9. Payments: deploy `payments` and `stripe-webhook` and set the Stripe secrets (see [Payments](payments.md)).
+
+For the full pilot order (extensions, function deploys, Vault secrets, backups, TestFlight), see [docs/pilot-cutover.md](../../docs/pilot-cutover.md#3-hosted-supabase-checklist-manual).
