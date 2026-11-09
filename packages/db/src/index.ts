@@ -10,6 +10,7 @@ export type { Database, Json } from './database.types';
 export type { Session, User } from '@supabase/supabase-js';
 export * from './services';
 export * from './appointments';
+export * from './notifications';
 
 type PublicSchema = Database['public'];
 

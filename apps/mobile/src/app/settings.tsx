@@ -79,6 +79,12 @@ export default function SettingsScreen() {
             onPress={() => router.push('/services')}
           />
           <ListRow
+            title="Notifications"
+            subtitle="Request reminders, quiet hours and daily agenda"
+            leading={<Icon name="notifications-outline" color="primary" />}
+            onPress={() => router.push('/settings/notifications')}
+          />
+          <ListRow
             title="AI assistant"
             subtitle="Provider, API key and monthly budget"
             leading={<Icon name="sparkles-outline" color="primary" />}

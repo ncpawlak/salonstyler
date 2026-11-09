@@ -443,3 +443,8 @@ verify_jwt = true
 # Stripe calls this without a JWT; requests are authenticated by the Stripe-Signature header.
 [functions.stripe-webhook]
 verify_jwt = false
+
+# Called by pg_cron via pg_net with the x-notifier-secret header, not a user JWT.
+[functions.notifier]
+verify_jwt = false
+
