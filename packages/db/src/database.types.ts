@@ -448,6 +448,8 @@ export type Database = {
           id: string;
           method: Database['public']['Enums']['checkout_method'] | null;
           paid_at: string | null;
+          rebook_appointment_id: string | null;
+          rebook_declined_at: string | null;
           receipt_token: string;
           salon_id: string;
           status: Database['public']['Enums']['checkout_status'];
@@ -470,6 +472,8 @@ export type Database = {
           id?: string;
           method?: Database['public']['Enums']['checkout_method'] | null;
           paid_at?: string | null;
+          rebook_appointment_id?: string | null;
+          rebook_declined_at?: string | null;
           receipt_token?: string;
           salon_id: string;
           status?: Database['public']['Enums']['checkout_status'];
@@ -491,6 +495,8 @@ export type Database = {
           id?: string;
           method?: Database['public']['Enums']['checkout_method'] | null;
           paid_at?: string | null;
+          rebook_appointment_id?: string | null;
+          rebook_declined_at?: string | null;
           receipt_token?: string;
           salon_id?: string;
           status?: Database['public']['Enums']['checkout_status'];
@@ -519,6 +525,13 @@ export type Database = {
             columns: ['salon_id', 'client_id'];
             isOneToOne: false;
             referencedRelation: 'clients';
+            referencedColumns: ['salon_id', 'id'];
+          },
+          {
+            foreignKeyName: 'checkouts_rebook_appointment_fkey';
+            columns: ['salon_id', 'rebook_appointment_id'];
+            isOneToOne: false;
+            referencedRelation: 'appointments';
             referencedColumns: ['salon_id', 'id'];
           },
           {
@@ -1482,6 +1495,7 @@ export type Database = {
           new_clients_only: boolean;
           position: number;
           price_cents: number | null;
+          rebook_interval_days: number | null;
           salon_id: string;
           updated_at: string;
         };
@@ -1502,6 +1516,7 @@ export type Database = {
           new_clients_only?: boolean;
           position?: number;
           price_cents?: number | null;
+          rebook_interval_days?: number | null;
           salon_id: string;
           updated_at?: string;
         };
@@ -1521,6 +1536,7 @@ export type Database = {
           new_clients_only?: boolean;
           position?: number;
           price_cents?: number | null;
+          rebook_interval_days?: number | null;
           salon_id?: string;
           updated_at?: string;
         };
@@ -1910,6 +1926,8 @@ export type Database = {
           id: string;
           method: Database['public']['Enums']['checkout_method'] | null;
           paid_at: string | null;
+          rebook_appointment_id: string | null;
+          rebook_declined_at: string | null;
           receipt_token: string;
           salon_id: string;
           status: Database['public']['Enums']['checkout_status'];
@@ -1988,6 +2006,8 @@ export type Database = {
           id: string;
           method: Database['public']['Enums']['checkout_method'] | null;
           paid_at: string | null;
+          rebook_appointment_id: string | null;
+          rebook_declined_at: string | null;
           receipt_token: string;
           salon_id: string;
           status: Database['public']['Enums']['checkout_status'];
@@ -2006,6 +2026,43 @@ export type Database = {
       payout_summary: { Args: { p_day?: string; p_salon_id: string }; Returns: Json };
       public_booking_page: { Args: { p_slug: string }; Returns: Json };
       public_client_bookings: { Args: { p_salon_id: string; p_user_id: string }; Returns: Json };
+      rebook_from_checkout: {
+        Args: {
+          p_checkout_id: string;
+          p_price_cents?: number;
+          p_segments: Json;
+          p_services?: Json;
+          p_status?: Database['public']['Enums']['appointment_status'];
+        };
+        Returns: {
+          cancel_reason: string | null;
+          cancelled_at: string | null;
+          client_id: string | null;
+          created_at: string;
+          created_by: string | null;
+          ends_at: string;
+          hold_expires_at: string | null;
+          id: string;
+          import_key: string | null;
+          notes: string | null;
+          price_cents: number | null;
+          requested_at: string | null;
+          salon_id: string;
+          services: NonNullable<Json>;
+          source: Database['public']['Enums']['appointment_source'];
+          starts_at: string;
+          status: Database['public']['Enums']['appointment_status'];
+          stylist_id: string;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'appointments';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      rebook_stats: { Args: { p_from?: string; p_salon_id: string; p_to?: string }; Returns: Json };
       record_client_reply: {
         Args: { p_reply: Json; p_salon_id: string };
         Returns: {
@@ -2194,6 +2251,38 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      skip_rebook: {
+        Args: { p_checkout_id: string };
+        Returns: {
+          amount_due_cents: number;
+          appointment_id: string | null;
+          card_brand: string | null;
+          card_last4: string | null;
+          client_id: string | null;
+          created_at: string;
+          created_by: string | null;
+          currency: string;
+          deposit_cents: number;
+          id: string;
+          method: Database['public']['Enums']['checkout_method'] | null;
+          paid_at: string | null;
+          rebook_appointment_id: string | null;
+          rebook_declined_at: string | null;
+          receipt_token: string;
+          salon_id: string;
+          status: Database['public']['Enums']['checkout_status'];
+          stripe_payment_intent_id: string | null;
+          subtotal_cents: number;
+          tip_cents: number;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'checkouts';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       start_checkout: {
         Args: { p_appointment_id: string };
         Returns: {
@@ -2209,6 +2298,8 @@ export type Database = {
           id: string;
           method: Database['public']['Enums']['checkout_method'] | null;
           paid_at: string | null;
+          rebook_appointment_id: string | null;
+          rebook_declined_at: string | null;
           receipt_token: string;
           salon_id: string;
           status: Database['public']['Enums']['checkout_status'];
@@ -2239,6 +2330,8 @@ export type Database = {
           id: string;
           method: Database['public']['Enums']['checkout_method'] | null;
           paid_at: string | null;
+          rebook_appointment_id: string | null;
+          rebook_declined_at: string | null;
           receipt_token: string;
           salon_id: string;
           status: Database['public']['Enums']['checkout_status'];

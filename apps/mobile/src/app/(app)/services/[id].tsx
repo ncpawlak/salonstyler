@@ -23,6 +23,7 @@ import {
   SkeletonRow,
   Text,
 } from '@/components/ui';
+import { RebookIntervalField } from '@/features/rebook/interval-field';
 import { COLOR_HEX } from '@/features/services/colors';
 import { useSaveService, useServiceMenu } from '@/features/services/data';
 import { SegmentTimeline } from '@/features/services/timeline';
@@ -336,6 +337,8 @@ function ServiceEditor({ existing, canEdit }: { existing?: MenuService; canEdit:
         placeholder="Leave blank if it varies"
         editable={canEdit}
       />
+
+      {existing ? <RebookIntervalField service={existing} canEdit={canEdit} /> : null}
 
       <SectionHeader title="Options" />
       <Card className="gap-1">

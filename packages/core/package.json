@@ -13,6 +13,7 @@
     "./availability": "./src/availability/index.ts",
     "./hours": "./src/hours/index.ts",
     "./import": "./src/import/index.ts",
+    "./rebook": "./src/rebook/index.ts",
     "./services": "./src/services/index.ts",
     "./utilization": "./src/utilization/index.ts"
   },

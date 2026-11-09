@@ -40,6 +40,7 @@ import {
   useSaveCheckout,
 } from '@/features/checkout/api';
 import { CardReaderProvider, useCardReader } from '@/features/checkout/terminal';
+import { RebookSection } from '@/features/rebook/rebook-card';
 import { haptics } from '@/lib/haptics';
 import { supabase } from '@/lib/supabase';
 import { useCurrentSalon } from '@/providers/session-provider';
@@ -537,6 +538,8 @@ function Paid({ checkout }: { checkout: CheckoutWithItems }) {
           last
         />
       </ListGroup>
+
+      <RebookSection checkout={checkout} client={client.data} />
 
       <Button
         className="mt-6"
