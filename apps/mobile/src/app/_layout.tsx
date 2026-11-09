@@ -10,13 +10,19 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AskChairsideButton } from '@/components/shell/ask-chairside';
+import { usePushNotifications } from '@/features/notifications/api';
+import { installNotificationResponseHandler } from '@/features/notifications/push';
 import { createQueryClient } from '@/lib/query-client';
 import { SessionProvider, useSession } from '@/providers/session-provider';
 import { ThemeProvider, useTheme } from '@/theme/theme-provider';
 
+// At module scope so Approve/Decline tapped on the lock screen are handled even before React mounts.
+installNotificationResponseHandler();
+
 function RootNavigator() {
   const { isLoading, session, salon } = useSession();
   const { colors } = useTheme();
+  usePushNotifications(session && salon ? salon.id : null);
 
   if (isLoading) {
     return (
@@ -47,6 +53,8 @@ function RootNavigator() {
           <Stack.Screen name="settings" />
           <Stack.Screen name="settings/ai" />
           <Stack.Screen name="settings/payments" />
+          <Stack.Screen name="settings/notifications" />
+          <Stack.Screen name="requests/[id]" options={{ presentation: 'modal' }} />
           <Stack.Screen name="hours/index" />
           <Stack.Screen name="services/index" />
           <Stack.Screen name="services/[id]" />

@@ -13,6 +13,7 @@ import {
 } from 'react';
 import { Platform } from 'react-native';
 
+import { unregisterThisDevice } from '@/features/notifications/push';
 import { createSessionFromUrl } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 
@@ -89,6 +90,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, [salonsQuery]);
 
   const signOut = useCallback(async () => {
+    // Stop pushes to this device while the session can still delete its token.
+    await unregisterThisDevice();
     await supabase.auth.signOut();
     await AsyncStorage.removeItem(CURRENT_SALON_KEY);
     setStoredSalonId(null);

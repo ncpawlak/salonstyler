@@ -12,6 +12,8 @@ await createSalon(supabase, { name: 'Karina Hair', slug: 'karina-hair', timezone
 
 Work hours: `getWorkHours(client, salonId)` loads the template, overrides and booking rules; pass the rows plus the salon `timezone` to `buildWorkHours({ timeZone, template, overrides })` from `@chairside/core/hours` to get the engine's `WorkHours`. Save with `saveWorkHoursTemplate`, `upsertWorkHoursOverride`, `deleteWorkHoursOverride` and `updateBookingRules`.
 
+Notifications: `getNotificationSettings` / `updateNotificationSettings` (nudge delay, hold expiry, quiet hours, daily agenda), `registerPushToken` on sign-in and `unregisterPushToken` before sign-out, and `getAppointment` for a request opened from a push. See "Push notifications" in `../../supabase/README.md`.
+
 | Script | What it does |
 |---|---|
 | `npm run gen:types` | Regenerates `src/database.types.ts` from the local DB (`npx supabase start` first). Run after every migration and commit the result. |
