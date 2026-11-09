@@ -1,15 +1,10 @@
-import {
-  listServiceMenu,
-  saveService,
-  type MenuService,
-  type SaveServiceInput,
-  type ServiceMenu,
-} from '@chairside/db';
-import { resolveCombo, type ResolvedService } from '@chairside/core';
+import { listServiceMenu, saveService, type SaveServiceInput } from '@chairside/db';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { supabase } from '@/lib/supabase';
 import { useCurrentSalon } from '@/providers/session-provider';
+
+export { resolveMenuCombo } from './menu';
 
 const menuKey = (salonId: string) => ['service-menu', salonId] as const;
 
@@ -30,22 +25,6 @@ export function useSaveService() {
     mutationFn: (service: SaveServiceInput) => saveService(supabase, salon.id, service),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: menuKey(salon.id) }),
   });
-}
-
-/** Resolves a saved combo against the menu's services. */
-export function resolveMenuCombo(
-  menu: ServiceMenu,
-  combo: ServiceMenu['combos'][number],
-): ResolvedService {
-  const byId = new Map<string, MenuService>(menu.services.map((s) => [s.id, s]));
-  return resolveCombo(
-    combo.items.map((i) => {
-      const service = byId.get(i.serviceId);
-      if (!service) throw new Error('Combo references a missing service');
-      return { service, replacesPreviousFinish: i.replacesPreviousFinish };
-    }),
-    { priceCents: combo.priceCents },
-  );
 }
 
 export function formatPrice(cents: number | null): string {

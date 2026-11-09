@@ -21,6 +21,8 @@ export interface BookingRulesState {
   minNoticeMinutes: number;
   bookingWindowDays: number;
   slotGridMinutes: number;
+  /** How long a held slot stays reserved before it is released automatically. */
+  holdExpiryHours: number;
 }
 
 /** Saved state for one salon, as the editor starts from it. */
@@ -45,6 +47,7 @@ async function loadWorkHours(salonId: string): Promise<SavedWorkHours> {
       minNoticeMinutes: data.bookingRules.min_notice_minutes,
       bookingWindowDays: data.bookingRules.booking_window_days,
       slotGridMinutes: data.bookingRules.slot_grid_minutes,
+      holdExpiryHours: data.bookingRules.hold_expiry_hours,
     },
     overrideRows: data.overrides,
   };
@@ -96,6 +99,7 @@ export function useSaveWorkHours(salonId: string) {
         min_notice_minutes: rules.minNoticeMinutes,
         booking_window_days: rules.bookingWindowDays,
         slot_grid_minutes: rules.slotGridMinutes,
+        hold_expiry_hours: rules.holdExpiryHours,
       });
     },
     // Only reload on success: after a failure the edits stay on screen and Save can be retried

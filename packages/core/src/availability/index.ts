@@ -21,4 +21,5 @@ export {
 } from './segments';
 export type { TimedSegment } from './segments';
 export { mergeIntervals, subtractIntervals } from './intervals';
-export { zonedToUtc, zonedParts } from './time';
+export { addDays, formatLocalDate, parseLocalDate, zonedParts, zonedToUtc } from './time';
+export type { LocalDate } from './time';
