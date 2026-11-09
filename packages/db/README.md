@@ -10,6 +10,8 @@ const salons = await listMySalons(supabase); // [] => first run: show "Create yo
 await createSalon(supabase, { name: 'Karina Hair', slug: 'karina-hair', timezone: 'America/Chicago' });
 ```
 
+Work hours: `getWorkHours(client, salonId)` loads the template, overrides and booking rules; pass the rows plus the salon `timezone` to `buildWorkHours({ timeZone, template, overrides })` from `@chairside/core/hours` to get the engine's `WorkHours`. Save with `saveWorkHoursTemplate`, `upsertWorkHoursOverride`, `deleteWorkHoursOverride` and `updateBookingRules`.
+
 | Script | What it does |
 |---|---|
 | `npm run gen:types` | Regenerates `src/database.types.ts` from the local DB (`npx supabase start` first). Run after every migration and commit the result. |

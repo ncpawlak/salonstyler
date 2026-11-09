@@ -153,8 +153,10 @@ export type Database = {
           currency: string;
           followup_nudge_hours: number;
           hold_expiry_hours: number;
+          min_notice_minutes: number;
           preferences: NonNullable<Json>;
           salon_id: string;
+          slot_grid_minutes: number;
           updated_at: string;
         };
         ComputedFields: never;
@@ -165,8 +167,10 @@ export type Database = {
           currency?: string;
           followup_nudge_hours?: number;
           hold_expiry_hours?: number;
+          min_notice_minutes?: number;
           preferences?: NonNullable<Json>;
           salon_id: string;
+          slot_grid_minutes?: number;
           updated_at?: string;
         };
         Update: {
@@ -176,8 +180,10 @@ export type Database = {
           currency?: string;
           followup_nudge_hours?: number;
           hold_expiry_hours?: number;
+          min_notice_minutes?: number;
           preferences?: NonNullable<Json>;
           salon_id?: string;
+          slot_grid_minutes?: number;
           updated_at?: string;
         };
         Relationships: [
@@ -185,6 +191,90 @@ export type Database = {
             foreignKeyName: 'settings_salon_id_fkey';
             columns: ['salon_id'];
             isOneToOne: true;
+            referencedRelation: 'salons';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      work_hours_override: {
+        Row: {
+          blocks: NonNullable<Json>;
+          breaks: NonNullable<Json>;
+          created_at: string;
+          end_date: string;
+          id: string;
+          kind: Database['public']['Enums']['work_hours_override_kind'];
+          note: string | null;
+          salon_id: string;
+          start_date: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          blocks?: NonNullable<Json>;
+          breaks?: NonNullable<Json>;
+          created_at?: string;
+          end_date: string;
+          id?: string;
+          kind?: Database['public']['Enums']['work_hours_override_kind'];
+          note?: string | null;
+          salon_id: string;
+          start_date: string;
+          updated_at?: string;
+        };
+        Update: {
+          blocks?: NonNullable<Json>;
+          breaks?: NonNullable<Json>;
+          created_at?: string;
+          end_date?: string;
+          id?: string;
+          kind?: Database['public']['Enums']['work_hours_override_kind'];
+          note?: string | null;
+          salon_id?: string;
+          start_date?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'work_hours_override_salon_id_fkey';
+            columns: ['salon_id'];
+            isOneToOne: false;
+            referencedRelation: 'salons';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      work_hours_template: {
+        Row: {
+          blocks: NonNullable<Json>;
+          breaks: NonNullable<Json>;
+          created_at: string;
+          salon_id: string;
+          updated_at: string;
+          weekday: number;
+        };
+        ComputedFields: never;
+        Insert: {
+          blocks?: NonNullable<Json>;
+          breaks?: NonNullable<Json>;
+          created_at?: string;
+          salon_id: string;
+          updated_at?: string;
+          weekday: number;
+        };
+        Update: {
+          blocks?: NonNullable<Json>;
+          breaks?: NonNullable<Json>;
+          created_at?: string;
+          salon_id?: string;
+          updated_at?: string;
+          weekday?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'work_hours_template_salon_id_fkey';
+            columns: ['salon_id'];
+            isOneToOne: false;
             referencedRelation: 'salons';
             referencedColumns: ['id'];
           },
@@ -218,6 +308,7 @@ export type Database = {
     Enums: {
       push_platform: 'ios' | 'android' | 'web';
       salon_role: 'owner' | 'stylist';
+      work_hours_override_kind: 'custom' | 'day_off' | 'vacation';
     };
     CompositeTypes: {
       [_ in never]: never;
@@ -239,9 +330,7 @@ export type Tables<
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Views'])
     : never) = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals;
-}
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
   ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
       DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Views'])[TableName] extends {
       Row: infer R;
@@ -264,9 +353,7 @@ export type TablesInsert<
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables']
     : never) = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals;
-}
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'][TableName] extends {
       Insert: infer I;
     }
@@ -288,9 +375,7 @@ export type TablesUpdate<
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables']
     : never) = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals;
-}
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'][TableName] extends {
       Update: infer U;
     }
@@ -312,9 +397,7 @@ export type Enums<
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions['schema']]['Enums']
     : never) = never,
-> = DefaultSchemaEnumNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals;
-}
+> = DefaultSchemaEnumNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
   ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions['schema']]['Enums'][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema['Enums']
     ? DefaultSchema['Enums'][DefaultSchemaEnumNameOrOptions]
@@ -328,9 +411,7 @@ export type CompositeTypes<
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes']
     : never) = never,
-> = PublicCompositeTypeNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals;
-}
+> = PublicCompositeTypeNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes'][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema['CompositeTypes']
     ? DefaultSchema['CompositeTypes'][PublicCompositeTypeNameOrOptions]
@@ -341,6 +422,7 @@ export const Constants = {
     Enums: {
       push_platform: ['ios', 'android', 'web'],
       salon_role: ['owner', 'stylist'],
+      work_hours_override_kind: ['custom', 'day_off', 'vacation'],
     },
   },
 } as const;

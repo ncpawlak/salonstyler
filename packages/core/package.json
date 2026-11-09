@@ -8,7 +8,8 @@
   "types": "src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./availability": "./src/availability/index.ts"
+    "./availability": "./src/availability/index.ts",
+    "./hours": "./src/hours/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
