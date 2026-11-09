@@ -1,5 +1,6 @@
 import { formatDuration, type WorkHours } from '@chairside/core';
 import type { AppointmentStatus, AppointmentWithDetails } from '@chairside/db';
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 
@@ -217,9 +218,22 @@ function AppointmentDetails({
             onPress={() => change('confirmed')}
           />
         ) : null}
+        {status === 'confirmed' || status === 'completed' ? (
+          <Button
+            label={status === 'completed' ? 'Checkout & receipt' : 'Checkout'}
+            icon="card-outline"
+            fullWidth
+            disabled={busy}
+            onPress={() => {
+              onClose();
+              router.push(`/checkout/${appointment.id}`);
+            }}
+          />
+        ) : null}
         {status === 'confirmed' ? (
           <View className="flex-row gap-3">
             <Button
+              variant="secondary"
               label="Completed"
               icon="checkmark-done-outline"
               grow

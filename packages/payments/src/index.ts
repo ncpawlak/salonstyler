@@ -1,4 +1,14 @@
+export * from './checkout.ts';
 export * from './status.ts';
+export type {
+  CheckoutErrorBody,
+  CheckoutPaidResponse,
+  CheckoutRecord,
+  CheckoutRequest,
+  ConnectionTokenResponse,
+  CreateIntentResponse,
+  RefundResponse,
+} from './server/checkout.ts';
 export type {
   PaymentsAccountResponse,
   PaymentsErrorBody,

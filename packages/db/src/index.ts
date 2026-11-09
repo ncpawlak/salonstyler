@@ -14,6 +14,7 @@ export * from './notifications.ts';
 export * from './search.ts';
 export * from './clients.ts';
 export * from './inbox.ts';
+export * from './checkout.ts';
 
 type PublicSchema = Database['public'];
 

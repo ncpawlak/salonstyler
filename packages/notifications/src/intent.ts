@@ -2,7 +2,7 @@ import { DEFAULT_ACTION_ID } from './categories.ts';
 
 /** The `data` payload the database attaches to each push (see notifications_outbox.data). */
 export interface NotificationData {
-  type?: 'request' | 'request_nudge' | 'cancellation' | 'daily_agenda';
+  type?: 'request' | 'request_nudge' | 'cancellation' | 'daily_agenda' | 'payout_summary';
   salonId?: string;
   appointmentId?: string;
   date?: string;
@@ -53,5 +53,6 @@ export function notificationIntent(
   if (actionId && actionId !== DEFAULT_ACTION_ID) return { kind: 'none' };
   if (data.type === 'daily_agenda') return { kind: 'open', href: '/' };
   if (data.type === 'cancellation') return { kind: 'open', href: '/calendar' };
+  if (data.type === 'payout_summary') return { kind: 'open', href: '/settings/payments' };
   return { kind: 'none' };
 }

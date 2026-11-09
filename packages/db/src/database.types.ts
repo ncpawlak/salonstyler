@@ -376,6 +376,157 @@ export type Database = {
           },
         ];
       };
+      checkout_items: {
+        Row: {
+          amount_cents: number | null;
+          checkout_id: string;
+          id: string;
+          kind: Database['public']['Enums']['checkout_item_kind'];
+          name: string;
+          position: number;
+          quantity: number;
+          salon_id: string;
+          source_id: string | null;
+          unit_amount_cents: number;
+        };
+        ComputedFields: never;
+        Insert: {
+          amount_cents?: never;
+          checkout_id: string;
+          id?: string;
+          kind: Database['public']['Enums']['checkout_item_kind'];
+          name: string;
+          position: number;
+          quantity?: number;
+          salon_id: string;
+          source_id?: string | null;
+          unit_amount_cents: number;
+        };
+        Update: {
+          amount_cents?: never;
+          checkout_id?: string;
+          id?: string;
+          kind?: Database['public']['Enums']['checkout_item_kind'];
+          name?: string;
+          position?: number;
+          quantity?: number;
+          salon_id?: string;
+          source_id?: string | null;
+          unit_amount_cents?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'checkout_items_checkout_fkey';
+            columns: ['salon_id', 'checkout_id'];
+            isOneToOne: false;
+            referencedRelation: 'checkouts';
+            referencedColumns: ['salon_id', 'id'];
+          },
+          {
+            foreignKeyName: 'checkout_items_salon_id_fkey';
+            columns: ['salon_id'];
+            isOneToOne: false;
+            referencedRelation: 'salons';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      checkouts: {
+        Row: {
+          amount_due_cents: number;
+          appointment_id: string | null;
+          card_brand: string | null;
+          card_last4: string | null;
+          client_id: string | null;
+          created_at: string;
+          created_by: string | null;
+          currency: string;
+          deposit_cents: number;
+          id: string;
+          method: Database['public']['Enums']['checkout_method'] | null;
+          paid_at: string | null;
+          receipt_token: string;
+          salon_id: string;
+          status: Database['public']['Enums']['checkout_status'];
+          stripe_payment_intent_id: string | null;
+          subtotal_cents: number;
+          tip_cents: number;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          amount_due_cents?: number;
+          appointment_id?: string | null;
+          card_brand?: string | null;
+          card_last4?: string | null;
+          client_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          currency: string;
+          deposit_cents?: number;
+          id?: string;
+          method?: Database['public']['Enums']['checkout_method'] | null;
+          paid_at?: string | null;
+          receipt_token?: string;
+          salon_id: string;
+          status?: Database['public']['Enums']['checkout_status'];
+          stripe_payment_intent_id?: string | null;
+          subtotal_cents?: number;
+          tip_cents?: number;
+          updated_at?: string;
+        };
+        Update: {
+          amount_due_cents?: number;
+          appointment_id?: string | null;
+          card_brand?: string | null;
+          card_last4?: string | null;
+          client_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          currency?: string;
+          deposit_cents?: number;
+          id?: string;
+          method?: Database['public']['Enums']['checkout_method'] | null;
+          paid_at?: string | null;
+          receipt_token?: string;
+          salon_id?: string;
+          status?: Database['public']['Enums']['checkout_status'];
+          stripe_payment_intent_id?: string | null;
+          subtotal_cents?: number;
+          tip_cents?: number;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'checkouts_appointment_fkey';
+            columns: ['salon_id', 'appointment_id'];
+            isOneToOne: false;
+            referencedRelation: 'appointments';
+            referencedColumns: ['salon_id', 'id'];
+          },
+          {
+            foreignKeyName: 'checkouts_client_fkey';
+            columns: ['salon_id', 'client_id'];
+            isOneToOne: false;
+            referencedRelation: 'client_summaries';
+            referencedColumns: ['salon_id', 'client_id'];
+          },
+          {
+            foreignKeyName: 'checkouts_client_fkey';
+            columns: ['salon_id', 'client_id'];
+            isOneToOne: false;
+            referencedRelation: 'clients';
+            referencedColumns: ['salon_id', 'id'];
+          },
+          {
+            foreignKeyName: 'checkouts_salon_id_fkey';
+            columns: ['salon_id'];
+            isOneToOne: false;
+            referencedRelation: 'salons';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       client_formulas: {
         Row: {
           appointment_id: string | null;
@@ -1275,6 +1426,7 @@ export type Database = {
           followup_nudge_hours: number;
           hold_expiry_hours: number;
           min_notice_minutes: number;
+          payout_summary_enabled: boolean;
           preferences: NonNullable<Json>;
           quiet_hours_enabled: boolean;
           quiet_hours_end: string;
@@ -1293,6 +1445,7 @@ export type Database = {
           followup_nudge_hours?: number;
           hold_expiry_hours?: number;
           min_notice_minutes?: number;
+          payout_summary_enabled?: boolean;
           preferences?: NonNullable<Json>;
           quiet_hours_enabled?: boolean;
           quiet_hours_end?: string;
@@ -1310,6 +1463,7 @@ export type Database = {
           followup_nudge_hours?: number;
           hold_expiry_hours?: number;
           min_notice_minutes?: number;
+          payout_summary_enabled?: boolean;
           preferences?: NonNullable<Json>;
           quiet_hours_enabled?: boolean;
           quiet_hours_end?: string;
@@ -1340,6 +1494,7 @@ export type Database = {
           requirements_due: string[];
           salon_id: string;
           stripe_account_id: string;
+          terminal_location_id: string | null;
           updated_at: string;
         };
         ComputedFields: never;
@@ -1354,6 +1509,7 @@ export type Database = {
           requirements_due?: string[];
           salon_id: string;
           stripe_account_id: string;
+          terminal_location_id?: string | null;
           updated_at?: string;
         };
         Update: {
@@ -1367,6 +1523,7 @@ export type Database = {
           requirements_due?: string[];
           salon_id?: string;
           stripe_account_id?: string;
+          terminal_location_id?: string | null;
           updated_at?: string;
         };
         Relationships: [
@@ -1588,6 +1745,41 @@ export type Database = {
           isSetofReturn: true;
         };
       };
+      complete_card_checkout: {
+        Args: {
+          p_card_brand?: string;
+          p_card_last4?: string;
+          p_checkout_id: string;
+          p_payment_intent_id: string;
+        };
+        Returns: {
+          amount_due_cents: number;
+          appointment_id: string | null;
+          card_brand: string | null;
+          card_last4: string | null;
+          client_id: string | null;
+          created_at: string;
+          created_by: string | null;
+          currency: string;
+          deposit_cents: number;
+          id: string;
+          method: Database['public']['Enums']['checkout_method'] | null;
+          paid_at: string | null;
+          receipt_token: string;
+          salon_id: string;
+          status: Database['public']['Enums']['checkout_status'];
+          stripe_payment_intent_id: string | null;
+          subtotal_cents: number;
+          tip_cents: number;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'checkouts';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       create_salon: {
         Args: { p_name: string; p_slug: string; p_timezone: string };
         Returns: {
@@ -1617,6 +1809,7 @@ export type Database = {
           provider: Database['public']['Enums']['ai_provider'];
         }[];
       };
+      get_receipt: { Args: { p_token: string }; Returns: Json };
       inbox_bridge_for_token: {
         Args: { p_hourly_limit?: number; p_token: string };
         Returns: {
@@ -1627,6 +1820,37 @@ export type Database = {
         }[];
       };
       is_salon_slug_available: { Args: { p_slug: string }; Returns: boolean };
+      pay_checkout_offline: {
+        Args: { p_checkout_id: string; p_method: Database['public']['Enums']['checkout_method'] };
+        Returns: {
+          amount_due_cents: number;
+          appointment_id: string | null;
+          card_brand: string | null;
+          card_last4: string | null;
+          client_id: string | null;
+          created_at: string;
+          created_by: string | null;
+          currency: string;
+          deposit_cents: number;
+          id: string;
+          method: Database['public']['Enums']['checkout_method'] | null;
+          paid_at: string | null;
+          receipt_token: string;
+          salon_id: string;
+          status: Database['public']['Enums']['checkout_status'];
+          stripe_payment_intent_id: string | null;
+          subtotal_cents: number;
+          tip_cents: number;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'checkouts';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      payout_summary: { Args: { p_day?: string; p_salon_id: string }; Returns: Json };
       register_push_token: {
         Args: {
           p_platform: Database['public']['Enums']['push_platform'];
@@ -1787,6 +2011,66 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      start_checkout: {
+        Args: { p_appointment_id: string };
+        Returns: {
+          amount_due_cents: number;
+          appointment_id: string | null;
+          card_brand: string | null;
+          card_last4: string | null;
+          client_id: string | null;
+          created_at: string;
+          created_by: string | null;
+          currency: string;
+          deposit_cents: number;
+          id: string;
+          method: Database['public']['Enums']['checkout_method'] | null;
+          paid_at: string | null;
+          receipt_token: string;
+          salon_id: string;
+          status: Database['public']['Enums']['checkout_status'];
+          stripe_payment_intent_id: string | null;
+          subtotal_cents: number;
+          tip_cents: number;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'checkouts';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      update_checkout: {
+        Args: { p_checkout_id: string; p_items: Json; p_tip_cents?: number };
+        Returns: {
+          amount_due_cents: number;
+          appointment_id: string | null;
+          card_brand: string | null;
+          card_last4: string | null;
+          client_id: string | null;
+          created_at: string;
+          created_by: string | null;
+          currency: string;
+          deposit_cents: number;
+          id: string;
+          method: Database['public']['Enums']['checkout_method'] | null;
+          paid_at: string | null;
+          receipt_token: string;
+          salon_id: string;
+          status: Database['public']['Enums']['checkout_status'];
+          stripe_payment_intent_id: string | null;
+          subtotal_cents: number;
+          tip_cents: number;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'checkouts';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
     };
     Enums: {
       addon_placement: 'before_finish' | 'end';
@@ -1797,7 +2081,11 @@ export type Database = {
         'held' | 'requested' | 'confirmed' | 'completed' | 'cancelled' | 'no_show';
       captured_request_intent: 'booking' | 'reschedule' | 'cancel';
       captured_request_status: 'pending' | 'approved' | 'declined' | 'expired' | 'dismissed';
-      notification_kind: 'request' | 'request_nudge' | 'cancellation' | 'daily_agenda';
+      checkout_item_kind: 'service' | 'addon' | 'retail' | 'custom';
+      checkout_method: 'card' | 'cash' | 'other';
+      checkout_status: 'open' | 'paid' | 'canceled';
+      notification_kind:
+        'request' | 'request_nudge' | 'cancellation' | 'daily_agenda' | 'payout_summary';
       notification_status: 'pending' | 'sending' | 'sent' | 'skipped' | 'failed';
       payment_status:
         | 'pending'
@@ -1929,7 +2217,16 @@ export const Constants = {
       appointment_status: ['held', 'requested', 'confirmed', 'completed', 'cancelled', 'no_show'],
       captured_request_intent: ['booking', 'reschedule', 'cancel'],
       captured_request_status: ['pending', 'approved', 'declined', 'expired', 'dismissed'],
-      notification_kind: ['request', 'request_nudge', 'cancellation', 'daily_agenda'],
+      checkout_item_kind: ['service', 'addon', 'retail', 'custom'],
+      checkout_method: ['card', 'cash', 'other'],
+      checkout_status: ['open', 'paid', 'canceled'],
+      notification_kind: [
+        'request',
+        'request_nudge',
+        'cancellation',
+        'daily_agenda',
+        'payout_summary',
+      ],
       notification_status: ['pending', 'sending', 'sent', 'skipped', 'failed'],
       payment_status: [
         'pending',

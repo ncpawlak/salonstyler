@@ -13,10 +13,11 @@ export type NotificationSettings = Pick<
   | 'quiet_hours_start'
   | 'quiet_hours_end'
   | 'daily_agenda_enabled'
+  | 'payout_summary_enabled'
 >;
 
 const NOTIFICATION_SETTINGS_COLUMNS =
-  'followup_nudge_hours, hold_expiry_hours, quiet_hours_enabled, quiet_hours_start, quiet_hours_end, daily_agenda_enabled';
+  'followup_nudge_hours, hold_expiry_hours, quiet_hours_enabled, quiet_hours_start, quiet_hours_end, daily_agenda_enabled, payout_summary_enabled';
 
 export async function getNotificationSettings(
   client: ChairsideClient,

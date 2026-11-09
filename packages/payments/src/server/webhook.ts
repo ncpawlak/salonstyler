@@ -34,6 +34,11 @@ export interface PaymentsStore {
   salonIdForAccount(stripeAccountId: string): Promise<string | null>;
   getPaymentStatus(paymentIntentId: string): Promise<PaymentStatus | null>;
   upsertPayment(row: PaymentUpsert): Promise<void>;
+  /**
+   * Marks a checkout paid by card (idempotent; also completes its appointment). Must ignore
+   * checkouts that don't belong to `salonId`.
+   */
+  completeCheckout(salonId: string, checkoutId: string, paymentIntentId: string): Promise<void>;
 }
 
 export interface StripeWebhookDeps {
@@ -144,6 +149,12 @@ export async function handleStripeWebhook(
       failure_message: piStatus === 'failed' ? (intent.last_payment_error?.message ?? null) : null,
       livemode: event.livemode,
     });
+    // Backstop for Tap to Pay: if the app lost connection before calling `complete`, the
+    // checkout still closes once Stripe reports the payment.
+    const checkoutId = uuidOrNull(intent.metadata?.checkout_id);
+    if (piStatus === 'succeeded' && checkoutId && !event.account) {
+      await deps.store.completeCheckout(salonId, checkoutId, intent.id);
+    }
     return ok(true);
   }
 

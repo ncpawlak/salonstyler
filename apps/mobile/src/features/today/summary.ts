@@ -133,6 +133,31 @@ export function summarizeToday(
   };
 }
 
+/**
+ * Who Today's Checkout action should ring up: the confirmed client in the chair, else the one who
+ * most recently finished, else the next one. Completed appointments are already settled or can be
+ * reached from the picker.
+ */
+export function checkoutCandidate(
+  appointments: readonly AppointmentWithDetails[],
+  now: number,
+): AppointmentWithDetails | null {
+  const confirmed = appointments.filter((a) => a.status === 'confirmed');
+  const inChair = confirmed.find((a) => {
+    const span = clientSpan(a);
+    return span.start <= now && now < span.end;
+  });
+  if (inChair) return inChair;
+  const finished = confirmed
+    .filter((a) => clientSpan(a).end <= now)
+    .sort((a, b) => clientSpan(b).end - clientSpan(a).end);
+  if (finished[0]) return finished[0];
+  const upcoming = confirmed
+    .filter((a) => clientSpan(a).start > now)
+    .sort((a, b) => clientSpan(a).start - clientSpan(b).start);
+  return upcoming[0] ?? null;
+}
+
 /** `in 2h 5m`, `in 12 min`, `now`, `5 min ago`. */
 export function formatCountdown(ms: number): string {
   const minutes = Math.round(ms / 60_000);

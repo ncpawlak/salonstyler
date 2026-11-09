@@ -16,7 +16,8 @@ export class PaymentsRequestError extends Error {
   }
 }
 
-async function readError(error: unknown): Promise<PaymentsRequestError> {
+/** Turns a `functions.invoke` error into the function's `{ error: { code, message } }`. */
+export async function readFunctionError(error: unknown): Promise<PaymentsRequestError> {
   const context = (error as { context?: unknown }).context;
   if (context instanceof Response) {
     try {
@@ -48,7 +49,7 @@ export async function invokePayments(
   const { data, error } = await supabase.functions.invoke<
     PaymentsAccountResponse | PaymentsLinkResponse
   >('payments', { body: request });
-  if (error) throw await readError(error);
+  if (error) throw await readFunctionError(error);
   if (!data) throw new PaymentsRequestError('invalid_response', 'Empty response from payments');
   return data;
 }
