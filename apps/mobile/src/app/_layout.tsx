@@ -46,6 +46,8 @@ function RootNavigator() {
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="settings" />
           <Stack.Screen name="hours/index" />
+          <Stack.Screen name="services/index" />
+          <Stack.Screen name="services/[id]" />
         </Stack.Protected>
       </Stack>
       <AskChairsideButton />

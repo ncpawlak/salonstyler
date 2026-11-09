@@ -8,6 +8,7 @@ import type { Database, Json } from './database.types';
 
 export type { Database, Json } from './database.types';
 export type { Session, User } from '@supabase/supabase-js';
+export * from './services';
 
 type PublicSchema = Database['public'];
 
@@ -23,6 +24,11 @@ export type SalonMember = Tables<'salon_members'>;
 export type SalonSettings = Tables<'settings'>;
 export type AuditLogEntry = Tables<'audit_log'>;
 export type PushToken = Tables<'push_tokens'>;
+export type ServiceRow = Tables<'services'>;
+export type ServiceSegmentRow = Tables<'service_segments'>;
+export type ServiceVariantRow = Tables<'service_variants'>;
+export type ServiceAddonRow = Tables<'service_addons'>;
+export type ServiceComboItemRow = Tables<'service_combo_items'>;
 export type SalonRole = Enums<'salon_role'>;
 export type WorkHoursTemplate = Tables<'work_hours_template'>;
 export type WorkHoursOverride = Tables<'work_hours_override'>;

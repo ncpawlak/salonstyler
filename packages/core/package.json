@@ -9,7 +9,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./availability": "./src/availability/index.ts",
-    "./hours": "./src/hours/index.ts"
+    "./hours": "./src/hours/index.ts",
+    "./services": "./src/services/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
