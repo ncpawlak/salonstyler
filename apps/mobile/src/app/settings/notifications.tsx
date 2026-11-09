@@ -38,6 +38,7 @@ interface FormState {
   quietStart: string;
   quietEnd: string;
   agendaEnabled: boolean;
+  payoutEnabled: boolean;
 }
 
 function toForm(s: NotificationSettings): FormState {
@@ -48,6 +49,7 @@ function toForm(s: NotificationSettings): FormState {
     quietStart: toClock(s.quiet_hours_start),
     quietEnd: toClock(s.quiet_hours_end),
     agendaEnabled: s.daily_agenda_enabled,
+    payoutEnabled: s.payout_summary_enabled,
   };
 }
 
@@ -184,6 +186,7 @@ export default function NotificationSettingsScreen() {
         quiet_hours_start: state!.quietStart,
         quiet_hours_end: state!.quietEnd,
         daily_agenda_enabled: state!.agendaEnabled,
+        payout_summary_enabled: state!.payoutEnabled,
       },
       { onSuccess: () => setNotice('Saved.') },
     );
@@ -271,13 +274,23 @@ export default function NotificationSettingsScreen() {
             ) : null}
           </Section>
 
-          <Section title="Daily agenda" hint="A summary of your day at 8:00 AM, salon time.">
+          <Section
+            title="Daily summaries"
+            hint="Salon time: your agenda at 8:00 AM, takings at 8:00 PM."
+          >
             <ToggleRow
               label="Morning agenda"
               hint="Only sent on days with appointments or requests."
               value={state.agendaEnabled}
               disabled={!isOwner}
               onChange={(agendaEnabled) => set({ agendaEnabled })}
+            />
+            <ToggleRow
+              label="Evening takings"
+              hint="Card, cash and tips. Owners only; sent on days with checkouts."
+              value={state.payoutEnabled}
+              disabled={!isOwner}
+              onChange={(payoutEnabled) => set({ payoutEnabled })}
             />
           </Section>
 

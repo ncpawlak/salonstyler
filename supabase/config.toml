@@ -440,6 +440,10 @@ verify_jwt = true
 [functions.payments]
 verify_jwt = true
 
+# Card checkout (Stripe Terminal / Tap to Pay, simulated reader, refunds): requires a user JWT.
+[functions.checkout]
+verify_jwt = true
+
 # Stripe calls this without a JWT; requests are authenticated by the Stripe-Signature header.
 [functions.stripe-webhook]
 verify_jwt = false

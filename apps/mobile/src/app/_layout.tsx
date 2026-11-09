@@ -61,7 +61,11 @@ function RootNavigator() {
           <Stack.Screen name="services/index" />
           <Stack.Screen name="services/[id]" />
           <Stack.Screen name="clients/[id]" />
+          <Stack.Screen name="checkout/index" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="checkout/[appointmentId]" options={{ presentation: 'modal' }} />
         </Stack.Protected>
+        {/* Public: clients open their receipt link without an account. */}
+        <Stack.Screen name="receipt/[token]" />
       </Stack>
       <AskChairsideButton />
     </>

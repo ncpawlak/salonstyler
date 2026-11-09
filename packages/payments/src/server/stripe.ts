@@ -22,8 +22,56 @@ export interface StripeConnectClient {
   };
 }
 
+type IdempotentOptions = { idempotencyKey?: string };
+
+/** Subset of the test-helper params (the SDK doesn't re-export the TestHelpers namespace). */
+export interface PresentPaymentMethodParams {
+  type?: 'card_present';
+  card_present?: { number?: string };
+}
+
+/** Terminal / checkout slice (Tap to Pay, simulated readers, refunds). */
+export interface StripeCheckoutClient {
+  paymentIntents: {
+    create(
+      params: Stripe.PaymentIntentCreateParams,
+      options?: IdempotentOptions,
+    ): Promise<Stripe.PaymentIntent>;
+    retrieve(id: string, params?: { expand?: string[] }): Promise<Stripe.PaymentIntent>;
+    cancel(id: string): Promise<Stripe.PaymentIntent>;
+  };
+  refunds: {
+    create(params: Stripe.RefundCreateParams, options?: IdempotentOptions): Promise<Stripe.Refund>;
+  };
+  terminal: {
+    connectionTokens: { create(params: { location?: string }): Promise<{ secret: string }> };
+    locations: {
+      create(
+        params: Stripe.Terminal.LocationCreateParams,
+        options?: IdempotentOptions,
+      ): Promise<{ id: string }>;
+    };
+    readers: {
+      list(params: Stripe.Terminal.ReaderListParams): Promise<{ data: Stripe.Terminal.Reader[] }>;
+      create(params: Stripe.Terminal.ReaderCreateParams): Promise<Stripe.Terminal.Reader>;
+      cancelAction(id: string): Promise<unknown>;
+      processPaymentIntent(
+        id: string,
+        params: Stripe.Terminal.ReaderProcessPaymentIntentParams,
+      ): Promise<Stripe.Terminal.Reader>;
+      /** Test mode only: taps a test card on a simulated reader. */
+      presentPaymentMethod(
+        id: string,
+        params: PresentPaymentMethodParams,
+      ): Promise<Stripe.Terminal.Reader>;
+    };
+  };
+}
+
+export type StripeClient = StripeConnectClient & StripeCheckoutClient;
+
 /** Uses fetch + Web Crypto so the same code runs in Deno (Edge Functions) and Node (tests). */
-export function createStripeClient(secretKey: string): StripeConnectClient {
+export function createStripeClient(secretKey: string): StripeClient {
   const stripe = new Stripe(secretKey, {
     apiVersion: STRIPE_API_VERSION,
     httpClient: Stripe.createFetchHttpClient(),
@@ -37,6 +85,27 @@ export function createStripeClient(secretKey: string): StripeConnectClient {
       createLoginLink: (id) => stripe.accounts.createLoginLink(id),
     },
     accountLinks: { create: (params) => stripe.accountLinks.create(params) },
+    paymentIntents: {
+      create: (params, options) => stripe.paymentIntents.create(params, options),
+      retrieve: (id, params) => stripe.paymentIntents.retrieve(id, params),
+      cancel: (id) => stripe.paymentIntents.cancel(id),
+    },
+    refunds: { create: (params, options) => stripe.refunds.create(params, options) },
+    terminal: {
+      connectionTokens: { create: (params) => stripe.terminal.connectionTokens.create(params) },
+      locations: {
+        create: (params, options) => stripe.terminal.locations.create(params, options),
+      },
+      readers: {
+        list: async (params) => ({ data: (await stripe.terminal.readers.list(params)).data }),
+        create: (params) => stripe.terminal.readers.create(params),
+        cancelAction: (id) => stripe.terminal.readers.cancelAction(id),
+        processPaymentIntent: (id, params) =>
+          stripe.terminal.readers.processPaymentIntent(id, params),
+        presentPaymentMethod: (id, params) =>
+          stripe.testHelpers.terminal.readers.presentPaymentMethod(id, params),
+      },
+    },
   };
 }
 

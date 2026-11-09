@@ -32,7 +32,7 @@ import { RequestStack, type RequestDecision } from '@/features/today/request-sta
 import { parseLateParam } from '@/features/today/running-late';
 import { RunningLateSheet } from '@/features/today/running-late-sheet';
 import { serviceColor } from '@/features/today/service-pills';
-import { clientSpan, summarizeToday } from '@/features/today/summary';
+import { checkoutCandidate, clientSpan, summarizeToday } from '@/features/today/summary';
 import { haptics } from '@/lib/haptics';
 import { supabase } from '@/lib/supabase';
 import { useCurrentSalon } from '@/providers/session-provider';
@@ -255,7 +255,15 @@ export default function TodayScreen() {
                 label: 'Running late',
                 onPress: () => setLate({ delay: null }),
               },
-              { id: 'checkout', icon: 'card-outline', label: 'Checkout' },
+              {
+                id: 'checkout',
+                icon: 'card-outline',
+                label: 'Checkout',
+                onPress: () => {
+                  const candidate = checkoutCandidate(list, now);
+                  router.push(candidate ? `/checkout/${candidate.id}` : '/checkout');
+                },
+              },
             ]}
           />
 

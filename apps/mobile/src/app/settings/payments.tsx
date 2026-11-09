@@ -25,6 +25,7 @@ import {
   SkeletonRow,
   Text,
 } from '@/components/ui';
+import { RecentCheckouts, TodayTakings } from '@/features/checkout/payouts';
 import { invokePayments } from '@/features/payments/api';
 import { supabase } from '@/lib/supabase';
 import { useCurrentSalon } from '@/providers/session-provider';
@@ -200,6 +201,9 @@ export default function PaymentsSettingsScreen() {
               Stripe isn’t configured on the server yet, so this status may be out of date.
             </Text>
           ) : null}
+
+          <TodayTakings />
+          <RecentCheckouts />
 
           {data ? (
             <>

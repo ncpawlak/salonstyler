@@ -27,7 +27,16 @@ export function AskChairsideButton() {
   const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
   const first = segments[0] as string | undefined;
-  if (first === '(auth)' || first === '(onboarding)' || first === 'assistant') return null;
+  // Hidden on client-facing screens (checkout is shown to the client; receipts are public).
+  if (
+    first === '(auth)' ||
+    first === '(onboarding)' ||
+    first === 'assistant' ||
+    first === 'checkout' ||
+    first === 'receipt'
+  ) {
+    return null;
+  }
   const inTabs = first === '(tabs)';
   const bottom = (inTabs ? TAB_BAR_HEIGHT : 0) + insets.bottom + 16;
 

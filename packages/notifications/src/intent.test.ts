@@ -53,6 +53,12 @@ describe('notificationIntent', () => {
     });
   });
 
+  it('opens Settings → Payments for the evening payout summary', () => {
+    expect(
+      notificationIntent(DEFAULT_ACTION_ID, { type: 'payout_summary', salonId: 's1' }),
+    ).toEqual({ kind: 'open', href: '/settings/payments' });
+  });
+
   it('ignores malformed payloads and unknown actions', () => {
     expect(notificationIntent('approve', null)).toEqual({ kind: 'none' });
     expect(notificationIntent('approve', { type: 'cancellation', appointmentId: 'a1' })).toEqual({

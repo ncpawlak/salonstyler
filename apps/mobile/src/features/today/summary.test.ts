@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   activeProcessing,
+  checkoutCandidate,
   dayUtilization,
   formatClock,
   formatCountdown,
@@ -143,5 +144,35 @@ describe('formatting', () => {
     expect(formatClock(64_001)).toBe('01:05');
     expect(formatClock(3_725_000)).toBe('1:02:05');
     expect(formatClock(-1)).toBe('00:00');
+  });
+});
+
+describe('checkoutCandidate', () => {
+  it('prefers the confirmed client in the chair', () => {
+    const done = appt([['busy', '09:00', '10:00']]);
+    const inChair = appt([
+      ['busy', '10:00', '11:00'],
+      ['buffer', '11:00', '11:15'],
+    ]);
+    const next = appt([['busy', '13:00', '14:00']]);
+    expect(checkoutCandidate([next, done, inChair], at('10:30'))?.id).toBe(inChair.id);
+  });
+
+  it('falls back to whoever finished most recently, ignoring buffers and settled appointments', () => {
+    const early = appt([['busy', '09:00', '10:00']]);
+    const later = appt([
+      ['busy', '10:00', '11:00'],
+      ['buffer', '11:00', '11:30'],
+    ]);
+    const paid = appt([['busy', '11:00', '11:10']], 'completed');
+    expect(checkoutCandidate([early, later, paid], at('11:15'))?.id).toBe(later.id);
+  });
+
+  it('otherwise picks the next confirmed appointment, or nothing', () => {
+    const held = appt([['busy', '09:00', '10:00']], 'held');
+    const next = appt([['busy', '14:00', '15:00']]);
+    const nextLater = appt([['busy', '16:00', '17:00']]);
+    expect(checkoutCandidate([nextLater, held, next], at('08:00'))?.id).toBe(next.id);
+    expect(checkoutCandidate([held], at('08:00'))).toBeNull();
   });
 });

@@ -3,7 +3,8 @@
 // header instead (STRIPE_WEBHOOK_SECRET).
 //
 // Handles: account.updated, payment_intent.{processing,succeeded,payment_failed,canceled},
-// charge.refunded. Everything else is acknowledged and ignored.
+// charge.refunded. Everything else is acknowledged and ignored. A succeeded PaymentIntent with
+// `metadata.checkout_id` also closes that checkout (backstop if the app went offline mid-tap).
 import { createClient } from '@supabase/supabase-js';
 
 import {
@@ -66,6 +67,21 @@ Deno.serve(async (req) => {
       const { error } = await db
         .from('payments')
         .upsert(row, { onConflict: 'stripe_payment_intent_id' });
+      if (error) throw error;
+    },
+    async completeCheckout(salonId, checkoutId, paymentIntentId) {
+      const { data: checkout, error: loadError } = await db
+        .from('checkouts')
+        .select('id')
+        .eq('id', checkoutId)
+        .eq('salon_id', salonId)
+        .maybeSingle();
+      if (loadError) throw loadError;
+      if (!checkout) return;
+      const { error } = await db.rpc('complete_card_checkout', {
+        p_checkout_id: checkoutId,
+        p_payment_intent_id: paymentIntentId,
+      });
       if (error) throw error;
     },
   };

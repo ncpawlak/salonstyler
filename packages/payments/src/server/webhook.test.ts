@@ -16,6 +16,7 @@ import {
 const SECRET = 'whsec_test_chairside_fixture_secret';
 const SALON_A = '6f1c1d2e-3a4b-4c5d-8e9f-0a1b2c3d4e5f';
 const ACCOUNT_A = 'acct_1TestSalonA0001';
+const CHECKOUT = '9d8c7b6a-5f4e-4d3c-8b2a-1f0e9d8c7b6a';
 
 type Fixture = Record<string, unknown> & { type: string; account?: string; data: { object: any } };
 
@@ -36,7 +37,11 @@ class MemoryStore implements PaymentsStore {
     [ACCOUNT_A, { salonId: SALON_A }],
   ]);
   payments = new Map<string, PaymentUpsert>();
+  completed: [string, string, string][] = [];
 
+  async completeCheckout(salonId: string, checkoutId: string, paymentIntentId: string) {
+    this.completed.push([salonId, checkoutId, paymentIntentId]);
+  }
   async updateAccount(snapshot: StripeAccountSnapshot) {
     const row = this.accounts.get(snapshot.stripe_account_id);
     if (!row) return null;
@@ -209,6 +214,26 @@ describe('payments', () => {
     await deliver(fixture('payment_intent.succeeded'));
     await deliver(fixture('payment_intent.succeeded'));
     expect(store.payments.size).toBe(1);
+  });
+
+  it('closes the checkout for a platform (destination) charge with checkout metadata', async () => {
+    const event = fixture('payment_intent.succeeded');
+    delete event.account;
+    event.data.object.on_behalf_of = ACCOUNT_A;
+    event.data.object.transfer_data = { destination: ACCOUNT_A };
+    event.data.object.metadata.checkout_id = CHECKOUT;
+    await deliver(event);
+    expect(store.completed).toEqual([[SALON_A, CHECKOUT, 'pi_3TestTapToPay0001']]);
+  });
+
+  it('does not close checkouts from failed payments or connected-account events', async () => {
+    const failed = fixture('payment_intent.payment_failed');
+    failed.data.object.metadata = { checkout_id: CHECKOUT };
+    await deliver(failed);
+    const direct = fixture('payment_intent.succeeded');
+    direct.data.object.metadata.checkout_id = CHECKOUT;
+    await deliver(direct);
+    expect(store.completed).toEqual([]);
   });
 
   it('ignores salon metadata on connected-account events (only the account mapping counts)', async () => {
