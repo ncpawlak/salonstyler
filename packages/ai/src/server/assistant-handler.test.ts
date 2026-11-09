@@ -7,6 +7,7 @@ import type { DraftCard } from '../assistant/types.ts';
 import type { ChatMessage, ChatResult, LLMProvider } from '../types.ts';
 import {
   type AssistantMessageResponse,
+  type AssistantRunningLateResponse,
   type AssistantServiceDeps,
   handleAssistantRequest,
   trimHistory,
@@ -178,6 +179,86 @@ describe('handleAssistantRequest', () => {
     );
     expect(res).toMatchObject({ status: 200, body: { client: { name: 'Jessica Day' } } });
     expect(port.clients.map((c) => c.name)).toContain('Jessica Day');
+  });
+});
+
+describe('draft_running_late', () => {
+  const draft = (port: ReturnType<typeof setup>['port'], newStarts: string[]) => {
+    for (const a of port.appointments) a.salon_id = SALON;
+    return {
+      action: 'draft_running_late',
+      salonId: SALON,
+      delayMinutes: 15,
+      moves: port.appointments.map((a, i) => ({ appointmentId: a.id, newStart: newStarts[i] })),
+    };
+  };
+
+  it('drafts with the salon’s provider, reading names and times from the database', async () => {
+    const { deps, port, usage } = setup();
+    const res = await handleAssistantRequest(
+      draft(port, ['2026-12-18T15:15:00Z', '2026-12-18T20:30:00Z']),
+      deps,
+    );
+    expect(res.status).toBe(200);
+    const body = res.body as AssistantRunningLateResponse;
+    expect(body.notice).toBeNull();
+    expect(body.drafts.map((d) => [d.clientName, d.source])).toEqual([
+      ['Maria Garcia', 'ai'],
+      ['Karen Smith', 'ai'],
+    ]);
+    expect(body.drafts[0]!.text).toContain('9:15 AM instead of 9:00 AM');
+    expect(usage).toEqual([expect.objectContaining({ purpose: 'running_late' })]);
+    expect(port.audits.at(-1)).toMatchObject({ action: 'assistant.running_late_drafts' });
+  });
+
+  it('falls back to template texts without a key or budget, or when the provider fails', async () => {
+    for (const s of [
+      setup({ config: null }),
+      setup({ used: 10_000 }),
+      setup({
+        createProvider: () => ({
+          id: 'openai',
+          model: 'x',
+          chat: async () => {
+            throw new AiProviderError('openai', 'rate_limit', 'down', 503);
+          },
+        }),
+      }),
+    ]) {
+      const res = await handleAssistantRequest(
+        draft(s.port, ['2026-12-18T15:15:00Z', '2026-12-18T20:45:00Z']),
+        s.deps,
+      );
+      expect(res.status).toBe(200);
+      const body = res.body as AssistantRunningLateResponse;
+      expect(body.notice).toEqual(expect.any(String));
+      expect(body.drafts.map((d) => d.source)).toEqual(['template', 'template']);
+      expect(body.drafts[0]!.text).toContain('start your 9:00 AM appointment at 9:15 AM');
+    }
+  });
+
+  it('rejects unknown appointments and out-of-range delays', async () => {
+    const { deps } = setup();
+    const missing = await handleAssistantRequest(
+      {
+        action: 'draft_running_late',
+        salonId: SALON,
+        delayMinutes: 15,
+        moves: [{ appointmentId: KARINA, newStart: '2026-12-18T15:15:00Z' }],
+      },
+      deps,
+    );
+    expect(missing).toMatchObject({ status: 409, body: { error: { code: 'not_found' } } });
+    const tooLong = await handleAssistantRequest(
+      {
+        action: 'draft_running_late',
+        salonId: SALON,
+        delayMinutes: 600,
+        moves: [{ appointmentId: KARINA, newStart: '2026-12-18T15:15:00Z' }],
+      },
+      deps,
+    );
+    expect(tooLong.status).toBe(400);
   });
 });
 

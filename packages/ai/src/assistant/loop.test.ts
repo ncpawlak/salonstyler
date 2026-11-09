@@ -230,4 +230,18 @@ describe('DemoAssistantProvider', () => {
     expect(turn.cards).toEqual([{ type: 'client_not_found', query: 'Jessica', suggestions: [] }]);
     expect(turn.reply).toMatch(/add them/);
   });
+
+  it('"I\'m running 30 late" → a running-late card; nothing moves', async () => {
+    const port = createFakePort();
+    const turn = await runAssistantTurn({
+      llm: new DemoAssistantProvider(),
+      tools: { port, now: () => Date.parse('2026-12-18T14:50:00Z') },
+      prompt,
+      history: [],
+      text: "I'm running 30 min late",
+    });
+    expect(turn.toolCalls).toEqual([{ name: 'running_late', ok: true }]);
+    expect(turn.cards[0]).toMatchObject({ type: 'running_late', delayMinutes: 30 });
+    expect(turn.reply).toMatch(/Maria 9:00 AM → 9:30 AM.*Review/);
+  });
 });

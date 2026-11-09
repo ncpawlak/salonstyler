@@ -138,6 +138,39 @@ describe('get_day_summary', () => {
   });
 });
 
+describe('running_late', () => {
+  it('previews the cascade from the next client without moving anything', async () => {
+    const lateCtx = { port, now: () => Date.parse('2026-12-18T14:50:00Z') };
+    const out = await runTool(lateCtx, 'running_late', { minutes: 30 });
+    expect(out.ok).toBe(true);
+    expect(out.card).toMatchObject({
+      type: 'running_late',
+      delayMinutes: 30,
+      moves: [
+        expect.objectContaining({
+          clientName: 'Maria Garcia',
+          from: '2026-12-18T15:00:00.000Z',
+          to: '2026-12-18T15:30:00.000Z',
+          label: '9:00 AM → 9:30 AM',
+        }),
+      ],
+      overtimeMinutes: 0,
+    });
+    const after = await port.listAppointments({
+      from: '2026-12-18T00:00:00Z',
+      to: '2026-12-19T00:00:00Z',
+    });
+    expect(after.find((a) => a.client?.name === 'Maria Garcia')?.starts_at).toBe(
+      '2026-12-18T15:00:00Z',
+    );
+  });
+
+  it('rejects silly delays', async () => {
+    const out = await runTool(ctx, 'running_late', { minutes: 0 });
+    expect(out.ok).toBe(false);
+  });
+});
+
 describe('drafts', () => {
   it('propose_booking holds an engine slot; only the owner confirms', async () => {
     const card = await slotsFor({ clientId: KARINA, date: '2026-12-18' });

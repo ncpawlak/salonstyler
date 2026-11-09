@@ -1033,6 +1033,35 @@ export type Database = {
     };
     Functions: {
       ai_tokens_used_this_month: { Args: { p_salon_id: string }; Returns: number };
+      apply_running_late: {
+        Args: { p_delay_minutes: number; p_moves: Json; p_salon_id: string; p_strategy?: string };
+        Returns: {
+          cancel_reason: string | null;
+          cancelled_at: string | null;
+          client_id: string | null;
+          created_at: string;
+          created_by: string | null;
+          ends_at: string;
+          hold_expires_at: string | null;
+          id: string;
+          notes: string | null;
+          price_cents: number | null;
+          requested_at: string | null;
+          salon_id: string;
+          services: NonNullable<Json>;
+          source: Database['public']['Enums']['appointment_source'];
+          starts_at: string;
+          status: Database['public']['Enums']['appointment_status'];
+          stylist_id: string;
+          updated_at: string;
+        }[];
+        SetofOptions: {
+          from: '*';
+          to: 'appointments';
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
       book_appointment: {
         Args: {
           p_client_id: string;

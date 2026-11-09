@@ -22,3 +22,15 @@ export {
   type AssistantTurnResult,
 } from './loop.ts';
 export { DemoAssistantProvider, parseDemoDate } from './demo-provider.ts';
+export {
+  draftRunningLateTexts,
+  MAX_RUNNING_LATE_TEXT,
+  parseRunningLateDrafts,
+  RUNNING_LATE_PROMPT_TAG,
+  runningLateMessages,
+  templateRunningLateDrafts,
+  templateRunningLateText,
+  type ClientTextDraft,
+  type RunningLateDraftInput,
+  type RunningLateDraftItem,
+} from './running-late.ts';
