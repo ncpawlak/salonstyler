@@ -40,19 +40,39 @@ export function createSupabaseInboxPort(client: ChairsideClient, salonId: string
   };
 }
 
-/** Looks up a bridge token (service role) and counts the call against its hourly limit. */
+/**
+ * Looks up a bridge token (service role), counts the call against its hourly limit, and records
+ * the Shortcut version it reported.
+ */
 export async function authenticateBridgeToken(
   client: ChairsideClient,
   token: string,
+  meta: { bridgeVersion?: string | null } = {},
   hourlyLimit = INBOX_HOURLY_LIMIT,
 ): Promise<InboxBridge | null> {
   const { data, error } = await client.rpc('inbox_bridge_for_token', {
     p_token: token,
     p_hourly_limit: hourlyLimit,
+    ...(meta.bridgeVersion ? { p_bridge_version: meta.bridgeVersion } : {}),
   });
   if (error) throw error;
   const row = data[0];
   return row
-    ? { salonId: row.salon_id, keyword: row.keyword, rateLimited: row.rate_limited }
+    ? {
+        salonId: row.salon_id,
+        keyword: row.keyword,
+        rateLimited: row.rate_limited,
+        autoReply: row.auto_reply,
+        salonName: row.salon_name,
+      }
     : null;
+}
+
+/** Records a test message / hand run of the Shortcut (service role). */
+export async function markBridgeTested(client: ChairsideClient, salonId: string): Promise<void> {
+  const { error } = await client
+    .from('inbox_bridges')
+    .update({ last_test_at: new Date().toISOString() })
+    .eq('salon_id', salonId);
+  if (error) throw error;
 }

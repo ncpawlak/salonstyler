@@ -96,7 +96,7 @@ When done, paste the table and the `inbox-echo.log` lines (redact client numbers
 
 ## 3. Shortcut recipe
 
-The keyword trigger and the forwarding logic are separate: one **shortcut** named `Chairside Bridge`, plus one or two **triggers** (Chairside, Chair side) that run it. Part 2 ships the shortcut as an iCloud "Add to Shortcuts" link with the token pre-filled. The trigger can't be shared, so onboarding walks the user through it.
+The keyword trigger and the forwarding logic are separate: one **shortcut** named `Chairside Bridge`, plus one or two **triggers** (Chairside, Chair side) that run it. Part 2 ships the shortcut as an iCloud "Add to Shortcuts" link (see [`../shortcut-bridge.md`](../shortcut-bridge.md) for the shipped v2 recipe, publishing and onboarding). The trigger can't be shared, so onboarding walks the user through it.
 
 ### 3a. The shortcut: `Chairside Bridge`
 Values in `«»` are placeholders.

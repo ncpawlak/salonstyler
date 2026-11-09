@@ -1,5 +1,6 @@
+import { router } from 'expo-router';
 import { useState } from 'react';
-import { View } from 'react-native';
+import { Switch, View } from 'react-native';
 
 import { DetailScreen } from '@/components/shell/screen';
 import {
@@ -9,27 +10,23 @@ import {
   EmptyState,
   Icon,
   Input,
+  ListGroup,
+  ListRow,
   SectionHeader,
   SkeletonRow,
   Text,
 } from '@/components/ui';
 import { errorMessage } from '@/features/appointments/api';
-import { formatDay, formatTime } from '@/features/appointments/format';
 import {
   inboxEndpoint,
   useInboxBridge,
   useRemoveBridge,
   useRotateBridgeToken,
   useUpdateBridgeKeyword,
+  useUpdateBridgeSettings,
 } from '@/features/inbox/api';
+import { BridgeHealthSummary } from '@/features/inbox/bridge-ui';
 import { useCurrentSalon } from '@/providers/session-provider';
-
-const STEPS = [
-  'In the Shortcuts app, open Automation → New → Message.',
-  'Message Contains: your keyword. Run Immediately.',
-  'Add “Get Contents of URL”: the endpoint above, method POST, header X-Bridge-Token: your token.',
-  'Request body JSON: sender, senderPhone, text (the message), receivedAt (current date), bridgeVersion "1".',
-];
 
 /** Settings → Text bridge: the token and endpoint the salon's iOS Shortcut posts texts to. */
 export default function TextBridgeScreen() {
@@ -39,6 +36,7 @@ export default function TextBridgeScreen() {
   const rotate = useRotateBridgeToken();
   const updateKeyword = useUpdateBridgeKeyword();
   const remove = useRemoveBridge();
+  const settings = useUpdateBridgeSettings();
 
   const [token, setToken] = useState<string | null>(null);
   const [keyword, setKeyword] = useState('');
@@ -56,9 +54,9 @@ export default function TextBridgeScreen() {
     setNotice(message);
     setFailure(e ? errorMessage(e) : null);
   };
-  const busy = rotate.isPending || updateKeyword.isPending || remove.isPending;
+  const busy =
+    rotate.isPending || updateKeyword.isPending || remove.isPending || settings.isPending;
   const trimmed = keyword.trim();
-  const last = saved?.last_received_at ? Date.parse(saved.last_received_at) : null;
 
   return (
     <DetailScreen title="Text bridge">
@@ -83,7 +81,10 @@ export default function TextBridgeScreen() {
               <Text variant="headline">Booking texts → Inbox</Text>
               <Text variant="footnote" tone="muted">
                 An iPhone Shortcut forwards texts containing your keyword. Chairside reads them,
-                holds a time, and waits for you to approve. Nothing is sent back to the client.
+                holds a time, and waits for you to approve.
+                {saved?.auto_reply
+                  ? ' The Shortcut texts the client a short “got it”.'
+                  : ' Nothing is sent back to the client.'}
               </Text>
             </View>
             {saved ? <Badge label="On" tone="success" /> : <Badge label="Off" />}
@@ -92,6 +93,58 @@ export default function TextBridgeScreen() {
             <Text variant="footnote" tone="warning" className="px-1 pt-2">
               Only the salon owner can change these.
             </Text>
+          ) : null}
+
+          {isOwner ? (
+            <Button
+              label={saved ? 'Run setup again' : 'Set up in about a minute'}
+              icon="phone-portrait-outline"
+              variant={saved ? 'outline' : 'primary'}
+              fullWidth
+              className="mt-4"
+              testID="bridge-start-setup"
+              onPress={() => router.push('/settings/text-bridge-setup')}
+            />
+          ) : null}
+
+          {saved ? (
+            <>
+              <SectionHeader title="Status" />
+              <Card>
+                <BridgeHealthSummary bridge={saved} timeZone={salon.timezone} />
+              </Card>
+
+              <SectionHeader title="Replies" />
+              <Card className="flex-row items-center gap-3">
+                <View className="flex-1 gap-0.5">
+                  <Text variant="body">Auto-reply</Text>
+                  <Text variant="footnote" tone="muted">
+                    Your Shortcut texts back “Got it, we’ll confirm shortly” and teaches the keyword
+                    to anyone who only sends “{saved.keyword}”.
+                  </Text>
+                </View>
+                <Switch
+                  accessibilityLabel="Auto-reply"
+                  testID="bridge-auto-reply"
+                  value={saved.auto_reply}
+                  disabled={!isOwner || busy}
+                  onValueChange={(autoReply) =>
+                    settings.mutate({ autoReply }, { onError: (e) => show(null, e) })
+                  }
+                />
+              </Card>
+
+              <SectionHeader title="Clients" />
+              <ListGroup>
+                <ListRow
+                  title="Station card"
+                  subtitle="Printable “text Chairside” card with a QR code"
+                  leading={<Icon name="qr-code-outline" color="primary" />}
+                  onPress={() => router.push('/settings/station-card')}
+                  last
+                />
+              </ListGroup>
+            </>
           ) : null}
 
           <SectionHeader title="Endpoint" />
@@ -119,13 +172,6 @@ export default function TextBridgeScreen() {
                   : 'No token yet. Generate one to connect your Shortcut.'}
               </Text>
             )}
-            {saved ? (
-              <Text variant="footnote" tone="muted">
-                {last
-                  ? `Last text received ${formatDay(last, salon.timezone)} · ${formatTime(last, salon.timezone)}`
-                  : 'No texts received yet.'}
-              </Text>
-            ) : null}
           </Card>
 
           {saved ? (
@@ -150,7 +196,10 @@ export default function TextBridgeScreen() {
                   disabled={busy}
                   onPress={() =>
                     updateKeyword.mutate(trimmed, {
-                      onSuccess: () => show('Keyword saved. Update your Shortcut to match.'),
+                      onSuccess: () =>
+                        show(
+                          'Keyword saved. Update your Message triggers to match (Run setup again shows how).',
+                        ),
                       onError: (e) => show(null, e),
                     })
                   }
@@ -158,20 +207,6 @@ export default function TextBridgeScreen() {
               ) : null}
             </>
           ) : null}
-
-          <SectionHeader title="Set up the Shortcut" />
-          <Card className="gap-2">
-            {STEPS.map((step, i) => (
-              <View key={step} className="flex-row gap-2">
-                <Text variant="footnote" tone="muted" numeric>
-                  {i + 1}.
-                </Text>
-                <Text variant="footnote" className="flex-1">
-                  {step}
-                </Text>
-              </View>
-            ))}
-          </Card>
 
           {notice ? (
             <Text

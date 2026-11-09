@@ -6,7 +6,9 @@
 // POST /functions/v1/inbox   X-Bridge-Token: csb_…   (no user JWT: verify_jwt = false)
 //   { "sender": "Karina M.", "senderPhone": "+1 555…", "text": "Chairside can I get…",
 //     "receivedAt": "2026-12-01T14:03:22-05:00", "bridgeVersion": "1" }
-// → 200 { ok, status: "captured" | "duplicate" | "ignored", requestId? }
+// → 200 { ok, status: "captured" | "duplicate" | "ignored" | "test", requestId?, reply? }
+//   `reply` only in auto-reply mode: the Shortcut texts it back to the sender.
+//   Empty text (a hand run) or "<keyword> test" records a bridge test; nothing is captured.
 //   401 unknown token · 429 rate limited / AI budget · 409 no AI provider
 //
 // Local development only: CHAIRSIDE_AI_DEMO=1 parses with rules instead of the salon's model.
@@ -16,6 +18,7 @@ import { createClient } from '@supabase/supabase-js';
 import {
   authenticateBridgeToken,
   createSupabaseInboxPort,
+  markBridgeTested,
 } from '@chairside/ai/inbox/supabase-port.ts';
 import { handleInboxRequest } from '@chairside/ai/inbox/handler.ts';
 import type { ChairsideClient } from '@chairside/db';
@@ -53,7 +56,8 @@ Deno.serve(async (req) => {
   try {
     const result = await handleInboxRequest(req.headers.get('X-Bridge-Token'), parsed.body, {
       ...serviceAiDeps(serviceClient, null),
-      authenticate: (token) => authenticateBridgeToken(db, token),
+      authenticate: (token, meta) => authenticateBridgeToken(db, token, meta),
+      markTested: (salonId) => markBridgeTested(db, salonId),
       createPort: (salonId) => createSupabaseInboxPort(db, salonId),
       demo: demoEnabled(),
     });

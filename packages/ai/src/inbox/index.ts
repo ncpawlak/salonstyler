@@ -33,4 +33,9 @@ export {
   type InboxServiceDeps,
   type InboxServiceResult,
 } from './handler.ts';
-export { authenticateBridgeToken, createSupabaseInboxPort } from './supabase-port.ts';
+export {
+  authenticateBridgeToken,
+  createSupabaseInboxPort,
+  markBridgeTested,
+} from './supabase-port.ts';
+export * from './shortcut.ts';

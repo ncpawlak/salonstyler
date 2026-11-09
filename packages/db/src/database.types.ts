@@ -855,9 +855,13 @@ export type Database = {
       };
       inbox_bridges: {
         Row: {
+          auto_reply: boolean;
           created_at: string;
           keyword: string;
+          last_bridge_version: string | null;
           last_received_at: string | null;
+          last_test_at: string | null;
+          phone: string | null;
           rotated_at: string;
           salon_id: string;
           token_hash: string;
@@ -867,9 +871,13 @@ export type Database = {
         };
         ComputedFields: never;
         Insert: {
+          auto_reply?: boolean;
           created_at?: string;
           keyword?: string;
+          last_bridge_version?: string | null;
           last_received_at?: string | null;
+          last_test_at?: string | null;
+          phone?: string | null;
           rotated_at?: string;
           salon_id: string;
           token_hash: string;
@@ -878,9 +886,13 @@ export type Database = {
           window_started_at?: string;
         };
         Update: {
+          auto_reply?: boolean;
           created_at?: string;
           keyword?: string;
+          last_bridge_version?: string | null;
           last_received_at?: string | null;
+          last_test_at?: string | null;
+          phone?: string | null;
           rotated_at?: string;
           salon_id?: string;
           token_hash?: string;
@@ -1811,11 +1823,13 @@ export type Database = {
       };
       get_receipt: { Args: { p_token: string }; Returns: Json };
       inbox_bridge_for_token: {
-        Args: { p_hourly_limit?: number; p_token: string };
+        Args: { p_bridge_version?: string; p_hourly_limit?: number; p_token: string };
         Returns: {
+          auto_reply: boolean;
           keyword: string;
           rate_limited: boolean;
           salon_id: string;
+          salon_name: string;
           timezone: string;
         }[];
       };

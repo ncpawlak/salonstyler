@@ -11,7 +11,8 @@
     "./server": "./src/server/handler.ts",
     "./assistant": "./src/assistant/index.ts",
     "./assistant-server": "./src/server/assistant-handler.ts",
-    "./inbox": "./src/inbox/index.ts"
+    "./inbox": "./src/inbox/index.ts",
+    "./shortcut": "./src/inbox/shortcut.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
