@@ -1,22 +1,27 @@
 import '../global.css';
 
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { AskChairsideButton } from '@/components/shell/ask-chairside';
 import { createQueryClient } from '@/lib/query-client';
 import { SessionProvider, useSession } from '@/providers/session-provider';
+import { ThemeProvider, useTheme } from '@/theme/theme-provider';
 
 function RootNavigator() {
   const { isLoading, session, salon } = useSession();
+  const { colors } = useTheme();
 
   if (isLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-white dark:bg-black">
-        <ActivityIndicator />
+      <View className="flex-1 items-center justify-center bg-background">
+        <ActivityIndicator color={colors['muted-foreground']} />
       </View>
     );
   }
@@ -25,19 +30,38 @@ function RootNavigator() {
   const hasSalon = salon !== null;
 
   // Exactly one group is reachable at a time; Expo Router redirects to it when the guards change.
+  // The gallery and static mockups sit outside the guards so they can be reviewed without an account.
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Protected guard={!signedIn}>
-        <Stack.Screen name="(auth)/sign-in" />
-      </Stack.Protected>
-      <Stack.Protected guard={signedIn && !hasSalon}>
-        <Stack.Screen name="(onboarding)/create-salon" />
-      </Stack.Protected>
-      <Stack.Protected guard={signedIn && hasSalon}>
-        <Stack.Screen name="index" />
-        <Stack.Screen name="hours/index" />
-      </Stack.Protected>
-    </Stack>
+    <>
+      <Stack
+        screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}
+      >
+        <Stack.Protected guard={!signedIn}>
+          <Stack.Screen name="(auth)/sign-in" />
+        </Stack.Protected>
+        <Stack.Protected guard={signedIn && !hasSalon}>
+          <Stack.Screen name="(onboarding)/create-salon" />
+        </Stack.Protected>
+        <Stack.Protected guard={signedIn && hasSalon}>
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="settings" />
+          <Stack.Screen name="hours/index" />
+        </Stack.Protected>
+      </Stack>
+      <AskChairsideButton />
+    </>
+  );
+}
+
+function ThemedApp() {
+  const { scheme } = useTheme();
+  return (
+    <BottomSheetModalProvider>
+      <SessionProvider>
+        <RootNavigator />
+      </SessionProvider>
+      <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
+    </BottomSheetModalProvider>
   );
 }
 
@@ -45,13 +69,14 @@ export default function RootLayout() {
   const [queryClient] = useState(createQueryClient);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <SafeAreaProvider>
-        <SessionProvider>
-          <RootNavigator />
-        </SessionProvider>
-        <StatusBar style="auto" />
-      </SafeAreaProvider>
-    </QueryClientProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <QueryClientProvider client={queryClient}>
+        <SafeAreaProvider>
+          <ThemeProvider>
+            <ThemedApp />
+          </ThemeProvider>
+        </SafeAreaProvider>
+      </QueryClientProvider>
+    </GestureHandlerRootView>
   );
 }

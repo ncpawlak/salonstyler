@@ -1,13 +1,10 @@
-// Minimal form primitives for auth/onboarding. #41 (design system) will restyle these.
+// Auth/onboarding form primitives, built on the Chairside kit (#41). Same API as the
+// original #33 primitives so sign-in and create-salon pick up the design system as-is.
 import type { ReactNode } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  Text,
-  TextInput,
-  View,
-  type TextInputProps,
-} from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { Button as KitButton, Icon, Input, Text, type InputProps } from '@/components/ui';
 
 export function Screen({
   title,
@@ -19,15 +16,34 @@ export function Screen({
   children: ReactNode;
 }) {
   return (
-    <View className="flex-1 bg-white dark:bg-black">
-      <View className="w-full max-w-md flex-1 justify-center gap-4 self-center px-6">
-        <Text className="text-3xl font-bold text-black dark:text-white">{title}</Text>
-        {subtitle ? (
-          <Text className="text-base text-neutral-500 dark:text-neutral-400">{subtitle}</Text>
-        ) : null}
-        {children}
-      </View>
-    </View>
+    <SafeAreaView className="flex-1 bg-background">
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView
+          contentContainerClassName="flex-grow justify-center"
+          keyboardShouldPersistTaps="handled"
+        >
+          <View className="w-full max-w-md gap-4 self-center px-6 py-10">
+            <View className="mb-2 h-14 w-14 items-center justify-center rounded-2xl bg-primary">
+              <Icon name="cut-outline" size={28} color="primary-foreground" />
+            </View>
+            <View className="gap-1">
+              <Text variant="title1" accessibilityRole="header">
+                {title}
+              </Text>
+              {subtitle ? (
+                <Text variant="body" tone="muted">
+                  {subtitle}
+                </Text>
+              ) : null}
+            </View>
+            {children}
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
@@ -35,17 +51,17 @@ export function Field({
   label,
   hint,
   ...props
-}: TextInputProps & { label: string; hint?: ReactNode }) {
+}: Omit<InputProps, 'label'> & { label: string; hint?: ReactNode }) {
   return (
-    <View className="gap-1">
-      <Text className="text-sm font-medium text-neutral-700 dark:text-neutral-300">{label}</Text>
-      <TextInput
-        accessibilityLabel={label}
-        className="rounded-lg border border-neutral-300 px-3 py-3 text-base text-black dark:border-neutral-700 dark:text-white"
-        placeholderTextColor="#a3a3a3"
-        {...props}
-      />
-      {hint}
+    <View className="gap-1.5">
+      <Input label={label} {...props} />
+      {typeof hint === 'string' ? (
+        <Text variant="footnote" tone="muted">
+          {hint}
+        </Text>
+      ) : (
+        hint
+      )}
     </View>
   );
 }
@@ -63,42 +79,23 @@ export function Button({
   loading?: boolean;
   variant?: 'primary' | 'link';
 }) {
-  const isDisabled = disabled || loading;
-  if (variant === 'link') {
-    return (
-      <Pressable
-        accessibilityRole="button"
-        onPress={onPress}
-        disabled={isDisabled}
-        className="py-2"
-      >
-        <Text className="text-center text-base text-neutral-600 underline dark:text-neutral-400">
-          {title}
-        </Text>
-      </Pressable>
-    );
-  }
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ disabled: !!isDisabled, busy: !!loading }}
+    <KitButton
+      label={title}
       onPress={onPress}
-      disabled={isDisabled}
-      className={`items-center rounded-lg bg-black py-3 dark:bg-white ${isDisabled ? 'opacity-50' : ''}`}
-    >
-      {loading ? (
-        <ActivityIndicator color="#888" />
-      ) : (
-        <Text className="text-base font-semibold text-white dark:text-black">{title}</Text>
-      )}
-    </Pressable>
+      disabled={disabled}
+      loading={loading}
+      variant={variant === 'link' ? 'ghost' : 'primary'}
+      size={variant === 'link' ? 'md' : 'lg'}
+      fullWidth
+    />
   );
 }
 
 export function ErrorText({ children }: { children: ReactNode }) {
   if (!children) return null;
   return (
-    <Text accessibilityRole="alert" className="text-sm text-red-600">
+    <Text variant="footnote" tone="destructive" accessibilityRole="alert">
       {children}
     </Text>
   );
