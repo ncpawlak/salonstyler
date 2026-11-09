@@ -1,6 +1,12 @@
 import { dayAvailability, type DayAvailability } from './hours';
 import { mergeIntervals, overlapMs, overlaps, contains, subtractIntervals } from './intervals';
-import { busyRanges, isBlocking, layoutService, processingRanges, type TimedSegment } from './segments';
+import {
+  busyRanges,
+  isBlocking,
+  layoutService,
+  processingRanges,
+  type TimedSegment,
+} from './segments';
 import {
   MINUTE,
   DAY_MS,
@@ -43,11 +49,11 @@ export const TIME_OF_DAY_WINDOWS = {
   evening: { from: 17 * 60, to: 24 * 60 },
 } as const;
 
-export type RejectionReason = 'lead-time' | 'booking-window' | 'outside-hours' | 'conflict' | 'tentative-excluded';
+export type RejectionReason =
+  'lead-time' | 'booking-window' | 'outside-hours' | 'conflict' | 'tentative-excluded';
 
 export type Evaluation =
-  | { ok: true; candidate: SlotCandidate }
-  | { ok: false; reason: RejectionReason };
+  { ok: true; candidate: SlotCandidate } | { ok: false; reason: RejectionReason };
 
 interface Context {
   service: ServiceRequest;
@@ -65,7 +71,7 @@ function buildContext(input: {
   service: ServiceRequest;
   hours: WorkHours;
   existing?: ExistingAppointment[] | undefined;
-  blocked?: Array<{ start: InstantInput; end: InstantInput }> | undefined;
+  blocked?: { start: InstantInput; end: InstantInput }[] | undefined;
   rules?: BookingRules | undefined;
   now: InstantInput;
   includeTentative?: boolean | undefined;
@@ -74,7 +80,8 @@ function buildContext(input: {
 }): Context {
   assertTimeZone(input.hours.timeZone);
   const rules = { ...DEFAULT_RULES, ...stripUndefined(input.rules ?? {}) };
-  if (rules.slotGridMinutes <= 0 || !Number.isInteger(rules.slotGridMinutes)) throw new RangeError('slotGridMinutes must be a positive integer');
+  if (rules.slotGridMinutes <= 0 || !Number.isInteger(rules.slotGridMinutes))
+    throw new RangeError('slotGridMinutes must be a positive integer');
   layoutService(input.service, 0);
   const existing = input.existing ?? [];
   const blocked = (input.blocked ?? []).map((b) => ({ start: toMs(b.start), end: toMs(b.end) }));
@@ -95,7 +102,9 @@ function stripUndefined<T extends object>(o: T): Partial<T> {
   return Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined)) as Partial<T>;
 }
 
-function resolvePreference(p: TimePreference | undefined): { from: number; to: number } | undefined {
+function resolvePreference(
+  p: TimePreference | undefined,
+): { from: number; to: number } | undefined {
   if (p === undefined) return undefined;
   if (typeof p === 'string') return TIME_OF_DAY_WINDOWS[p];
   return { from: parseClock(p.start), to: parseClock(p.end) };
@@ -103,8 +112,10 @@ function resolvePreference(p: TimePreference | undefined): { from: number; to: n
 
 function evaluate(ctx: Context, clientStart: number, day: DayAvailability): Evaluation {
   const { rules } = ctx;
-  if (clientStart < ctx.now + rules.leadTimeMinutes * MINUTE) return { ok: false, reason: 'lead-time' };
-  if (clientStart > ctx.now + rules.bookingWindowDays * DAY_MS) return { ok: false, reason: 'booking-window' };
+  if (clientStart < ctx.now + rules.leadTimeMinutes * MINUTE)
+    return { ok: false, reason: 'lead-time' };
+  if (clientStart > ctx.now + rules.bookingWindowDays * DAY_MS)
+    return { ok: false, reason: 'booking-window' };
 
   const timed = layoutService(ctx.service, clientStart);
   const span: Interval = { start: timed[0]!.start, end: timed[timed.length - 1]!.end };
@@ -112,7 +123,8 @@ function evaluate(ctx: Context, clientStart: number, day: DayAvailability): Eval
   if (!container) return { ok: false, reason: 'outside-hours' };
 
   const blocking = timed.filter((s) => isBlocking(s.kind));
-  if (blocking.some((s) => ctx.occupied.some((o) => overlaps(o, s)))) return { ok: false, reason: 'conflict' };
+  if (blocking.some((s) => ctx.occupied.some((o) => overlaps(o, s))))
+    return { ok: false, reason: 'conflict' };
 
   const requiresApproval = day.tentative.some((t) => overlaps(t, span));
   if (requiresApproval && !ctx.includeTentative) return { ok: false, reason: 'tentative-excluded' };
@@ -139,7 +151,8 @@ function evaluate(ctx: Context, clientStart: number, day: DayAvailability): Eval
 
   const deadMinutes = Math.round(deadMs / MINUTE);
   const processingFillMinutes = Math.round(processingFillMs / MINUTE);
-  const score = 100 + 10 * abutting + processingFillMinutes - 2 * deadMinutes - (requiresApproval ? 50 : 0);
+  const score =
+    100 + 10 * abutting + processingFillMinutes - 2 * deadMinutes - (requiresApproval ? 50 : 0);
 
   const local = zonedParts(clientStart, ctx.hours.timeZone);
   const localDate = formatLocalDate(local);
@@ -152,7 +165,8 @@ function evaluate(ctx: Context, clientStart: number, day: DayAvailability): Eval
 
   const clientSegments = timed.filter((s) => s.kind !== 'buffer');
   const reasons: string[] = [];
-  if (processingFillMinutes > 0) reasons.push(`uses ${processingFillMinutes}m of another client's processing time`);
+  if (processingFillMinutes > 0)
+    reasons.push(`uses ${processingFillMinutes}m of another client's processing time`);
   if (abutting > 0) reasons.push(`fits snugly (${abutting} edge${abutting > 1 ? 's' : ''} flush)`);
   if (deadMinutes > 0) reasons.push(`leaves ${deadMinutes}m unusable gap`);
   if (requiresApproval) reasons.push('in tentative hours: needs stylist approval');
@@ -193,7 +207,12 @@ export function compareCandidates(a: SlotCandidate, b: SlotCandidate): number {
   );
 }
 
-function candidateStarts(ctx: Context, date: string, day: DayAvailability, timed: TimedSegment[]): number[] {
+function candidateStarts(
+  ctx: Context,
+  date: string,
+  day: DayAvailability,
+  timed: TimedSegment[],
+): number[] {
   const tz = ctx.hours.timeZone;
   const ld = parseLocalDate(date);
   const starts = new Set<number>();
@@ -225,7 +244,8 @@ function candidateStarts(ctx: Context, date: string, day: DayAvailability, timed
 function searchDates(requestedDate: string, radius: number): string[] {
   const base = parseLocalDate(requestedDate);
   const out = [formatLocalDate(base)];
-  for (let d = 1; d <= radius; d++) out.push(formatLocalDate(addDays(base, -d)), formatLocalDate(addDays(base, d)));
+  for (let d = 1; d <= radius; d++)
+    out.push(formatLocalDate(addDays(base, -d)), formatLocalDate(addDays(base, d)));
   return out;
 }
 
@@ -236,7 +256,8 @@ function searchDates(requestedDate: string, radius: number): string[] {
 export function findSlots(input: FindSlotsInput): SlotCandidate[] {
   const ctx = buildContext(input);
   const radius = input.searchRadiusDays ?? 3;
-  if (radius < 0 || !Number.isInteger(radius)) throw new RangeError('searchRadiusDays must be a non-negative integer');
+  if (radius < 0 || !Number.isInteger(radius))
+    throw new RangeError('searchRadiusDays must be a non-negative integer');
   const relative = layoutService(ctx.service, 0);
   const results: SlotCandidate[] = [];
   for (const date of searchDates(ctx.requestedDate, radius)) {
@@ -256,7 +277,9 @@ export function findSlots(input: FindSlotsInput): SlotCandidate[] {
  * `findSlots`. Exclude the appointment being moved from `existing`.
  */
 export function evaluateStart(
-  input: Omit<FindSlotsInput, 'requestedDate' | 'searchRadiusDays' | 'limit'> & { start: InstantInput },
+  input: Omit<FindSlotsInput, 'requestedDate' | 'searchRadiusDays' | 'limit'> & {
+    start: InstantInput;
+  },
 ): Evaluation {
   const start = toMs(input.start);
   const date = formatLocalDate(zonedParts(start, input.hours.timeZone));

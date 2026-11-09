@@ -29,7 +29,7 @@ function assert(cond: unknown, msg: string): asserts cond {
 async function latestOtp(email: string): Promise<string> {
   for (let i = 0; i < 20; i++) {
     const res = await fetch(`${mailpit}/api/v1/search?query=${encodeURIComponent(`to:${email}`)}`);
-    const { messages } = (await res.json()) as { messages: Array<{ ID: string }> };
+    const { messages } = (await res.json()) as { messages: { ID: string }[] };
     const id = messages[0]?.ID;
     if (id) {
       const msg = (await (await fetch(`${mailpit}/api/v1/message/${id}`)).json()) as {

@@ -11,12 +11,20 @@ export function at(date: string, time: string, timeZone = NY): string {
 }
 
 /** Builds an existing appointment from a start and `[kind, minutes]` pairs laid out back-to-back. */
-export function appt(id: string, startIso: string, parts: Array<[PlacedSegmentKind, number]>): ExistingAppointment {
+export function appt(
+  id: string,
+  startIso: string,
+  parts: [PlacedSegmentKind, number][],
+): ExistingAppointment {
   let t = Date.parse(startIso);
   return {
     id,
     segments: parts.map(([kind, minutes]) => {
-      const seg = { kind, start: new Date(t).toISOString(), end: new Date(t + minutes * 60_000).toISOString() };
+      const seg = {
+        kind,
+        start: new Date(t).toISOString(),
+        end: new Date(t + minutes * 60_000).toISOString(),
+      };
       t += minutes * 60_000;
       return seg;
     }),

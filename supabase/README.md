@@ -20,8 +20,8 @@ Local sign-in emails (magic link + 6-digit code) land in **Mailpit**: http://127
 Quick end-to-end check of the first-run flow (sign in → create salon → list salons, plus cross-salon isolation over REST):
 
 ```bash
-cd packages/db && npm install
-SUPABASE_ANON_KEY=<publishable/anon key from `npx supabase status`> npm run smoke
+npm install   # from the repo root (npm workspaces)
+SUPABASE_ANON_KEY=<publishable/anon key from `npx supabase status`> npm run smoke --workspace @chairside/db
 ```
 
 ## Schema (foundation)

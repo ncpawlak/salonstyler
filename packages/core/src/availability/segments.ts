@@ -1,6 +1,14 @@
 import { mergeIntervals } from './intervals';
 import { MINUTE, toMs } from './time';
-import type { DurationOverride, ExistingAppointment, Interval, PlacedSegment, PlacedSegmentKind, ServiceRequest, ServiceSegment } from './types';
+import type {
+  DurationOverride,
+  ExistingAppointment,
+  Interval,
+  PlacedSegment,
+  PlacedSegmentKind,
+  ServiceRequest,
+  ServiceSegment,
+} from './types';
 
 /** Segment kinds during which the stylist is occupied (hands-on or prep/cleanup). */
 export function isBlocking(kind: PlacedSegmentKind): boolean {
@@ -8,7 +16,10 @@ export function isBlocking(kind: PlacedSegmentKind): boolean {
 }
 
 /** Applies per-client duration overrides. Returns a new array; throws on invalid results. */
-export function applyDurationOverrides(segments: readonly ServiceSegment[], overrides: readonly DurationOverride[] = []): ServiceSegment[] {
+export function applyDurationOverrides(
+  segments: readonly ServiceSegment[],
+  overrides: readonly DurationOverride[] = [],
+): ServiceSegment[] {
   const out = segments.map((s) => ({ ...s }));
   for (const o of overrides) {
     const seg = out[o.index];
@@ -23,7 +34,8 @@ export function applyDurationOverrides(segments: readonly ServiceSegment[], over
 export function validateSegments(segments: readonly ServiceSegment[]): void {
   if (segments.length === 0) throw new RangeError('A service needs at least one segment');
   for (const s of segments) {
-    if (!Number.isInteger(s.minutes) || s.minutes <= 0) throw new RangeError(`Segment minutes must be a positive integer, got ${s.minutes}`);
+    if (!Number.isInteger(s.minutes) || s.minutes <= 0)
+      throw new RangeError(`Segment minutes must be a positive integer, got ${s.minutes}`);
   }
   if (segments[0]!.kind === 'processing' || segments[segments.length - 1]!.kind === 'processing') {
     throw new RangeError('A service cannot start or end with a processing segment');
@@ -46,7 +58,8 @@ export function layoutService(service: ServiceRequest, clientStart: number): Tim
   const before = service.bufferBeforeMinutes ?? 0;
   const after = service.bufferAfterMinutes ?? 0;
   if (before < 0 || after < 0) throw new RangeError('Buffers cannot be negative');
-  if (before > 0) out.push({ kind: 'buffer', start: clientStart - before * MINUTE, end: clientStart });
+  if (before > 0)
+    out.push({ kind: 'buffer', start: clientStart - before * MINUTE, end: clientStart });
   let t = clientStart;
   for (const s of segments) {
     out.push({ kind: s.kind, start: t, end: t + s.minutes * MINUTE });
@@ -63,15 +76,23 @@ export function layoutService(service: ServiceRequest, clientStart: number): Tim
  * exclusion constraint `EXCLUDE USING gist (salon_id WITH =, stylist_id WITH =, range WITH &&)
  * WHERE (kind <> 'processing')` (btree_gist, `tstzrange` with default `[)` bounds).
  */
-export function busyRanges(segments: readonly PlacedSegment[] | readonly TimedSegment[]): Interval[] {
+export function busyRanges(
+  segments: readonly PlacedSegment[] | readonly TimedSegment[],
+): Interval[] {
   return mergeIntervals(
-    segments.filter((s) => isBlocking(s.kind)).map((s) => ({ start: toMs(s.start), end: toMs(s.end) })),
+    segments
+      .filter((s) => isBlocking(s.kind))
+      .map((s) => ({ start: toMs(s.start), end: toMs(s.end) })),
   );
 }
 
-export function processingRanges(segments: readonly PlacedSegment[] | readonly TimedSegment[]): Interval[] {
+export function processingRanges(
+  segments: readonly PlacedSegment[] | readonly TimedSegment[],
+): Interval[] {
   return mergeIntervals(
-    segments.filter((s) => !isBlocking(s.kind)).map((s) => ({ start: toMs(s.start), end: toMs(s.end) })),
+    segments
+      .filter((s) => !isBlocking(s.kind))
+      .map((s) => ({ start: toMs(s.start), end: toMs(s.end) })),
   );
 }
 
@@ -81,16 +102,24 @@ export function toTstzRanges(ranges: readonly Interval[]): string[] {
 }
 
 /** Busy ranges across many appointments that overlap each other (what the DB would reject). */
-export function findBusyConflicts(appointments: readonly ExistingAppointment[]): Array<{ a: string; b: string; overlap: Interval }> {
-  const ranges = appointments.flatMap((appt) => busyRanges(appt.segments).map((r) => ({ id: appt.id, ...r })));
+export function findBusyConflicts(
+  appointments: readonly ExistingAppointment[],
+): { a: string; b: string; overlap: Interval }[] {
+  const ranges = appointments.flatMap((appt) =>
+    busyRanges(appt.segments).map((r) => ({ id: appt.id, ...r })),
+  );
   ranges.sort((x, y) => x.start - y.start || x.end - y.end || x.id.localeCompare(y.id));
-  const conflicts: Array<{ a: string; b: string; overlap: Interval }> = [];
+  const conflicts: { a: string; b: string; overlap: Interval }[] = [];
   for (let i = 0; i < ranges.length; i++) {
     for (let j = i + 1; j < ranges.length && ranges[j]!.start < ranges[i]!.end; j++) {
       const x = ranges[i]!;
       const y = ranges[j]!;
       if (x.id === y.id) continue;
-      conflicts.push({ a: x.id, b: y.id, overlap: { start: y.start, end: Math.min(x.end, y.end) } });
+      conflicts.push({
+        a: x.id,
+        b: y.id,
+        overlap: { start: y.start, end: Math.min(x.end, y.end) },
+      });
     }
   }
   return conflicts;

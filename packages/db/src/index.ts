@@ -62,7 +62,7 @@ export async function createSalon(
 /** Salons the signed-in user belongs to, with their role. Empty => show the create-salon screen. */
 export async function listMySalons(
   client: ChairsideClient,
-): Promise<Array<Salon & { role: SalonRole }>> {
+): Promise<(Salon & { role: SalonRole })[]> {
   const { data: auth, error: authError } = await client.auth.getUser();
   if (authError) throw authError;
   const userId = auth.user?.id;

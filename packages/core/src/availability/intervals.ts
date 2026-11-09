@@ -2,7 +2,9 @@ import type { Interval } from './types';
 
 /** Sorts and merges overlapping or touching intervals; drops empty ones. */
 export function mergeIntervals(intervals: readonly Interval[]): Interval[] {
-  const sorted = intervals.filter((i) => i.end > i.start).sort((a, b) => a.start - b.start || a.end - b.end);
+  const sorted = intervals
+    .filter((i) => i.end > i.start)
+    .sort((a, b) => a.start - b.start || a.end - b.end);
   const out: Interval[] = [];
   for (const i of sorted) {
     const last = out[out.length - 1];

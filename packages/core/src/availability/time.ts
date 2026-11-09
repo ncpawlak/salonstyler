@@ -4,7 +4,8 @@ export const MINUTE = 60_000;
 export const DAY_MS = 86_400_000;
 
 export function toMs(input: InstantInput): number {
-  const ms = input instanceof Date ? input.getTime() : typeof input === 'number' ? input : Date.parse(input);
+  const ms =
+    input instanceof Date ? input.getTime() : typeof input === 'number' ? input : Date.parse(input);
   if (!Number.isFinite(ms)) throw new RangeError(`Invalid instant: ${String(input)}`);
   return ms;
 }
@@ -45,7 +46,9 @@ export function weekday(d: LocalDate): 0 | 1 | 2 | 3 | 4 | 5 | 6 {
 }
 
 export function daysBetween(a: LocalDate, b: LocalDate): number {
-  return Math.round((Date.UTC(b.year, b.month - 1, b.day) - Date.UTC(a.year, a.month - 1, a.day)) / DAY_MS);
+  return Math.round(
+    (Date.UTC(b.year, b.month - 1, b.day) - Date.UTC(a.year, a.month - 1, a.day)) / DAY_MS,
+  );
 }
 
 /** Parses `HH:MM` to minutes since local midnight. `24:00` is allowed. */
@@ -113,7 +116,9 @@ export function zonedToUtc(date: LocalDate, minutes: number, timeZone: string): 
   const wall = Date.UTC(date.year, date.month - 1, date.day, 0, minutes);
   const before = zoneOffset(wall - DAY_MS / 2, timeZone);
   const after = zoneOffset(wall + DAY_MS / 2, timeZone);
-  const valid = [before, after].map((o) => wall - o).filter((utc) => zoneOffset(utc, timeZone) === wall - utc);
+  const valid = [before, after]
+    .map((o) => wall - o)
+    .filter((utc) => zoneOffset(utc, timeZone) === wall - utc);
   if (valid.length > 0) return Math.min(...valid);
   return wall - before;
 }

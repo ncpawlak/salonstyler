@@ -131,7 +131,7 @@ export interface FindSlotsInput {
   preference?: TimePreference;
   existing?: ExistingAppointment[];
   /** Fully blocked time (personal events, holds without segments). */
-  blocked?: Array<{ start: InstantInput; end: InstantInput }>;
+  blocked?: { start: InstantInput; end: InstantInput }[];
   rules?: BookingRules;
   now: InstantInput;
   /** Include tentative-hour slots. Default true. */
@@ -162,6 +162,6 @@ export interface SlotCandidate {
   /** Minutes of this booking's hands-on time placed inside other appointments' processing time. */
   processingFillMinutes: number;
   /** Placed segments, including buffers. */
-  segments: Array<{ kind: PlacedSegmentKind; start: string; end: string }>;
+  segments: { kind: PlacedSegmentKind; start: string; end: string }[];
   reasons: string[];
 }
