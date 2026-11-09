@@ -9,11 +9,18 @@ import {
   withoutOverride,
 } from './paint';
 import { getWorkingBlocks } from './resolve';
-import { buildWorkHours, overrideFromRow, overrideToRow, templateToRows } from './rows';
-import type { WorkHours } from './types';
+import {
+  buildWorkHours,
+  diffOverrides,
+  overrideFromRow,
+  overrideToRow,
+  templateToRows,
+} from './rows';
+import type { WorkHours, WorkHoursOverride } from './types';
 
 const CHI = 'America/Chicago';
 const lunch = [{ start: '12:00', end: '13:00' }];
+const OPEN_10_2 = { start: '10:00', end: '14:00' };
 
 function acceptanceHours(): WorkHours {
   let weekly = applyBlanketSchedule(
@@ -95,6 +102,60 @@ describe('painting work hours', () => {
     expect(getWorkingBlocks(h, '2026-12-25').status).toBe('open');
     h = withoutOverride(h, '2026-12-24', '2026-12-26');
     expect(h.overrides).toEqual([]);
+  });
+
+  it('painting over part of a range splits it, and the result survives a DB round-trip', () => {
+    let h = acceptanceHours();
+    h = withOverride(h, paintDays(h, 'open', '2026-12-25', '2026-12-25', OPEN_10_2));
+    expect((h.overrides as WorkHoursOverride[]).map((o) => [o.from, o.to, o.kind])).toEqual([
+      ['2026-12-24', '2026-12-24', 'vacation'],
+      ['2026-12-26', '2026-12-26', 'vacation'],
+      ['2026-12-25', '2026-12-25', 'custom'],
+    ]);
+    // A wider range painted later replaces what it covers, even after a reload.
+    h = withOverride(h, paintDays(h, 'tentative', '2026-12-20', '2026-12-31'));
+    expect(h.overrides).toHaveLength(1);
+    h = withOverride(h, paintDays(h, 'closed', '2026-12-28'));
+    const rebuilt = buildWorkHours({
+      timeZone: CHI,
+      template: templateToRows(h.weekly),
+      overrides: (h.overrides ?? []).map(overrideToRow),
+    });
+    for (let d = 18; d <= 31; d++) {
+      const date = `2026-12-${d}`;
+      expect(getWorkingBlocks(rebuilt, date).blocks).toEqual(getWorkingBlocks(h, date).blocks);
+    }
+    expect(getWorkingBlocks(rebuilt, '2026-12-28').status).toBe('closed');
+    expect(getWorkingBlocks(rebuilt, '2026-12-29').status).toBe('tentative');
+  });
+
+  it('clearing part of a range reverts just those days to the template', () => {
+    let h = acceptanceHours();
+    h = withoutOverride(h, '2026-12-25');
+    expect(getWorkingBlocks(h, '2026-12-25').source).toBe('template');
+    expect(getWorkingBlocks(h, '2026-12-24').source).toBe('override');
+    expect(getWorkingBlocks(h, '2026-12-26').source).toBe('override');
+  });
+
+  it('diffs edited overrides against saved rows', () => {
+    const saved = [
+      { id: 'a', ...overrideToRow({ from: '2026-12-24', to: '2026-12-26', blocks: [] }) },
+      { id: 'b', ...overrideToRow({ from: '2027-01-02', blocks: [] }) },
+      { id: 'c', ...overrideToRow({ from: '2027-01-03', blocks: [] }) },
+    ];
+    let h: WorkHours = buildWorkHours({ timeZone: CHI, template: [], overrides: saved });
+    expect(diffOverrides(saved, h.overrides ?? [])).toEqual({ upserts: [], deletes: [] });
+    h = withOverride(h, paintDays(h, 'open', '2026-12-25', '2026-12-25', OPEN_10_2));
+    h = withoutOverride(h, '2027-01-03');
+    h = withOverride(h, paintDays(h, 'tentative', '2027-01-02', '2027-01-02', OPEN_10_2));
+    const { upserts, deletes } = diffOverrides(saved, h.overrides ?? []);
+    expect(deletes.sort()).toEqual(['a', 'c']);
+    expect(upserts.map((r) => `${r.start_date}..${r.end_date}:${r.kind}`).sort()).toEqual([
+      '2026-12-24..2026-12-24:day_off',
+      '2026-12-25..2026-12-25:custom',
+      '2026-12-26..2026-12-26:day_off',
+      '2027-01-02..2027-01-02:custom',
+    ]);
   });
 
   it('rejects bad input', () => {

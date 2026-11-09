@@ -1,8 +1,9 @@
 import {
   applyBlanketSchedule,
-  getWorkingBlocksRange,
+  overrideToRow,
   paintDays,
   setTemplateDay,
+  templateToRows,
   withOverride,
   withoutOverride,
   type BlanketScheduleInput,
@@ -13,34 +14,23 @@ import {
 } from '@chairside/core';
 import { useCallback, useMemo, useState } from 'react';
 
-export interface BookingRulesState {
-  minNoticeMinutes: number;
-  bookingWindowDays: number;
-  slotGridMinutes: number;
-}
+import type { BookingRulesState, SavedWorkHours } from './use-work-hours';
 
-export const DEFAULT_BOOKING_RULES: BookingRulesState = {
-  minNoticeMinutes: 120,
-  bookingWindowDays: 60,
-  slotGridMinutes: 15,
-};
-
-function deviceTimeZone(): string {
-  return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+/** Comparable snapshot of what would be written to the DB. */
+function snapshot(hours: WorkHours, rules: BookingRulesState): string {
+  const overrides = (hours.overrides ?? [])
+    .map(overrideToRow)
+    .sort((a, b) => a.start_date.localeCompare(b.start_date));
+  return JSON.stringify([templateToRows(hours.weekly), overrides, rules]);
 }
 
 /**
- * Local editor state for work hours. Everything is computed with `@chairside/core`, so the
- * screen behaves exactly like the booking engine. Persisting via `@chairside/db`
- * (`saveWorkHoursTemplate`, `upsertWorkHoursOverride`, …) plugs in once auth/salon context lands.
+ * Editor state for work hours, starting from the saved data. Everything is computed with
+ * `@chairside/core`, so the screen behaves exactly like the booking engine.
  */
-export function useWorkHoursEditor(initial?: Partial<WorkHours>) {
-  const [hours, setHours] = useState<WorkHours>(() => ({
-    timeZone: initial?.timeZone ?? deviceTimeZone(),
-    weekly: initial?.weekly ?? {},
-    overrides: initial?.overrides ?? [],
-  }));
-  const [rules, setRules] = useState<BookingRulesState>(DEFAULT_BOOKING_RULES);
+export function useWorkHoursEditor(saved: SavedWorkHours) {
+  const [hours, setHours] = useState<WorkHours>(saved.hours);
+  const [rules, setRules] = useState<BookingRulesState>(saved.rules);
 
   const applyBlanket = useCallback(
     (input: BlanketScheduleInput) =>
@@ -60,33 +50,25 @@ export function useWorkHoursEditor(initial?: Partial<WorkHours>) {
     [],
   );
 
-  const clear = useCallback(
+  /** Back to the weekly template for these dates. */
+  const reset = useCallback(
     (from: string, to: string = from) => setHours((h) => withoutOverride(h, from, to)),
     [],
   );
 
-  /** Back to the weekly template: drops the exact override, then masks any wider one. */
-  const reset = useCallback(
-    (from: string, to: string = from) =>
-      setHours((h) => {
-        let next = withoutOverride(h, from, to);
-        for (const day of getWorkingBlocksRange(next, from, to)) {
-          if (day.source !== 'override') continue;
-          const usual = next.weekly[day.weekday] ?? { blocks: [] };
-          next = withOverride(next, {
-            from: day.date,
-            blocks: usual.blocks,
-            breaks: usual.breaks ?? [],
-            kind: usual.blocks.length ? 'custom' : 'day_off',
-          });
-        }
-        return next;
-      }),
-    [],
+  const discard = useCallback(() => {
+    setHours(saved.hours);
+    setRules(saved.rules);
+  }, [saved]);
+
+  const savedSnapshot = useMemo(() => snapshot(saved.hours, saved.rules), [saved]);
+  const dirty = useMemo(
+    () => snapshot(hours, rules) !== savedSnapshot,
+    [hours, rules, savedSnapshot],
   );
 
   return useMemo(
-    () => ({ hours, rules, setRules, applyBlanket, setWeekday, paint, clear, reset }),
-    [hours, rules, applyBlanket, setWeekday, paint, clear, reset],
+    () => ({ hours, rules, setRules, applyBlanket, setWeekday, paint, reset, discard, dirty }),
+    [hours, rules, applyBlanket, setWeekday, paint, reset, discard, dirty],
   );
 }

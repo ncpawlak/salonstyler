@@ -133,3 +133,26 @@ export function bookingRulesFromSettings(row: BookingSettingsRow): BookingRules 
     slotGridMinutes: row.slot_grid_minutes,
   };
 }
+
+/**
+ * What to write so the DB matches the edited overrides: `deletes` are ids of saved rows whose
+ * range is gone, `upserts` are new or changed rows (keyed by `start_date`/`end_date`).
+ */
+export function diffOverrides(
+  saved: readonly (WorkHoursOverrideRow & { id: string })[],
+  edited: readonly WorkHoursOverride[],
+): { upserts: WorkHoursOverrideRow[]; deletes: string[] } {
+  const key = (r: WorkHoursOverrideRow) => `${r.start_date}|${r.end_date}`;
+  const same = (a: WorkHoursOverrideRow, b: WorkHoursOverrideRow) =>
+    JSON.stringify(a) === JSON.stringify(b);
+  const savedByKey = new Map(saved.map((r) => [key(r), overrideToRow(overrideFromRow(r))]));
+  const next = edited.map(overrideToRow);
+  const nextKeys = new Set(next.map(key));
+  return {
+    upserts: next.filter((r) => {
+      const prev = savedByKey.get(key(r));
+      return !prev || !same(prev, r);
+    }),
+    deletes: saved.filter((r) => !nextKeys.has(key(r))).map((r) => r.id),
+  };
+}

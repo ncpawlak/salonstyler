@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { Text } from 'react-native';
 
 import { Button, Screen } from '@/components/form';
@@ -13,6 +14,7 @@ export default function HomeScreen() {
       <Text className="text-base text-neutral-500 dark:text-neutral-400">
         Signed in as {user?.email ?? 'unknown'} ({salon.role})
       </Text>
+      <Button title="Work hours" onPress={() => router.push('/hours')} />
       <Button title="Sign out" variant="link" onPress={() => void signOut()} />
     </Screen>
   );
