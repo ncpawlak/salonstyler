@@ -1215,6 +1215,19 @@ export type Database = {
       };
       save_service: { Args: { p_salon_id: string; p_service: Json }; Returns: string };
       save_service_addon: { Args: { p_addon: Json; p_salon_id: string }; Returns: string };
+      search_salon: {
+        Args: { p_limit?: number; p_query: string; p_salon_id: string };
+        Returns: {
+          color_tag: string;
+          id: string;
+          kind: string;
+          score: number;
+          starts_at: string;
+          status: Database['public']['Enums']['appointment_status'];
+          subtitle: string;
+          title: string;
+        }[];
+      };
       set_appointment_status: {
         Args: {
           p_appointment_id: string;

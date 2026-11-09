@@ -11,6 +11,7 @@ export type { Session, User } from '@supabase/supabase-js';
 export * from './services.ts';
 export * from './appointments.ts';
 export * from './notifications.ts';
+export * from './search.ts';
 
 type PublicSchema = Database['public'];
 

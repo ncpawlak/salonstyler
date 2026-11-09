@@ -33,7 +33,8 @@ import {
 } from './selection';
 
 export type BookingTarget =
-  { kind: 'new'; start: number } | { kind: 'edit'; appointment: AppointmentWithDetails };
+  | { kind: 'new'; start: number; client?: PickedClient }
+  | { kind: 'edit'; appointment: AppointmentWithDetails };
 
 export interface BookingSheetProps {
   target: BookingTarget | null;
@@ -112,7 +113,9 @@ function BookingForm({
   const book = useBookAppointment();
   const reschedule = useRescheduleAppointment();
 
-  const [client, setClient] = useState<PickedClient | null>(editing?.client ?? null);
+  const [client, setClient] = useState<PickedClient | null>(
+    editing?.client ?? (target.kind === 'new' ? (target.client ?? null) : null),
+  );
   const [selection, setSelection] = useState<BookingSelection>(
     editing ? selectionFromSnapshots(editing.services) : { items: [], adjustMinutes: 0 },
   );
