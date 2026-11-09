@@ -91,6 +91,12 @@ export default function SettingsScreen() {
             onPress={() => router.push('/settings/ai')}
           />
           <ListRow
+            title="Text bridge"
+            subtitle="Forward booking texts from your iPhone to the Inbox"
+            leading={<Icon name="chatbubbles-outline" color="primary" />}
+            onPress={() => router.push('/settings/text-bridge')}
+          />
+          <ListRow
             title="Payments"
             subtitle="Stripe account, card payments and payouts"
             leading={<Icon name="card-outline" color="primary" />}

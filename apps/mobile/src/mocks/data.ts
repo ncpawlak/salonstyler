@@ -165,54 +165,6 @@ export function formatDuration(minutes: number): string {
 
 export const WORK_DAY = { start: 9 * 60, end: 18 * 60 };
 
-export type RequestSource = 'instagram' | 'text' | 'web';
-
-export type BookingRequest = {
-  id: string;
-  client: string;
-  source: RequestSource;
-  receivedAgo: string;
-  message: string;
-  serviceIds: string[];
-  proposed: string;
-  alternatives: string[];
-  isNewClient?: boolean;
-};
-
-export const bookingRequests: BookingRequest[] = [
-  {
-    id: 'r1',
-    client: 'Maya Thompson',
-    source: 'instagram',
-    receivedAgo: '12m',
-    message: 'Hiii can I get a root touch up sometime next week? Afternoons are best 🙏',
-    serviceIds: ['root-color'],
-    proposed: 'Tue, Nov 17 · 2:00 PM',
-    alternatives: ['Wed 3:30 PM', 'Thu 1:00 PM'],
-  },
-  {
-    id: 'r2',
-    client: 'Chris Nguyen',
-    source: 'text',
-    receivedAgo: '1h',
-    message: 'Need a cut before Friday if you have anything',
-    serviceIds: ['mens-cut'],
-    proposed: 'Thu, Nov 12 · 11:30 AM',
-    alternatives: ['Thu 4:00 PM', 'Fri 9:00 AM'],
-  },
-  {
-    id: 'r3',
-    client: 'Alana Brooks',
-    source: 'web',
-    receivedAgo: '3h',
-    message: 'Booked online: balayage + gloss. First time!',
-    serviceIds: ['balayage', 'gloss'],
-    proposed: 'Sat, Nov 14 · 10:00 AM',
-    alternatives: ['Sat 12:30 PM'],
-    isNewClient: true,
-  },
-];
-
 export type Client = {
   id: string;
   name: string;

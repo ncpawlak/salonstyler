@@ -5,8 +5,8 @@ import type { ColorValue } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { TAB_BAR_HEIGHT } from '@/components/shell/ask-chairside';
+import { useInbox } from '@/features/inbox/api';
 import { useSalonRealtime } from '@/features/realtime/use-salon-realtime';
-import { usePendingRequests } from '@/features/today/api';
 import { haptics } from '@/lib/haptics';
 import { useTheme } from '@/theme/theme-provider';
 
@@ -28,7 +28,7 @@ function tabIcon(active: IoniconName, inactive: IoniconName) {
 export default function TabsLayout() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const pending = usePendingRequests().data?.length ?? 0;
+  const pending = useInbox().items?.length ?? 0;
   useSalonRealtime();
 
   return (

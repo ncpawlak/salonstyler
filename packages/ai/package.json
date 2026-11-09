@@ -10,7 +10,8 @@
     ".": "./src/index.ts",
     "./server": "./src/server/handler.ts",
     "./assistant": "./src/assistant/index.ts",
-    "./assistant-server": "./src/server/assistant-handler.ts"
+    "./assistant-server": "./src/server/assistant-handler.ts",
+    "./inbox": "./src/inbox/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

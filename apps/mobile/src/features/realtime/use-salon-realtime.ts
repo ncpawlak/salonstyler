@@ -18,7 +18,7 @@ export function uniqueTopic(base: string): string {
 
 /**
  * Streams appointment and client changes for the current salon and refreshes the affected
- * queries, so Today, the calendar, the Inbox badge and search stay live across devices. Realtime
+ * queries, so Today, the calendar, the Inbox and its badge and search stay live across devices. Realtime
  * applies RLS, so only rows from salons the user belongs to arrive. Bursts (a booking writes the
  * row a few times) are coalesced into one refetch.
  */
@@ -48,6 +48,12 @@ export function useSalonRealtime() {
       )
       .on('postgres_changes', { event: '*', schema: 'public', table: 'clients', filter }, () =>
         schedule('clients', 'search', 'appointments'),
+      )
+      // Texts captured by the inbox agent (their queries live under `appointments`).
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'captured_requests', filter },
+        () => schedule('appointments'),
       )
       .subscribe();
 

@@ -68,6 +68,21 @@ export async function aiRequestContext(req: Request): Promise<AiRequestContext |
       if (error) throw error;
       return ((data as { role?: string } | null)?.role as 'owner' | 'stylist' | undefined) ?? null;
     },
+    ...serviceAiDeps(serviceClient, user.id),
+  };
+
+  return { userClient, userId: user.id, deps };
+}
+
+/**
+ * Key loading, budget, and usage metering over the service client. `userId` is null for calls
+ * with no signed-in user (the inbox bridge).
+ */
+export function serviceAiDeps(
+  serviceClient: ReturnType<typeof createClient>,
+  userId: string | null,
+): Pick<AiServiceDeps, 'loadConfig' | 'tokensUsedThisMonth' | 'recordUsage'> {
+  return {
     async loadConfig(salonId) {
       const { data, error } = await serviceClient
         .rpc('get_ai_provider_secret', { p_salon_id: salonId })
@@ -96,7 +111,7 @@ export async function aiRequestContext(req: Request): Promise<AiRequestContext |
     async recordUsage(entry) {
       const { error } = await serviceClient.from('ai_usage').insert({
         salon_id: entry.salonId,
-        user_id: user.id,
+        user_id: userId,
         provider: entry.provider,
         model: entry.model,
         purpose: entry.purpose,
@@ -106,8 +121,6 @@ export async function aiRequestContext(req: Request): Promise<AiRequestContext |
       if (error) throw error;
     },
   };
-
-  return { userClient, userId: user.id, deps };
 }
 
 export async function readJson(req: Request): Promise<{ body: unknown } | Response> {
