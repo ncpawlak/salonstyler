@@ -18,7 +18,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useCurrentSalon } from '@/providers/session-provider';
 
-const appointmentsKey = (salonId: string) => ['appointments', salonId] as const;
+export const appointmentsKey = (salonId: string) => ['appointments', salonId] as const;
 /** Prefix for every client query (list, profile, visits...), so one invalidation refreshes all. */
 export const clientsKey = (salonId: string) => ['clients', salonId] as const;
 

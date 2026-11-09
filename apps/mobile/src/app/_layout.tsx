@@ -64,6 +64,7 @@ function RootNavigator() {
           <Stack.Screen name="services/index" />
           <Stack.Screen name="services/[id]" />
           <Stack.Screen name="clients/[id]" />
+          <Stack.Screen name="import/index" />
           <Stack.Screen name="checkout/index" options={{ presentation: 'modal' }} />
           <Stack.Screen name="checkout/[appointmentId]" options={{ presentation: 'modal' }} />
         </Stack.Protected>

@@ -5,4 +5,10 @@ export { createProvider } from './registry.ts';
 export { OpenAiProvider } from './adapters/openai.ts';
 export { AnthropicProvider } from './adapters/anthropic.ts';
 export { GeminiProvider } from './adapters/gemini.ts';
-export type { AiChatResponse, AiErrorBody, AiRequest, AiTestResponse } from './server/handler.ts';
+export type {
+  AiChatResponse,
+  AiErrorBody,
+  AiMapColumnsResponse,
+  AiRequest,
+  AiTestResponse,
+} from './server/handler.ts';

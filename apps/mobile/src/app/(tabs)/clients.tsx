@@ -92,13 +92,21 @@ export default function ClientsScreen() {
     );
   } else {
     body = (
-      <EmptyState
-        icon="people-outline"
-        title="No clients yet"
-        message="Clients you book appear here with their visits, formulas and photos."
-        actionLabel="Add client"
-        onAction={() => setAdding(true)}
-      />
+      <View className="items-center">
+        <EmptyState
+          icon="people-outline"
+          title="No clients yet"
+          message="Clients you book appear here with their visits, formulas and photos."
+          actionLabel="Add client"
+          onAction={() => setAdding(true)}
+        />
+        <Button
+          label="Import from Vagaro"
+          variant="ghost"
+          icon="cloud-download-outline"
+          onPress={() => router.push('/import')}
+        />
+      </View>
     );
   }
 
@@ -125,6 +133,13 @@ export default function ClientsScreen() {
             icon="person-add-outline"
             accessibilityLabel="Add client"
             onPress={() => setAdding(true)}
+          />
+          <Button
+            size="icon"
+            variant="secondary"
+            icon="cloud-download-outline"
+            accessibilityLabel="Import from Vagaro"
+            onPress={() => router.push('/import')}
           />
         </View>
       }
