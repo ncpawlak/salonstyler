@@ -41,7 +41,8 @@ Stylists get texts like *"can I get a balayage + trim next Friday afternoon?"* a
 apps/mobile/          Expo app (owner app + public booking routes)
 packages/core/        availability engine, service/segment math, shared schemas
 packages/ai/          LLM provider adapters, agent tools, prompts
-supabase/migrations/  schema, RLS, constraints
+packages/db/          typed Supabase client + generated DB types
+supabase/migrations/  schema, RLS, constraints (see supabase/README.md)
 supabase/functions/   inbox, ai-assistant, public-booking, notifier, stripe-webhook, import
 docs/                 plan & design docs
 ```
