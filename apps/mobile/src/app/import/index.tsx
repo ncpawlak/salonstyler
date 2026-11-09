@@ -698,7 +698,8 @@ function AppointmentPreview({
       <View className="flex-row gap-3 pt-5">
         <Button label="Back" variant="outline" grow onPress={onBack} />
         <Button
-          label={`Import ${plural(plan.appointments.length, 'appointment')}`}
+          label={`Import ${plan.appointments.length}`}
+          accessibilityLabel={`Import ${plural(plan.appointments.length, 'appointment')}`}
           grow
           loading={menu.isPending}
           disabled={!plan.appointments.length || !menu.data}
@@ -831,11 +832,11 @@ function AppointmentResults({
               return (
                 <ListRow
                   key={r.index}
-                  title={`${when(l?.startsAt)} · ${l?.title ?? ''}`}
+                  title={l?.title ?? 'Appointment'}
                   subtitle={
                     r.conflict
-                      ? `Overlaps ${r.conflict.clientName ?? 'a booking'} at ${when(r.conflict.startsAt)}`
-                      : (r.message ?? 'Overlaps another booking')
+                      ? `${when(l?.startsAt)} · overlaps ${r.conflict.clientName ?? 'a booking'} (${formatTime(Date.parse(r.conflict.startsAt), salon.timezone)})`
+                      : `${when(l?.startsAt)} · ${r.message ?? 'overlaps another booking'}`
                   }
                   chevron={false}
                   last={i === conflicts.length - 1}
@@ -845,7 +846,7 @@ function AppointmentResults({
           </ListGroup>
           <Text variant="footnote" tone="muted" className="px-1 pt-2">
             These weren’t booked. Decide which to keep and book the other yourself, or free the time
-            and import the file again. Everything else is skipped as already imported.
+            and import the file again: only what’s missing gets added.
           </Text>
         </>
       ) : null}
