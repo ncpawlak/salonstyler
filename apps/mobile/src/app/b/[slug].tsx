@@ -1,7 +1,7 @@
-import type { PublicService } from '@chairside/ai/public-booking';
+import type { PublicBookResponse, PublicService } from '@chairside/ai/public-booking';
 import { formatAmount } from '@chairside/payments';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -338,10 +338,17 @@ function DetailsStep({
     void verifiedEmail().then(setVerified);
   }, []);
 
+  // A due deposit holds the slot; the booking counts once it is paid on the pay page.
+  const done = (res: PublicBookResponse) => {
+    const { deposit, status, label } = res.booking;
+    if (deposit) router.push(`/pay/${deposit.payToken}`);
+    else onBooked({ status: status === 'confirmed' ? 'confirmed' : 'requested', label });
+  };
+
   const book = useMutation({
     mutationFn: () =>
       api.book({ services: slot.items, start: slot.start, name, phone, notes: notes || null }),
-    onSuccess: (res) => onBooked({ status: res.booking.status, label: res.booking.label }),
+    onSuccess: done,
   });
   const sendCode = useMutation({
     mutationFn: () => api.sendCode({ email: email.trim(), phone }),
@@ -359,7 +366,7 @@ function DetailsStep({
         notes: notes || null,
       });
     },
-    onSuccess: (res) => onBooked({ status: res.booking.status, label: res.booking.label }),
+    onSuccess: done,
   });
 
   const detailsReady = name.trim().length > 0 && phone.trim().length >= 7;

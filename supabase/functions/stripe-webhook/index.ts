@@ -84,6 +84,23 @@ Deno.serve(async (req) => {
       });
       if (error) throw error;
     },
+    async markDepositPaid(salonId, depositId, paymentIntentId, customerId, paymentMethodId) {
+      const { data: deposit, error: loadError } = await db
+        .from('appointment_deposits')
+        .select('id')
+        .eq('id', depositId)
+        .eq('salon_id', salonId)
+        .maybeSingle();
+      if (loadError) throw loadError;
+      if (!deposit) return;
+      const { error } = await db.rpc('mark_deposit_paid', {
+        p_deposit_id: depositId,
+        p_payment_intent_id: paymentIntentId,
+        p_customer_id: customerId ?? undefined,
+        p_payment_method_id: paymentMethodId ?? undefined,
+      });
+      if (error) throw error;
+    },
   };
 
   // The signature covers the exact bytes Stripe sent, so read the raw body (never re-serialize).

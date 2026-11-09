@@ -49,16 +49,26 @@ export interface PublicBookingInput {
   requiresApproval: boolean;
 }
 
+/** Present when the salon asks for a deposit: the booking is `held` until it is paid. */
+export interface PublicBookingDeposit {
+  amountCents: number;
+  currency: string;
+  /** Opens `/pay/{payToken}`. */
+  payToken: string;
+  holdExpiresAt: string;
+}
+
 export type PublicBookResult =
   | {
       ok: true;
       appointmentId: string;
-      status: 'confirmed' | 'requested';
+      status: 'confirmed' | 'requested' | 'held';
       startsAt: string;
       endsAt: string;
       clientId: string;
       clientCreated: boolean;
       clientLinked: boolean;
+      deposit?: PublicBookingDeposit;
     }
   | { ok: false; reason: 'disabled' | 'limit' | 'conflict' };
 

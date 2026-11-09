@@ -17,3 +17,11 @@ export type {
   StripeAccountRecord,
 } from './server/connect.ts';
 export type { PaymentStatus } from './server/webhook.ts';
+export type {
+  DepositPageResponse,
+  DepositPayPage,
+  DepositRefundResponse,
+  DepositsErrorBody,
+  DepositsRequest,
+  DepositStartResponse,
+} from './server/deposits.ts';

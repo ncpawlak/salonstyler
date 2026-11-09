@@ -68,7 +68,20 @@ export interface StripeCheckoutClient {
   };
 }
 
-export type StripeClient = StripeConnectClient & StripeCheckoutClient;
+export type StripeClient = StripeConnectClient & StripeCheckoutClient & StripeHostedCheckoutClient;
+
+/** Hosted Checkout (deposit pay links). */
+export interface StripeHostedCheckoutClient {
+  checkout: {
+    sessions: {
+      create(
+        params: Stripe.Checkout.SessionCreateParams,
+        options?: IdempotentOptions,
+      ): Promise<Stripe.Checkout.Session>;
+      retrieve(id: string, params?: { expand?: string[] }): Promise<Stripe.Checkout.Session>;
+    };
+  };
+}
 
 /** Uses fetch + Web Crypto so the same code runs in Deno (Edge Functions) and Node (tests). */
 export function createStripeClient(secretKey: string): StripeClient {
@@ -91,6 +104,12 @@ export function createStripeClient(secretKey: string): StripeClient {
       cancel: (id) => stripe.paymentIntents.cancel(id),
     },
     refunds: { create: (params, options) => stripe.refunds.create(params, options) },
+    checkout: {
+      sessions: {
+        create: (params, options) => stripe.checkout.sessions.create(params, options),
+        retrieve: (id, params) => stripe.checkout.sessions.retrieve(id, params),
+      },
+    },
     terminal: {
       connectionTokens: { create: (params) => stripe.terminal.connectionTokens.create(params) },
       locations: {

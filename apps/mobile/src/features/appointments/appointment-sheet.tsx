@@ -6,6 +6,8 @@ import { useState } from 'react';
 import { View } from 'react-native';
 
 import { Badge, Button, Sheet, Text, type BadgeTone } from '@/components/ui';
+import { useAppointmentDeposit } from '@/features/deposits/api';
+import { DepositCancel, DepositSummary } from '@/features/deposits/deposit-section';
 import { haptics } from '@/lib/haptics';
 
 import { formatPrice } from '../services/data';
@@ -65,6 +67,7 @@ function AppointmentDetails({
 }: Omit<AppointmentSheetProps, 'appointment'> & { appointment: AppointmentWithDetails }) {
   const tz = hours.timeZone;
   const setStatus = useSetAppointmentStatus();
+  const deposit = useAppointmentDeposit(appointment.id).data ?? null;
   // Status shown here survives the appointment dropping off the calendar (cancel/no-show).
   const [status, setLocalStatus] = useState<AppointmentStatus>(appointment.status);
   const [previous, setPrevious] = useState<AppointmentStatus | null>(null);
@@ -144,6 +147,10 @@ function AppointmentDetails({
           </Text>
         ) : null}
       </View>
+
+      {deposit ? (
+        <DepositSummary deposit={deposit} clientPhone={appointment.client?.phone ?? null} />
+      ) : null}
 
       {active ? (
         <View className="gap-2">
@@ -272,7 +279,22 @@ function AppointmentDetails({
           />
         ) : null}
         {active ? (
-          confirmCancel ? (
+          confirmCancel && deposit?.status === 'paid' ? (
+            <DepositCancel
+              appointmentId={appointment.id}
+              onBack={() => setConfirmCancel(false)}
+              onCancelled={(refundError) => {
+                setLocalStatus('cancelled');
+                setConfirmCancel(false);
+                if (refundError) {
+                  setMessage({
+                    text: `Cancelled, but the refund didn't go through: ${refundError}`,
+                    tone: 'destructive',
+                  });
+                } else onClose();
+              }}
+            />
+          ) : confirmCancel ? (
             <View className="gap-2">
               <Text variant="subhead" tone="muted">
                 Cancel this appointment and free the time?

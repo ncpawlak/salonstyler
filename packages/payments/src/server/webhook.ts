@@ -39,6 +39,17 @@ export interface PaymentsStore {
    * checkouts that don't belong to `salonId`.
    */
   completeCheckout(salonId: string, checkoutId: string, paymentIntentId: string): Promise<void>;
+  /**
+   * Records a paid deposit (`public.mark_deposit_paid`, idempotent). Must ignore deposits that
+   * don't belong to `salonId`.
+   */
+  markDepositPaid(
+    salonId: string,
+    depositId: string,
+    paymentIntentId: string,
+    customerId: string | null,
+    paymentMethodId: string | null,
+  ): Promise<void>;
 }
 
 export interface StripeWebhookDeps {
@@ -154,6 +165,22 @@ export async function handleStripeWebhook(
     const checkoutId = uuidOrNull(intent.metadata?.checkout_id);
     if (piStatus === 'succeeded' && checkoutId && !event.account) {
       await deps.store.completeCheckout(salonId, checkoutId, intent.id);
+    }
+    // Backstop for deposits: the client may close the tab before the pay page checks in.
+    const depositId = uuidOrNull(intent.metadata?.deposit_id);
+    if (
+      piStatus === 'succeeded' &&
+      intent.metadata?.purpose === 'deposit' &&
+      depositId &&
+      !event.account
+    ) {
+      await deps.store.markDepositPaid(
+        salonId,
+        depositId,
+        intent.id,
+        idOf(intent.customer),
+        idOf(intent.payment_method),
+      );
     }
     return ok(true);
   }

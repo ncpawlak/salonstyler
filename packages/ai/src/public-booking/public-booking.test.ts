@@ -386,6 +386,31 @@ describe('handlePublicBookingRequest', () => {
     });
   });
 
+  it('passes a due deposit through so the page can send the client to pay', async () => {
+    const port = createTestPort();
+    const deposit = {
+      amountCents: 2500,
+      currency: 'usd',
+      payToken: 'f'.repeat(64),
+      holdExpiresAt: '2026-12-04T15:45:00Z',
+    };
+    port.bookReply = {
+      ok: true,
+      appointmentId: 'appt-9',
+      status: 'held',
+      startsAt: '2026-12-04T16:00:00Z',
+      endsAt: '2026-12-04T17:00:00Z',
+      clientId: 'client-1',
+      clientCreated: false,
+      clientLinked: true,
+      deposit,
+    };
+    expect(await handlePublicBookingRequest(bookBody, verified, depsFor(port))).toMatchObject({
+      status: 200,
+      body: { booking: { appointmentId: 'appt-9', status: 'held', deposit } },
+    });
+  });
+
   it('limits bookings per verified user', async () => {
     const port = createTestPort();
     port.limitOverride.set('user:book', 1);

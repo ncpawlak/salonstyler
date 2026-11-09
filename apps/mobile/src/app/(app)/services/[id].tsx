@@ -13,6 +13,7 @@ import { useMemo, useState } from 'react';
 import { Pressable, Switch, View } from 'react-native';
 
 import { DetailScreen } from '@/components/shell/screen';
+import { ServiceDepositEditor } from '@/features/deposits/service-deposit';
 import {
   Button,
   Card,
@@ -337,6 +338,13 @@ function ServiceEditor({ existing, canEdit }: { existing?: MenuService; canEdit:
         placeholder="Leave blank if it varies"
         editable={canEdit}
       />
+      {existing ? (
+        <ServiceDepositEditor
+          serviceId={existing.id}
+          priceCents={existing.priceCents}
+          canEdit={canEdit}
+        />
+      ) : null}
 
       {existing ? <RebookIntervalField service={existing} canEdit={canEdit} /> : null}
 
