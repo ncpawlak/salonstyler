@@ -1,0 +1,23 @@
+{
+  "provider": "anthropic",
+  "scenario": "error_auth",
+  "model": "claude-haiku-4-5",
+  "source": "hand-authored from the provider API reference (no live call); re-record with `npm run record:fixtures`",
+  "request": {
+    "method": "POST",
+    "url": "https://api.anthropic.com/v1/messages",
+    "body": {
+      "model": "claude-haiku-4-5",
+      "max_tokens": 16,
+      "messages": [{ "role": "user", "content": [{ "type": "text", "text": "Ping" }] }]
+    }
+  },
+  "response": {
+    "status": 401,
+    "body": {
+      "type": "error",
+      "error": { "type": "authentication_error", "message": "invalid x-api-key" },
+      "request_id": "req_011CTestAuth"
+    }
+  }
+}

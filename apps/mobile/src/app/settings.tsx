@@ -77,6 +77,12 @@ export default function SettingsScreen() {
             subtitle="Menu, timelines and add-ons"
             leading={<Icon name="cut-outline" color="primary" />}
             onPress={() => router.push('/services')}
+          />
+          <ListRow
+            title="AI assistant"
+            subtitle="Provider, API key and monthly budget"
+            leading={<Icon name="sparkles-outline" color="primary" />}
+            onPress={() => router.push('/settings/ai')}
             last
           />
         </ListGroup>

@@ -45,6 +45,7 @@ function RootNavigator() {
         <Stack.Protected guard={signedIn && hasSalon}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="settings" />
+          <Stack.Screen name="settings/ai" />
           <Stack.Screen name="hours/index" />
           <Stack.Screen name="services/index" />
           <Stack.Screen name="services/[id]" />

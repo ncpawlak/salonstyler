@@ -1,0 +1,104 @@
+{
+  "provider": "gemini",
+  "scenario": "tool_call",
+  "model": "gemini-2.5-flash",
+  "source": "hand-authored from the provider API reference (no live call); re-record with `npm run record:fixtures`",
+  "request": {
+    "method": "POST",
+    "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+    "body": {
+      "systemInstruction": {
+        "parts": [
+          {
+            "text": "You turn salon client texts into structured booking requests. Always call parse_request."
+          }
+        ]
+      },
+      "contents": [
+        {
+          "role": "user",
+          "parts": [
+            {
+              "text": "Karina texted (screenshot attached): \"can I get a balayage + trim next Friday afternoon?\""
+            },
+            {
+              "inlineData": {
+                "mimeType": "image/png",
+                "data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+              }
+            }
+          ]
+        }
+      ],
+      "tools": [
+        {
+          "functionDeclarations": [
+            {
+              "name": "parse_request",
+              "description": "Extract the booking request from a client message.",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "client_name": { "type": "string", "description": "Client first name if known" },
+                  "services": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "description": "Requested services"
+                  },
+                  "date_hint": {
+                    "type": "string",
+                    "description": "Requested day, verbatim (e.g. \"next Friday\")"
+                  },
+                  "time_of_day": {
+                    "type": "string",
+                    "enum": ["morning", "afternoon", "evening", "any"]
+                  }
+                },
+                "required": ["services", "date_hint", "time_of_day"]
+              }
+            }
+          ]
+        }
+      ],
+      "generationConfig": { "maxOutputTokens": 256, "temperature": 0 }
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "candidates": [
+        {
+          "content": {
+            "parts": [
+              {
+                "functionCall": {
+                  "name": "parse_request",
+                  "args": {
+                    "client_name": "Karina",
+                    "services": ["balayage", "trim"],
+                    "date_hint": "next Friday",
+                    "time_of_day": "afternoon"
+                  }
+                }
+              }
+            ],
+            "role": "model"
+          },
+          "finishReason": "STOP",
+          "index": 0
+        }
+      ],
+      "usageMetadata": {
+        "promptTokenCount": 367,
+        "candidatesTokenCount": 41,
+        "totalTokenCount": 408,
+        "promptTokensDetails": [
+          { "modality": "TEXT", "tokenCount": 109 },
+          { "modality": "IMAGE", "tokenCount": 258 }
+        ]
+      },
+      "modelVersion": "gemini-2.5-flash",
+      "responseId": "dG9vbA"
+    }
+  }
+}
