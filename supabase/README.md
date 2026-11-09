@@ -13,6 +13,7 @@ Docs are split by feature so parallel PRs don't edit the same file. When you add
 - [Import from Vagaro](docs/import-vagaro.md) (#15).
 - [Payments](docs/payments.md): Stripe Connect.
 - [Checkout and Tap to Pay](docs/checkout.md) (#11).
+- [Rebook at checkout](docs/rebook.md) (#42).
 - [Push notifications](docs/push-notifications.md) (#8), including the notifier Vault secrets.
 - [Hosted project setup](docs/hosted-setup.md).
 - [Sign in with Apple](docs/sign-in-with-apple.md).
