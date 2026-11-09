@@ -335,7 +335,7 @@ max_frequency = "5s"
 # `twitter`, `x`, `slack_oidc`, `spotify`, `workos`, `zoom`.
 [auth.external.apple]
 enabled = false
-# Comma-separated: iOS bundle id (native sign-in) and Services ID (web). See supabase/README.md.
+# Comma-separated: iOS bundle id (native sign-in) and Services ID (web). See supabase/docs/sign-in-with-apple.md.
 client_id = "env(SUPABASE_AUTH_EXTERNAL_APPLE_CLIENT_ID)"
 # DO NOT commit your OAuth provider secret to git. Use environment variable substitution instead:
 secret = "env(SUPABASE_AUTH_EXTERNAL_APPLE_SECRET)"

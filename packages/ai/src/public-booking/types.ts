@@ -1,5 +1,6 @@
 import type { BookingSegment, ExistingAppointment } from '@chairside/core';
-import type { AppointmentServiceSnapshot, ServiceMenu } from '@chairside/db';
+import type { AppointmentServiceSnapshot } from '@chairside/db/appointments';
+import type { ServiceMenu } from '@chairside/db/services';
 
 import type { BookingItem, SalonSchedule, SlotDay } from '../assistant/types.ts';
 

@@ -1,5 +1,5 @@
 import { cardLabel, formatAmount } from '@chairside/payments';
-import { getPayoutSummary, listPaidCheckouts, type PaidCheckout } from '@chairside/db';
+import { getPayoutSummary, listPaidCheckouts, type PaidCheckout } from '@chairside/db/checkout';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';

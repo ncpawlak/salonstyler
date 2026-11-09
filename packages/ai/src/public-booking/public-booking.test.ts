@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { ServiceMenu } from '@chairside/db';
+import type { ServiceMenu } from '@chairside/db/services';
 
 import { COLOR, CUT, MENU, NOW, TZ, createFakePort } from '../assistant/fake-salon.ts';
 import type { ChatMessage, ChatResult, LLMProvider } from '../types.ts';

@@ -4,12 +4,12 @@ import type {
   ClientServiceOverride,
   WorkHours,
 } from '@chairside/core';
+import type { AppointmentStatus } from '@chairside/db';
 import type {
   AppointmentServiceSnapshot,
-  AppointmentStatus,
   AppointmentWithDetails,
-  ServiceMenu,
-} from '@chairside/db';
+} from '@chairside/db/appointments';
+import type { ServiceMenu } from '@chairside/db/services';
 
 /** One picked menu item: a service (optionally with a variant) or a combo. */
 export interface BookingItem {

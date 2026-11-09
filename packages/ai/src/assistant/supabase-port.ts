@@ -1,22 +1,18 @@
 import { bookingRulesFromSettings, buildWorkHours } from '@chairside/core';
+import type { ChairsideClient, ClientRow, Json } from '@chairside/db';
 import {
   addClient,
-  addClientFormula,
-  addClientNote,
   bookAppointment,
-  getInboxBridge,
-  getReplySettings,
-  getWorkHours,
   listAppointments,
-  listClientOverrides,
   listClients,
-  listServiceMenu,
   setAppointmentStatus,
   type AppointmentServiceSnapshot,
-  type ChairsideClient,
-  type ClientRow,
-  type Json,
-} from '@chairside/db';
+} from '@chairside/db/appointments';
+import { addClientFormula, addClientNote, listClientOverrides } from '@chairside/db/clients';
+import { getInboxBridge } from '@chairside/db/inbox';
+import { getReplySettings } from '@chairside/db/replies';
+import { listServiceMenu } from '@chairside/db/services';
+import { getWorkHours } from '@chairside/db/work-hours';
 
 import type { AssistantClient, AssistantPort } from './types.ts';
 

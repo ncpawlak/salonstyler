@@ -1,5 +1,5 @@
 import { resolveCombo, type ResolveComboOptions, type ResolvedService } from '@chairside/core';
-import type { MenuService, ServiceMenu } from '@chairside/db';
+import type { MenuService, ServiceMenu } from '@chairside/db/services';
 
 /** Resolves a saved combo against the menu's services. */
 export function resolveMenuCombo(

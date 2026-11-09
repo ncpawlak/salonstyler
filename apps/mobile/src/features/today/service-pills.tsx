@@ -1,5 +1,5 @@
 import type { ServiceColorTag } from '@chairside/core';
-import type { AppointmentServiceSnapshot } from '@chairside/db';
+import type { AppointmentServiceSnapshot } from '@chairside/db/appointments';
 import { View } from 'react-native';
 
 import { Text } from '@/components/ui';

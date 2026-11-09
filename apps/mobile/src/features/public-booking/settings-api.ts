@@ -2,7 +2,7 @@ import {
   type BookingPageSettings,
   getBookingPageSettings,
   updateBookingPageSettings,
-} from '@chairside/db';
+} from '@chairside/db/booking-page';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Linking from 'expo-linking';
 import { Platform } from 'react-native';

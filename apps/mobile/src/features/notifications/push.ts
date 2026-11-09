@@ -4,7 +4,8 @@ import {
   type NotificationCategoryId,
   notificationIntent,
 } from '@chairside/notifications';
-import { registerPushToken, setAppointmentStatus, unregisterPushToken } from '@chairside/db';
+import { setAppointmentStatus } from '@chairside/db/appointments';
+import { registerPushToken, unregisterPushToken } from '@chairside/db/notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import * as Notifications from 'expo-notifications';

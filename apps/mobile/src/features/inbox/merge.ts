@@ -1,4 +1,5 @@
-import type { AppointmentWithDetails, CapturedRequestWithDetails } from '@chairside/db';
+import type { AppointmentWithDetails } from '@chairside/db/appointments';
+import type { CapturedRequestWithDetails } from '@chairside/db/inbox';
 
 /** One row in the Inbox: a texted request the agent captured, or any other pending booking. */
 export type InboxItem =

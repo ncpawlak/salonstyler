@@ -1,4 +1,4 @@
-import { searchSalon, type SearchResult } from '@chairside/db';
+import { searchSalon, type SearchResult } from '@chairside/db/search';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useState } from 'react';

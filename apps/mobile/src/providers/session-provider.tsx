@@ -1,4 +1,5 @@
-import { listMySalons, type Salon, type SalonRole, type Session, type User } from '@chairside/db';
+import type { Salon, SalonRole, Session, User } from '@chairside/db';
+import { listMySalons } from '@chairside/db/salons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Linking from 'expo-linking';

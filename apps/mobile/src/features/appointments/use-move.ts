@@ -1,5 +1,5 @@
 import { planBooking, serviceFromSegments, type WorkHours } from '@chairside/core';
-import type { AppointmentWithDetails } from '@chairside/db';
+import type { AppointmentWithDetails } from '@chairside/db/appointments';
 import { useCallback } from 'react';
 
 import { errorMessage, useRescheduleAppointment } from './api';

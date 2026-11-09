@@ -6,8 +6,8 @@ import { buildWorkHours, type BookingSegment, type ClientServiceOverride } from 
 import type {
   AppointmentServiceSnapshot,
   AppointmentWithDetails,
-  ServiceMenu,
-} from '@chairside/db';
+} from '@chairside/db/appointments';
+import type { ServiceMenu } from '@chairside/db/services';
 
 import type {
   AssistantClient,

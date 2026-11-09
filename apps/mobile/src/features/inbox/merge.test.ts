@@ -1,4 +1,5 @@
-import type { AppointmentWithDetails, CapturedRequestWithDetails } from '@chairside/db';
+import type { AppointmentWithDetails } from '@chairside/db/appointments';
+import type { CapturedRequestWithDetails } from '@chairside/db/inbox';
 import { describe, expect, it } from 'vitest';
 
 import { mergeInbox } from './merge';

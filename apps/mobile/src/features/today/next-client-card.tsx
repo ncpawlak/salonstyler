@@ -1,5 +1,5 @@
 import { formatDuration } from '@chairside/core';
-import type { AppointmentWithDetails } from '@chairside/db';
+import type { AppointmentWithDetails } from '@chairside/db/appointments';
 import { Pressable, View } from 'react-native';
 
 import { Avatar, Badge, Button, Card, Icon, Text } from '@/components/ui';

@@ -5,7 +5,8 @@ import {
   type DurationSample,
   type OverrideSuggestion,
 } from '@chairside/core';
-import type { ClientVisit, ServiceMenu } from '@chairside/db';
+import type { ClientVisit } from '@chairside/db/clients';
+import type { ServiceMenu } from '@chairside/db/services';
 
 import { resolveMenuCombo } from '../services/menu';
 

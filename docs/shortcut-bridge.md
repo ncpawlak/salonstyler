@@ -1,6 +1,6 @@
 # iOS Shortcut bridge: install, onboarding and health
 
-Issue: #6, Part 2. The spike and its on-device test protocol are in [`spikes/ios-shortcut-keyword-bridge.md`](spikes/ios-shortcut-keyword-bridge.md). The `/inbox` contract is in [`supabase/README.md`](../supabase/README.md#inbox-agent-functionsinbox-34).
+Issue: #6, Part 2. The spike and its on-device test protocol are in [`spikes/ios-shortcut-keyword-bridge.md`](spikes/ios-shortcut-keyword-bridge.md). The `/inbox` contract is in [`supabase/docs/inbox.md`](../supabase/docs/inbox.md).
 
 A client texts the stylist's normal number: _"Chairside cut Friday afternoon"_. A Shortcuts **Message** trigger (Message Contains `Chairside`, plus `Chair side` because autocorrect splits the word) runs the **Chairside Bridge** shortcut. The shortcut POSTs the text to `/functions/v1/inbox` with the salon's `X-Bridge-Token`. Texts without the keyword never run it, so they never leave the phone.
 
@@ -10,7 +10,7 @@ A client texts the stylist's normal number: _"Chairside cut Friday afternoon"_. 
 |---|---|
 | Version, trigger phrases, replies, health rules | `packages/ai/src/inbox/shortcut.ts` (`@chairside/ai/shortcut`, shared by the server and the app) |
 | Server: test messages, help reply, auto-reply, queued `replies` (#7), version tracking | `packages/ai/src/inbox/handler.ts`, migration `20261109290000_shortcut_bridge.sql` |
-| Guided setup (about 1 min) | App → Settings → Text bridge → **Set up** (`apps/mobile/src/app/settings/text-bridge-setup.tsx`) |
+| Guided setup (about 1 min) | App → Settings → Text bridge → **Set up** (`apps/mobile/src/app/(app)/settings/text-bridge-setup.tsx`) |
 | Health, auto-reply toggle | Settings → Text bridge; a banner on the Inbox tab |
 | Station card (QR code that opens Messages with "Chairside " typed) | Settings → Text bridge → Station card |
 | Keyword teaching | Every auto-reply and the confirmation offered after approving a texted request end with _Next time just text "Chairside" + what you need_ |

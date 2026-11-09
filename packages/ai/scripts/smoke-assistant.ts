@@ -10,14 +10,11 @@
  * Without the demo flag (and no saved key) only the "not configured" path is checked.
  * Local defaults: URL http://127.0.0.1:54321, Mailpit http://127.0.0.1:54324.
  */
-import {
-  addClient,
-  createChairsideClient,
-  createSalon,
-  saveService,
-  saveWorkHoursTemplate,
-  type ChairsideClient,
-} from '@chairside/db';
+import { createChairsideClient, type ChairsideClient } from '@chairside/db';
+import { addClient } from '@chairside/db/appointments';
+import { createSalon } from '@chairside/db/salons';
+import { saveService } from '@chairside/db/services';
+import { saveWorkHoursTemplate } from '@chairside/db/work-hours';
 
 import type { AssistantCard, DraftCard, SlotsCard } from '../src/assistant/types.ts';
 

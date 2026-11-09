@@ -1,4 +1,5 @@
-import type { ClientVisit, MenuService, ServiceMenu } from '@chairside/db';
+import type { ClientVisit } from '@chairside/db/clients';
+import type { MenuService, ServiceMenu } from '@chairside/db/services';
 import { describe, expect, it } from 'vitest';
 
 import { durationSamples, overrideSuggestions } from './suggestions';

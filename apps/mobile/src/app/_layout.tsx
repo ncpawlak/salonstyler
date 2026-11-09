@@ -49,25 +49,8 @@ function RootNavigator() {
           <Stack.Screen name="(onboarding)/create-salon" />
         </Stack.Protected>
         <Stack.Protected guard={signedIn && hasSalon}>
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="settings" />
-          <Stack.Screen name="settings/ai" />
-          <Stack.Screen name="settings/text-bridge" />
-          <Stack.Screen name="settings/text-bridge-setup" />
-          <Stack.Screen name="settings/station-card" />
-          <Stack.Screen name="settings/replies" />
-          <Stack.Screen name="settings/booking-page" />
-          <Stack.Screen name="settings/payments" />
-          <Stack.Screen name="settings/notifications" />
-          <Stack.Screen name="requests/[id]" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="assistant" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="hours/index" />
-          <Stack.Screen name="services/index" />
-          <Stack.Screen name="services/[id]" />
-          <Stack.Screen name="clients/[id]" />
-          <Stack.Screen name="import/index" />
-          <Stack.Screen name="checkout/index" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="checkout/[appointmentId]" options={{ presentation: 'modal' }} />
+          {/* Every signed-in screen lives in app/(app)/, so new screens need no entry here. */}
+          <Stack.Screen name="(app)" />
         </Stack.Protected>
         {/* Public: clients open their receipt link and the salon's booking page without an account. */}
         <Stack.Screen name="receipt/[token]" />

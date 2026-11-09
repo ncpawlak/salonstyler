@@ -7,7 +7,7 @@ import {
   type ServiceColorTag,
   type WorkHours,
 } from '@chairside/core';
-import type { AppointmentWithDetails } from '@chairside/db';
+import type { AppointmentWithDetails } from '@chairside/db/appointments';
 import { useMemo, useState } from 'react';
 import { View } from 'react-native';
 import {

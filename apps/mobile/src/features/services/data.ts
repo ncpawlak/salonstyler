@@ -1,4 +1,4 @@
-import { listServiceMenu, saveService, type SaveServiceInput } from '@chairside/db';
+import { listServiceMenu, saveService, type SaveServiceInput } from '@chairside/db/services';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { supabase } from '@/lib/supabase';

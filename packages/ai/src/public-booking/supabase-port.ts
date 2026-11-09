@@ -1,4 +1,5 @@
-import { listAppointments, type ChairsideClient, type Json } from '@chairside/db';
+import type { ChairsideClient, Json } from '@chairside/db';
+import { listAppointments } from '@chairside/db/appointments';
 
 import { createSupabaseAssistantPort } from '../assistant/supabase-port.ts';
 import type {

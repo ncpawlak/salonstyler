@@ -1,5 +1,5 @@
 import { BRIDGE_SHORTCUT_VERSION, type BridgeHealth, bridgeHealth } from '@chairside/ai/shortcut';
-import type { InboxBridge as InboxBridgeRow } from '@chairside/db';
+import type { InboxBridge as InboxBridgeRow } from '@chairside/db/inbox';
 import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';

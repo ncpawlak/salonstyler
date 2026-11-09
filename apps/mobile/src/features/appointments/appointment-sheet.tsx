@@ -1,5 +1,6 @@
 import { formatDuration, type WorkHours } from '@chairside/core';
-import type { AppointmentStatus, AppointmentWithDetails } from '@chairside/db';
+import type { AppointmentStatus } from '@chairside/db';
+import type { AppointmentWithDetails } from '@chairside/db/appointments';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
