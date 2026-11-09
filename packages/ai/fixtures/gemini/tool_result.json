@@ -1,0 +1,118 @@
+{
+  "provider": "gemini",
+  "scenario": "tool_result",
+  "model": "gemini-2.5-flash",
+  "source": "hand-authored from the provider API reference (no live call); re-record with `npm run record:fixtures`",
+  "request": {
+    "method": "POST",
+    "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+    "body": {
+      "systemInstruction": {
+        "parts": [
+          {
+            "text": "You turn salon client texts into structured booking requests. Always call parse_request."
+          }
+        ]
+      },
+      "contents": [
+        {
+          "role": "user",
+          "parts": [
+            {
+              "text": "Karina texted (screenshot attached): \"can I get a balayage + trim next Friday afternoon?\""
+            },
+            {
+              "inlineData": {
+                "mimeType": "image/png",
+                "data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+              }
+            }
+          ]
+        },
+        {
+          "role": "model",
+          "parts": [
+            {
+              "functionCall": {
+                "name": "parse_request",
+                "args": {
+                  "client_name": "Karina",
+                  "services": ["balayage", "trim"],
+                  "date_hint": "next Friday",
+                  "time_of_day": "afternoon"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "parts": [
+            {
+              "functionResponse": {
+                "name": "parse_request",
+                "response": { "slots": ["Fri 12/18 1:30 PM"] }
+              }
+            },
+            { "text": "Draft a one-sentence reply offering that slot." }
+          ]
+        }
+      ],
+      "tools": [
+        {
+          "functionDeclarations": [
+            {
+              "name": "parse_request",
+              "description": "Extract the booking request from a client message.",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "client_name": { "type": "string", "description": "Client first name if known" },
+                  "services": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "description": "Requested services"
+                  },
+                  "date_hint": {
+                    "type": "string",
+                    "description": "Requested day, verbatim (e.g. \"next Friday\")"
+                  },
+                  "time_of_day": {
+                    "type": "string",
+                    "enum": ["morning", "afternoon", "evening", "any"]
+                  }
+                },
+                "required": ["services", "date_hint", "time_of_day"]
+              }
+            }
+          ]
+        }
+      ],
+      "generationConfig": { "maxOutputTokens": 128, "temperature": 0 }
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "candidates": [
+        {
+          "content": {
+            "parts": [
+              { "text": "Hey Karina! I've got Fri 12/18 at 1:30 for balayage + trim. Want it?" }
+            ],
+            "role": "model"
+          },
+          "finishReason": "STOP",
+          "index": 0
+        }
+      ],
+      "usageMetadata": {
+        "promptTokenCount": 452,
+        "candidatesTokenCount": 24,
+        "totalTokenCount": 476
+      },
+      "modelVersion": "gemini-2.5-flash",
+      "responseId": "cmVwbHk"
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "provider": "gemini",
+  "scenario": "error_auth",
+  "model": "gemini-2.5-flash",
+  "source": "hand-authored from the provider API reference (no live call); re-record with `npm run record:fixtures`",
+  "request": {
+    "method": "POST",
+    "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+    "body": {
+      "contents": [{ "role": "user", "parts": [{ "text": "Ping" }] }],
+      "generationConfig": { "maxOutputTokens": 16 }
+    }
+  },
+  "response": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": 400,
+        "message": "API key not valid. Please pass a valid API key.",
+        "status": "INVALID_ARGUMENT",
+        "details": [
+          {
+            "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+            "reason": "API_KEY_INVALID",
+            "domain": "googleapis.com",
+            "metadata": { "service": "generativelanguage.googleapis.com" }
+          }
+        ]
+      }
+    }
+  }
+}

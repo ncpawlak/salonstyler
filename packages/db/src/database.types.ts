@@ -3,6 +3,99 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 export type Database = {
   public: {
     Tables: {
+      ai_provider_config: {
+        Row: {
+          created_at: string;
+          key_hint: string;
+          key_updated_at: string;
+          model: string;
+          monthly_token_budget: number;
+          provider: Database['public']['Enums']['ai_provider'];
+          salon_id: string;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          key_hint: string;
+          key_updated_at?: string;
+          model: string;
+          monthly_token_budget?: number;
+          provider: Database['public']['Enums']['ai_provider'];
+          salon_id: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          key_hint?: string;
+          key_updated_at?: string;
+          model?: string;
+          monthly_token_budget?: number;
+          provider?: Database['public']['Enums']['ai_provider'];
+          salon_id?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'ai_provider_config_salon_id_fkey';
+            columns: ['salon_id'];
+            isOneToOne: true;
+            referencedRelation: 'salons';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      ai_usage: {
+        Row: {
+          created_at: string;
+          id: number;
+          input_tokens: number;
+          model: string;
+          output_tokens: number;
+          provider: Database['public']['Enums']['ai_provider'];
+          purpose: string;
+          salon_id: string;
+          total_tokens: number | null;
+          user_id: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          id?: never;
+          input_tokens: number;
+          model: string;
+          output_tokens: number;
+          provider: Database['public']['Enums']['ai_provider'];
+          purpose?: string;
+          salon_id: string;
+          total_tokens?: never;
+          user_id?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          id?: never;
+          input_tokens?: number;
+          model?: string;
+          output_tokens?: number;
+          provider?: Database['public']['Enums']['ai_provider'];
+          purpose?: string;
+          salon_id?: string;
+          total_tokens?: never;
+          user_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'ai_usage_salon_id_fkey';
+            columns: ['salon_id'];
+            isOneToOne: false;
+            referencedRelation: 'salons';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       audit_log: {
         Row: {
           action: string;
@@ -554,6 +647,7 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      ai_tokens_used_this_month: { Args: { p_salon_id: string }; Returns: number };
       create_salon: {
         Args: { p_name: string; p_slug: string; p_timezone: string };
         Returns: {
@@ -572,12 +666,49 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      delete_ai_provider_config: { Args: { p_salon_id: string }; Returns: undefined };
+      get_ai_provider_secret: {
+        Args: { p_salon_id: string };
+        Returns: {
+          api_key: string;
+          model: string;
+          monthly_token_budget: number;
+          provider: Database['public']['Enums']['ai_provider'];
+        }[];
+      };
       is_salon_slug_available: { Args: { p_slug: string }; Returns: boolean };
+      save_ai_provider_config: {
+        Args: {
+          p_api_key?: string;
+          p_model: string;
+          p_monthly_token_budget: number;
+          p_provider: Database['public']['Enums']['ai_provider'];
+          p_salon_id: string;
+        };
+        Returns: {
+          created_at: string;
+          key_hint: string;
+          key_updated_at: string;
+          model: string;
+          monthly_token_budget: number;
+          provider: Database['public']['Enums']['ai_provider'];
+          salon_id: string;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'ai_provider_config';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       save_service: { Args: { p_salon_id: string; p_service: Json }; Returns: string };
       save_service_addon: { Args: { p_addon: Json; p_salon_id: string }; Returns: string };
     };
     Enums: {
       addon_placement: 'before_finish' | 'end';
+      ai_provider: 'openai' | 'anthropic' | 'gemini';
       push_platform: 'ios' | 'android' | 'web';
       salon_role: 'owner' | 'stylist';
       segment_kind: 'busy' | 'processing' | 'style';
@@ -694,6 +825,7 @@ export const Constants = {
   public: {
     Enums: {
       addon_placement: ['before_finish', 'end'],
+      ai_provider: ['openai', 'anthropic', 'gemini'],
       push_platform: ['ios', 'android', 'web'],
       salon_role: ['owner', 'stylist'],
       segment_kind: ['busy', 'processing', 'style'],

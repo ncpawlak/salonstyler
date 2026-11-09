@@ -1,0 +1,40 @@
+{
+  "provider": "gemini",
+  "scenario": "text",
+  "model": "gemini-2.5-flash",
+  "source": "hand-authored from the provider API reference (no live call); re-record with `npm run record:fixtures`",
+  "request": {
+    "method": "POST",
+    "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+    "body": {
+      "systemInstruction": {
+        "parts": [{ "text": "You are Chairside, a friendly salon assistant. Be brief." }]
+      },
+      "contents": [
+        { "role": "user", "parts": [{ "text": "Say hi to Karina in five words or fewer." }] }
+      ],
+      "generationConfig": { "maxOutputTokens": 64, "temperature": 0 }
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "candidates": [
+        {
+          "content": { "parts": [{ "text": "Hi Karina, great to hear!" }], "role": "model" },
+          "finishReason": "STOP",
+          "index": 0
+        }
+      ],
+      "usageMetadata": {
+        "promptTokenCount": 22,
+        "candidatesTokenCount": 8,
+        "totalTokenCount": 57,
+        "promptTokensDetails": [{ "modality": "TEXT", "tokenCount": 22 }],
+        "thoughtsTokenCount": 27
+      },
+      "modelVersion": "gemini-2.5-flash",
+      "responseId": "aXRleHQ"
+    }
+  }
+}

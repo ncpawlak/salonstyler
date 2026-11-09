@@ -69,6 +69,32 @@ New salons get the Appendix A starter menu (an `after insert` trigger on `salons
 
 `tests/database/00_tenancy.test.sql` fails if any `public` table lacks RLS, lacks a NOT NULL `salon_id`, or is readable by `anon`.
 
+## AI providers (bring your own key)
+
+Owners pick OpenAI, Anthropic or Gemini in **Settings → AI assistant** (`apps/mobile/src/app/settings/ai.tsx`) and paste an API key. The LLM only interprets requests; slot math stays in `packages/core`.
+
+| Object | Purpose | Access (authenticated) |
+|---|---|---|
+| `ai_provider_config` | 1:1 per salon: provider, model, `monthly_token_budget` (0 = AI off), masked `key_hint` | Members read; written **only** via the RPCs below |
+| `ai_usage` | One row per LLM call: provider, model, purpose, input/output tokens | Members read; inserted only by the `ai` Edge Function (service role) |
+| `private.ai_provider_secrets` | `salon_id → vault.secrets.id`. The key itself is encrypted in Supabase Vault | No access |
+
+RPCs:
+- `save_ai_provider_config(p_salon_id, p_provider, p_model, p_monthly_token_budget, p_api_key?)`: owner only. Writes the key to Vault and returns the public row (never the key). A key is required on first save and when switching provider; omit it to keep the saved key.
+- `delete_ai_provider_config(p_salon_id)`: owner only. Also destroys the Vault secret.
+- `ai_tokens_used_this_month(p_salon_id)`: members; calendar month in the salon's timezone.
+- `get_ai_provider_secret(p_salon_id)`: **service role only** (the Edge Function). Returns the decrypted key.
+
+All LLM calls go through the `ai` Edge Function (`functions/ai`), which verifies the user's JWT, checks membership, enforces the monthly budget, loads the key server-side, calls the provider via `@chairside/ai`, and records usage. Provider errors are returned with the key redacted. Actions: `test` (owner; tests the saved key, or a pasted key before saving) and `chat` (any member).
+
+```bash
+npx supabase functions serve ai   # local; uses the local stack's URL and keys automatically
+```
+
+Deploy: `npx supabase functions deploy ai`. The function imports `packages/ai/src` through `functions/ai/deno.json`, so deploy from the repo root. `SUPABASE_URL`, `SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` are provided by the platform; provider keys are **not** function secrets, they come from Vault per salon.
+
+Provider contract tests replay fixtures in `packages/ai/fixtures` (no network in CI). To re-record against the live APIs: `OPENAI_API_KEY=… ANTHROPIC_API_KEY=… GEMINI_API_KEY=… npm run record:fixtures --workspace @chairside/ai` (keys are redacted from fixtures; review the diff before committing).
+
 ## Hosted project setup (manual)
 
 1. Create a project at https://supabase.com/dashboard (region near the salon). Note the project ref.
@@ -78,6 +104,7 @@ New salons get the Appendix A starter menu (an `after insert` trigger on `salons
 5. **Auth → Email templates → Magic link:** paste `supabase/templates/magic_link.html` (must include `{{ .Token }}` for the in-app code).
 6. **Auth → SMTP:** configure a real sender (e.g. Resend); the built-in sender is heavily rate limited.
 7. Put the project URL + anon/publishable key in the app's `.env` (`EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`). Never ship the service role key.
+8. Deploy the AI gateway: `npx supabase functions deploy ai` (see "AI providers" above). Vault is enabled by the migration.
 
 ## Sign in with Apple (manual)
 
