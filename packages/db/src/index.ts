@@ -9,6 +9,7 @@ import type { Database, Json } from './database.types';
 export type { Database, Json } from './database.types';
 export type { Session, User } from '@supabase/supabase-js';
 export * from './services';
+export * from './appointments';
 
 type PublicSchema = Database['public'];
 
@@ -33,6 +34,12 @@ export type SalonRole = Enums<'salon_role'>;
 export type WorkHoursTemplate = Tables<'work_hours_template'>;
 export type WorkHoursOverride = Tables<'work_hours_override'>;
 export type WorkHoursOverrideKind = Enums<'work_hours_override_kind'>;
+export type ClientRow = Tables<'clients'>;
+export type Appointment = Tables<'appointments'>;
+export type AppointmentSegmentRow = Tables<'appointment_segments'>;
+export type AppointmentStatus = Enums<'appointment_status'>;
+export type AppointmentSource = Enums<'appointment_source'>;
+export type AppointmentSegmentKind = Enums<'appointment_segment_kind'>;
 
 /** Public AI settings. The API key itself lives in Supabase Vault and is never readable here. */
 export type AiProviderConfig = Tables<'ai_provider_config'>;
@@ -103,7 +110,7 @@ export async function isSalonSlugAvailable(
 
 export type BookingRulesSettings = Pick<
   SalonSettings,
-  'min_notice_minutes' | 'booking_window_days' | 'slot_grid_minutes'
+  'min_notice_minutes' | 'booking_window_days' | 'slot_grid_minutes' | 'hold_expiry_hours'
 >;
 
 export interface WorkHoursData {
@@ -132,7 +139,7 @@ export async function getWorkHours(
     overrides.order('start_date'),
     client
       .from('settings')
-      .select('min_notice_minutes, booking_window_days, slot_grid_minutes')
+      .select('min_notice_minutes, booking_window_days, slot_grid_minutes, hold_expiry_hours')
       .eq('salon_id', salonId)
       .single(),
   ]);
@@ -207,7 +214,7 @@ export async function updateBookingRules(
     .from('settings')
     .update(rules)
     .eq('salon_id', salonId)
-    .select('min_notice_minutes, booking_window_days, slot_grid_minutes')
+    .select('min_notice_minutes, booking_window_days, slot_grid_minutes, hold_expiry_hours')
     .single();
   if (error) throw error;
   return data;

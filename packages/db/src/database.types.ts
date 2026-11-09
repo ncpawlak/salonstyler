@@ -96,6 +96,134 @@ export type Database = {
           },
         ];
       };
+      appointment_segments: {
+        Row: {
+          active: boolean;
+          appointment_id: string;
+          id: string;
+          kind: Database['public']['Enums']['appointment_segment_kind'];
+          label: string | null;
+          position: number;
+          range: unknown;
+          salon_id: string;
+          stylist_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          active?: boolean;
+          appointment_id: string;
+          id?: string;
+          kind: Database['public']['Enums']['appointment_segment_kind'];
+          label?: string | null;
+          position: number;
+          range: unknown;
+          salon_id: string;
+          stylist_id: string;
+        };
+        Update: {
+          active?: boolean;
+          appointment_id?: string;
+          id?: string;
+          kind?: Database['public']['Enums']['appointment_segment_kind'];
+          label?: string | null;
+          position?: number;
+          range?: unknown;
+          salon_id?: string;
+          stylist_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'appointment_segments_appointment_fkey';
+            columns: ['salon_id', 'appointment_id'];
+            isOneToOne: false;
+            referencedRelation: 'appointments';
+            referencedColumns: ['salon_id', 'id'];
+          },
+          {
+            foreignKeyName: 'appointment_segments_salon_id_fkey';
+            columns: ['salon_id'];
+            isOneToOne: false;
+            referencedRelation: 'salons';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      appointments: {
+        Row: {
+          cancel_reason: string | null;
+          cancelled_at: string | null;
+          client_id: string | null;
+          created_at: string;
+          created_by: string | null;
+          ends_at: string;
+          hold_expires_at: string | null;
+          id: string;
+          notes: string | null;
+          price_cents: number | null;
+          salon_id: string;
+          services: NonNullable<Json>;
+          source: Database['public']['Enums']['appointment_source'];
+          starts_at: string;
+          status: Database['public']['Enums']['appointment_status'];
+          stylist_id: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          cancel_reason?: string | null;
+          cancelled_at?: string | null;
+          client_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          ends_at: string;
+          hold_expires_at?: string | null;
+          id?: string;
+          notes?: string | null;
+          price_cents?: number | null;
+          salon_id: string;
+          services?: NonNullable<Json>;
+          source?: Database['public']['Enums']['appointment_source'];
+          starts_at: string;
+          status?: Database['public']['Enums']['appointment_status'];
+          stylist_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          cancel_reason?: string | null;
+          cancelled_at?: string | null;
+          client_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          ends_at?: string;
+          hold_expires_at?: string | null;
+          id?: string;
+          notes?: string | null;
+          price_cents?: number | null;
+          salon_id?: string;
+          services?: NonNullable<Json>;
+          source?: Database['public']['Enums']['appointment_source'];
+          starts_at?: string;
+          status?: Database['public']['Enums']['appointment_status'];
+          stylist_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'appointments_client_fkey';
+            columns: ['salon_id', 'client_id'];
+            isOneToOne: false;
+            referencedRelation: 'clients';
+            referencedColumns: ['salon_id', 'id'];
+          },
+          {
+            foreignKeyName: 'appointments_salon_id_fkey';
+            columns: ['salon_id'];
+            isOneToOne: false;
+            referencedRelation: 'salons';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       audit_log: {
         Row: {
           action: string;
@@ -131,6 +259,48 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: 'audit_log_salon_id_fkey';
+            columns: ['salon_id'];
+            isOneToOne: false;
+            referencedRelation: 'salons';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      clients: {
+        Row: {
+          created_at: string;
+          email: string | null;
+          id: string;
+          name: string;
+          notes: string | null;
+          phone: string | null;
+          salon_id: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          email?: string | null;
+          id?: string;
+          name: string;
+          notes?: string | null;
+          phone?: string | null;
+          salon_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          email?: string | null;
+          id?: string;
+          name?: string;
+          notes?: string | null;
+          phone?: string | null;
+          salon_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'clients_salon_id_fkey';
             columns: ['salon_id'];
             isOneToOne: false;
             referencedRelation: 'salons';
@@ -648,6 +818,44 @@ export type Database = {
     };
     Functions: {
       ai_tokens_used_this_month: { Args: { p_salon_id: string }; Returns: number };
+      book_appointment: {
+        Args: {
+          p_client_id: string;
+          p_notes?: string;
+          p_price_cents?: number;
+          p_salon_id: string;
+          p_segments: Json;
+          p_services?: Json;
+          p_source?: Database['public']['Enums']['appointment_source'];
+          p_status?: Database['public']['Enums']['appointment_status'];
+          p_stylist_id?: string;
+        };
+        Returns: {
+          cancel_reason: string | null;
+          cancelled_at: string | null;
+          client_id: string | null;
+          created_at: string;
+          created_by: string | null;
+          ends_at: string;
+          hold_expires_at: string | null;
+          id: string;
+          notes: string | null;
+          price_cents: number | null;
+          salon_id: string;
+          services: NonNullable<Json>;
+          source: Database['public']['Enums']['appointment_source'];
+          starts_at: string;
+          status: Database['public']['Enums']['appointment_status'];
+          stylist_id: string;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'appointments';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       create_salon: {
         Args: { p_name: string; p_slug: string; p_timezone: string };
         Returns: {
@@ -677,6 +885,39 @@ export type Database = {
         }[];
       };
       is_salon_slug_available: { Args: { p_slug: string }; Returns: boolean };
+      reschedule_appointment: {
+        Args: {
+          p_appointment_id: string;
+          p_price_cents?: number;
+          p_segments: Json;
+          p_services?: Json;
+        };
+        Returns: {
+          cancel_reason: string | null;
+          cancelled_at: string | null;
+          client_id: string | null;
+          created_at: string;
+          created_by: string | null;
+          ends_at: string;
+          hold_expires_at: string | null;
+          id: string;
+          notes: string | null;
+          price_cents: number | null;
+          salon_id: string;
+          services: NonNullable<Json>;
+          source: Database['public']['Enums']['appointment_source'];
+          starts_at: string;
+          status: Database['public']['Enums']['appointment_status'];
+          stylist_id: string;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'appointments';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       save_ai_provider_config: {
         Args: {
           p_api_key?: string;
@@ -705,10 +946,46 @@ export type Database = {
       };
       save_service: { Args: { p_salon_id: string; p_service: Json }; Returns: string };
       save_service_addon: { Args: { p_addon: Json; p_salon_id: string }; Returns: string };
+      set_appointment_status: {
+        Args: {
+          p_appointment_id: string;
+          p_reason?: string;
+          p_status: Database['public']['Enums']['appointment_status'];
+        };
+        Returns: {
+          cancel_reason: string | null;
+          cancelled_at: string | null;
+          client_id: string | null;
+          created_at: string;
+          created_by: string | null;
+          ends_at: string;
+          hold_expires_at: string | null;
+          id: string;
+          notes: string | null;
+          price_cents: number | null;
+          salon_id: string;
+          services: NonNullable<Json>;
+          source: Database['public']['Enums']['appointment_source'];
+          starts_at: string;
+          status: Database['public']['Enums']['appointment_status'];
+          stylist_id: string;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'appointments';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
     };
     Enums: {
       addon_placement: 'before_finish' | 'end';
       ai_provider: 'openai' | 'anthropic' | 'gemini';
+      appointment_segment_kind: 'busy' | 'processing' | 'style' | 'buffer';
+      appointment_source: 'owner' | 'inbox' | 'public' | 'import';
+      appointment_status:
+        'held' | 'requested' | 'confirmed' | 'completed' | 'cancelled' | 'no_show';
       push_platform: 'ios' | 'android' | 'web';
       salon_role: 'owner' | 'stylist';
       segment_kind: 'busy' | 'processing' | 'style';
@@ -826,6 +1103,9 @@ export const Constants = {
     Enums: {
       addon_placement: ['before_finish', 'end'],
       ai_provider: ['openai', 'anthropic', 'gemini'],
+      appointment_segment_kind: ['busy', 'processing', 'style', 'buffer'],
+      appointment_source: ['owner', 'inbox', 'public', 'import'],
+      appointment_status: ['held', 'requested', 'confirmed', 'completed', 'cancelled', 'no_show'],
       push_platform: ['ios', 'android', 'web'],
       salon_role: ['owner', 'stylist'],
       segment_kind: ['busy', 'processing', 'style'],

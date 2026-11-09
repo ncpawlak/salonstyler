@@ -6,6 +6,7 @@ import type { BookingRulesState } from './use-work-hours';
 const NOTICE = [0, 30, 60, 120, 240, 720, 1440, 2880] as const;
 const WINDOW = [7, 14, 30, 60, 90, 120, 180, 365] as const;
 const GRID = [5, 10, 15, 20, 30, 60] as const;
+const HOLD = [1, 2, 4, 8, 12, 24, 48, 72, 168] as const;
 
 function formatMinutes(m: number): string {
   if (m === 0) return 'None';
@@ -49,6 +50,13 @@ export function BookingRulesForm({
         options={GRID}
         format={(m) => `${m} min`}
         onChange={(slotGridMinutes) => onChange({ ...rules, slotGridMinutes })}
+      />
+      <NumberStepper
+        label="Holds expire after"
+        value={rules.holdExpiryHours}
+        options={HOLD}
+        format={(h) => formatMinutes(h * 60)}
+        onChange={(holdExpiryHours) => onChange({ ...rules, holdExpiryHours })}
       />
       <View>
         <Text className="text-xs text-neutral-500">

@@ -1,0 +1,98 @@
+import { bookingErrorMessage, type BookingSegment } from '@chairside/core';
+import {
+  addClient,
+  bookAppointment,
+  listAppointments,
+  listClients,
+  rescheduleAppointment,
+  setAppointmentStatus,
+  type AddClientInput,
+  type AppointmentServiceSnapshot,
+  type AppointmentStatus,
+  type BookAppointmentInput,
+} from '@chairside/db';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+
+import { supabase } from '@/lib/supabase';
+import { useCurrentSalon } from '@/providers/session-provider';
+
+const appointmentsKey = (salonId: string) => ['appointments', salonId] as const;
+const clientsKey = (salonId: string) => ['clients', salonId] as const;
+
+/** Appointments overlapping `[from, to)` (ISO). Refreshes every minute so expired holds drop off. */
+export function useAppointments(range: { from: string; to: string }) {
+  const salon = useCurrentSalon();
+  return useQuery({
+    queryKey: [...appointmentsKey(salon.id), range.from, range.to],
+    queryFn: () => listAppointments(supabase, salon.id, range),
+    refetchInterval: 60_000,
+  });
+}
+
+function useInvalidateAppointments() {
+  const salon = useCurrentSalon();
+  const queryClient = useQueryClient();
+  return () => queryClient.invalidateQueries({ queryKey: appointmentsKey(salon.id) });
+}
+
+/** Turns RPC errors (e.g. the overlap constraint) into a message for the UI. */
+export function errorMessage(error: unknown): string {
+  return bookingErrorMessage(error as { code?: string; message?: string } | null);
+}
+
+export function useBookAppointment() {
+  const salon = useCurrentSalon();
+  const invalidate = useInvalidateAppointments();
+  return useMutation({
+    mutationFn: (input: Omit<BookAppointmentInput, 'salonId'>) =>
+      bookAppointment(supabase, { ...input, salonId: salon.id }),
+    // Refresh on failure too: a conflict means our copy of the calendar is stale.
+    onSettled: invalidate,
+  });
+}
+
+export function useRescheduleAppointment() {
+  const invalidate = useInvalidateAppointments();
+  return useMutation({
+    mutationFn: (input: {
+      id: string;
+      segments: readonly BookingSegment[];
+      services?: readonly AppointmentServiceSnapshot[];
+      priceCents?: number | null;
+    }) =>
+      rescheduleAppointment(
+        supabase,
+        input.id,
+        input.segments,
+        input.services ? { services: input.services, priceCents: input.priceCents } : undefined,
+      ),
+    onSettled: invalidate,
+  });
+}
+
+export function useSetAppointmentStatus() {
+  const invalidate = useInvalidateAppointments();
+  return useMutation({
+    mutationFn: (input: { id: string; status: AppointmentStatus; reason?: string }) =>
+      setAppointmentStatus(supabase, input.id, input.status, input.reason),
+    onSettled: invalidate,
+  });
+}
+
+export function useClients(search: string) {
+  const salon = useCurrentSalon();
+  return useQuery({
+    queryKey: [...clientsKey(salon.id), search.trim()],
+    queryFn: () => listClients(supabase, salon.id, search),
+    placeholderData: (previous) => previous,
+  });
+}
+
+export function useAddClient() {
+  const salon = useCurrentSalon();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: AddClientInput) => addClient(supabase, salon.id, input),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: clientsKey(salon.id) }),
+  });
+}
