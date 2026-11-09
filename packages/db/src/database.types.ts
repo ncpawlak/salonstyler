@@ -308,6 +308,76 @@ export type Database = {
           },
         ];
       };
+      payments: {
+        Row: {
+          amount_cents: number;
+          amount_refunded_cents: number;
+          appointment_id: string | null;
+          created_at: string;
+          currency: string;
+          description: string | null;
+          failure_message: string | null;
+          id: string;
+          livemode: boolean;
+          salon_id: string;
+          status: Database['public']['Enums']['payment_status'];
+          stripe_account_id: string | null;
+          stripe_charge_id: string | null;
+          stripe_payment_intent_id: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          amount_cents: number;
+          amount_refunded_cents?: number;
+          appointment_id?: string | null;
+          created_at?: string;
+          currency: string;
+          description?: string | null;
+          failure_message?: string | null;
+          id?: string;
+          livemode?: boolean;
+          salon_id: string;
+          status: Database['public']['Enums']['payment_status'];
+          stripe_account_id?: string | null;
+          stripe_charge_id?: string | null;
+          stripe_payment_intent_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          amount_cents?: number;
+          amount_refunded_cents?: number;
+          appointment_id?: string | null;
+          created_at?: string;
+          currency?: string;
+          description?: string | null;
+          failure_message?: string | null;
+          id?: string;
+          livemode?: boolean;
+          salon_id?: string;
+          status?: Database['public']['Enums']['payment_status'];
+          stripe_account_id?: string | null;
+          stripe_charge_id?: string | null;
+          stripe_payment_intent_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'payments_appointment_fkey';
+            columns: ['salon_id', 'appointment_id'];
+            isOneToOne: false;
+            referencedRelation: 'appointments';
+            referencedColumns: ['salon_id', 'id'];
+          },
+          {
+            foreignKeyName: 'payments_salon_id_fkey';
+            columns: ['salon_id'];
+            isOneToOne: false;
+            referencedRelation: 'salons';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       push_tokens: {
         Row: {
           created_at: string;
@@ -728,6 +798,57 @@ export type Database = {
           },
         ];
       };
+      stripe_accounts: {
+        Row: {
+          charges_enabled: boolean;
+          country: string | null;
+          created_at: string;
+          default_currency: string | null;
+          details_submitted: boolean;
+          disabled_reason: string | null;
+          payouts_enabled: boolean;
+          requirements_due: string[];
+          salon_id: string;
+          stripe_account_id: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          charges_enabled?: boolean;
+          country?: string | null;
+          created_at?: string;
+          default_currency?: string | null;
+          details_submitted?: boolean;
+          disabled_reason?: string | null;
+          payouts_enabled?: boolean;
+          requirements_due?: string[];
+          salon_id: string;
+          stripe_account_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          charges_enabled?: boolean;
+          country?: string | null;
+          created_at?: string;
+          default_currency?: string | null;
+          details_submitted?: boolean;
+          disabled_reason?: string | null;
+          payouts_enabled?: boolean;
+          requirements_due?: string[];
+          salon_id?: string;
+          stripe_account_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'stripe_accounts_salon_id_fkey';
+            columns: ['salon_id'];
+            isOneToOne: true;
+            referencedRelation: 'salons';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       work_hours_override: {
         Row: {
           blocks: NonNullable<Json>;
@@ -986,6 +1107,14 @@ export type Database = {
       appointment_source: 'owner' | 'inbox' | 'public' | 'import';
       appointment_status:
         'held' | 'requested' | 'confirmed' | 'completed' | 'cancelled' | 'no_show';
+      payment_status:
+        | 'pending'
+        | 'processing'
+        | 'succeeded'
+        | 'failed'
+        | 'canceled'
+        | 'partially_refunded'
+        | 'refunded';
       push_platform: 'ios' | 'android' | 'web';
       salon_role: 'owner' | 'stylist';
       segment_kind: 'busy' | 'processing' | 'style';
@@ -1106,6 +1235,15 @@ export const Constants = {
       appointment_segment_kind: ['busy', 'processing', 'style', 'buffer'],
       appointment_source: ['owner', 'inbox', 'public', 'import'],
       appointment_status: ['held', 'requested', 'confirmed', 'completed', 'cancelled', 'no_show'],
+      payment_status: [
+        'pending',
+        'processing',
+        'succeeded',
+        'failed',
+        'canceled',
+        'partially_refunded',
+        'refunded',
+      ],
       push_platform: ['ios', 'android', 'web'],
       salon_role: ['owner', 'stylist'],
       segment_kind: ['busy', 'processing', 'style'],

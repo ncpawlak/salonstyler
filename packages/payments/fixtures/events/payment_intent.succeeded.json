@@ -1,0 +1,36 @@
+{
+  "id": "evt_3TestPiSucceeded",
+  "object": "event",
+  "api_version": "2026-10-28.endive",
+  "account": "acct_1TestSalonA0001",
+  "created": 1794241000,
+  "livemode": false,
+  "pending_webhooks": 1,
+  "request": { "id": "req_TestTapToPay", "idempotency_key": "chk-1" },
+  "type": "payment_intent.succeeded",
+  "data": {
+    "object": {
+      "id": "pi_3TestTapToPay0001",
+      "object": "payment_intent",
+      "amount": 18500,
+      "amount_capturable": 0,
+      "amount_received": 18500,
+      "application_fee_amount": null,
+      "capture_method": "automatic",
+      "created": 1794240900,
+      "currency": "usd",
+      "description": "Balayage + toner",
+      "last_payment_error": null,
+      "latest_charge": "ch_3TestTapToPay0001",
+      "livemode": false,
+      "metadata": {
+        "salon_id": "6f1c1d2e-3a4b-4c5d-8e9f-0a1b2c3d4e5f",
+        "appointment_id": "0b5f2a4e-1c3d-4e5f-9a8b-7c6d5e4f3a2b"
+      },
+      "on_behalf_of": null,
+      "payment_method_types": ["card_present"],
+      "status": "succeeded",
+      "transfer_data": null
+    }
+  }
+}

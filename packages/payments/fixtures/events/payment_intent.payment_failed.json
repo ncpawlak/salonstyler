@@ -1,0 +1,37 @@
+{
+  "id": "evt_3TestPiFailed",
+  "object": "event",
+  "api_version": "2026-10-28.endive",
+  "account": "acct_1TestSalonA0001",
+  "created": 1794241100,
+  "livemode": false,
+  "pending_webhooks": 1,
+  "request": { "id": "req_TestDeclined", "idempotency_key": null },
+  "type": "payment_intent.payment_failed",
+  "data": {
+    "object": {
+      "id": "pi_3TestDeclined0001",
+      "object": "payment_intent",
+      "amount": 6500,
+      "amount_capturable": 0,
+      "amount_received": 0,
+      "capture_method": "automatic",
+      "created": 1794241050,
+      "currency": "usd",
+      "description": "Women's cut",
+      "last_payment_error": {
+        "code": "card_declined",
+        "decline_code": "insufficient_funds",
+        "message": "Your card has insufficient funds.",
+        "type": "card_error"
+      },
+      "latest_charge": "ch_3TestDeclined0001",
+      "livemode": false,
+      "metadata": {},
+      "on_behalf_of": null,
+      "payment_method_types": ["card_present"],
+      "status": "requires_payment_method",
+      "transfer_data": null
+    }
+  }
+}

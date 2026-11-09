@@ -83,6 +83,12 @@ export default function SettingsScreen() {
             subtitle="Provider, API key and monthly budget"
             leading={<Icon name="sparkles-outline" color="primary" />}
             onPress={() => router.push('/settings/ai')}
+          />
+          <ListRow
+            title="Payments"
+            subtitle="Stripe account, card payments and payouts"
+            leading={<Icon name="card-outline" color="primary" />}
+            onPress={() => router.push('/settings/payments')}
             last
           />
         </ListGroup>

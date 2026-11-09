@@ -1,0 +1,51 @@
+{
+  "id": "evt_1TestAccountUpdatedOnb",
+  "object": "event",
+  "api_version": "2026-10-28.endive",
+  "account": "acct_1TestSalonA0001",
+  "created": 1794240000,
+  "livemode": false,
+  "pending_webhooks": 1,
+  "request": { "id": null, "idempotency_key": null },
+  "type": "account.updated",
+  "data": {
+    "object": {
+      "id": "acct_1TestSalonA0001",
+      "object": "account",
+      "type": "express",
+      "business_profile": {
+        "mcc": "7230",
+        "name": "Salon A",
+        "product_description": "Hair salon services"
+      },
+      "capabilities": { "card_payments": "inactive", "transfers": "inactive" },
+      "charges_enabled": false,
+      "country": "US",
+      "created": 1794239000,
+      "default_currency": "usd",
+      "details_submitted": false,
+      "email": null,
+      "metadata": { "salon_id": "6f1c1d2e-3a4b-4c5d-8e9f-0a1b2c3d4e5f" },
+      "payouts_enabled": false,
+      "requirements": {
+        "alternatives": [],
+        "current_deadline": null,
+        "currently_due": [
+          "external_account",
+          "tos_acceptance.date",
+          "individual.verification.document"
+        ],
+        "disabled_reason": "requirements.past_due",
+        "errors": [],
+        "eventually_due": [
+          "external_account",
+          "tos_acceptance.date",
+          "individual.verification.document"
+        ],
+        "past_due": ["external_account"],
+        "pending_verification": []
+      }
+    },
+    "previous_attributes": { "requirements": { "currently_due": [] } }
+  }
+}
