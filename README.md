@@ -22,6 +22,10 @@ Stylists get texts like *"can I get a balayage + trim next Friday afternoon?"* a
 - 💳 **Payments:** Tap to Pay on iPhone checkout after the service (Stripe), plus optional deposits.
 - 📥 **Import from Vagaro:** clients, services, and upcoming appointments.
 - 🧴 **Inventory:** products, barcode scanning, low-stock alerts, per-service product usage.
+- ⏱️ **Processing timers** on the lock screen / Dynamic Island, plus home-screen widgets.
+- 🏃 **Running late?** One tap or "I'm 15 late" and Chairside drafts texts to every affected client.
+- 🔁 **Rebook at checkout**, 🗣️ **Siri** commands, 📊 **reports**, 💼 **booth-renter finances**, 📝 **intake & consent forms**, 📤 **full data export**.
+- ✨ **Minimal, native-feeling UI:** 4 tabs + "Ask Chairside" everywhere, light/dark mode, accessible. Custom branding comes later.
 
 ## Tech stack
 | Layer | Choice |

@@ -19,6 +19,8 @@ A Vagaro replacement for independent stylists and small salons. The selling poin
 | AI | Bring-your-own key (OpenAI / Anthropic / Gemini) **and** a paid tier with AI included (platform key + usage metering) |
 | Backend | Supabase (Postgres + RLS, Auth, Realtime, Edge Functions, Storage, pg_cron, Vault) |
 | Hours | Open / **Tentative** (bookable, but he approves) / Closed |
+| UI style | **Minimal, ultra-modern, native iOS feel** (see §5b). Theming/branding (logo, accent color) comes later via design tokens. |
+| His business | **Booth renter.** Track booth rent, expenses, and tips for taxes. Sells **retail products**. Books others during color processing. |
 | Payments | **Pay after service** is the norm: Stripe Terminal **Tap to Pay on iPhone** is the core. Deposits are **optional, off by default**, and can be enabled per service. |
 ## 2. The core problem & how we automate it
 > Clients text "can I get a balayage + trim next Friday afternoon?" and he has to work out how long that takes and where it fits.
@@ -136,7 +138,28 @@ sequenceDiagram
 - **Month:** utilization heatmap with a mini ring per day.
 - Drag to move (conflict-checked), long-press to quick-book, tap a service chip to rebook.
 
-## 6. Client self-booking (public page)
+## 5b. UI/UX design: minimal, modern, effortless
+**Principles:** anything is reachable in **≤2 taps**, readable at arm's length, one-handed use, and it feels like a native iPhone app.
+
+### Navigation
+- **Bottom tabs:** **Today** · **Calendar** · **Inbox** (badge for pending requests) · **Clients**
+- **"Ask Chairside"** floating AI button on every screen (type or hold to talk)
+- **Settings** sit behind his avatar (top-left). **Global search** (top) covers clients, appointments, services, and products.
+- Create/edit flows open as **bottom sheets** instead of new screens, so he keeps his place.
+
+### Today screen (home)
+Next client card with a countdown and services · day donut (% booked) · **pending requests** (swipe right to approve, left to decline) · active processing timers · quick actions (Book, Block time, Running late, Checkout).
+
+### Visual system
+- **Minimal:** neutral palette (white/off-black), **one accent color**, service color tags. **Light + dark mode.**
+- Typography: SF Pro (iOS system), big bold numbers, generous spacing (8-pt grid).
+- Motion: Reanimated micro-interactions, haptics on key actions, skeleton loaders, friendly empty states.
+- **Accessibility:** Dynamic Type, 44-pt tap targets, WCAG AA contrast, VoiceOver labels.
+- **Design tokens** (color, radius, type, spacing) drive everything, which enables **custom themes + salon logo** later (§11b).
+- Stack: NativeWind + a shadcn-style component kit (react-native-reusables), `@gorhom/bottom-sheet`, Reanimated, expo-haptics.
+- Process: clickable mockups of the key screens are reviewed with him **before** the Phase 1 UI is built.
+
+
 `chairside.app/b/{salon-slug}` (Expo web build): pick services (or describe in free text and let the AI pick) → see real slots → enter phone → email or verify code → booked or requested (Auto/Draft toggle). Link goes in his IG bio, Google Business Profile, and drafted replies.
 
 Optional AI chat widget on the same page, using the client-concierge agent with a restricted tool set.
@@ -177,7 +200,21 @@ Products (brand, category, SKU/barcode, unit, on-hand, reorder point, cost, reta
 ## 11. Client records
 Profile, contact, notes, **color formulas**, before/after photos, visit history, preferred services, per-client duration overrides, no-show count, marketing opt-in.
 
-## 12. AI design
+## 11b. Pro features (stylist quality-of-life)
+| Feature | What it does |
+|---|---|
+| ⭐ **Processing timers + Live Activities** | Starting a processing segment shows a timer on the **lock screen / Dynamic Island** ("Karina · color · 12 min left"), with a haptic alert at 0. **Home/lock-screen widgets** show the next client and today's % booked. |
+| ⭐ **"Running late" cascade** | "I'm running 15 late" (button or AI) → the engine recomputes the day → AI drafts texts to every affected client → he approves → one-tap sends. Offers to shift or squeeze later appointments. |
+| **Rebook at checkout** | After payment: "Book Karina's next color in 6 weeks?" with suggested slots based on the service's typical interval. One tap holds it. |
+| **Siri & Shortcuts (App Intents)** | "Hey Siri, ask Chairside what's tomorrow", "...I'm running late", "...block 3 to 4". Hands-free with wet hands. |
+| **Reports dashboard** | Revenue, tips, utilization by day/week, top services, rebook rate, new vs returning clients, no-shows, retail sales. |
+| **Booth renter finances** | Track booth rent, product purchases, and other expenses; tips; quarterly estimated-tax helper; CSV/PDF export for his accountant. |
+| **Intake & consent forms** | Form builder (allergies, hair history, patch-test consent for color). Sent with the new-client confirmation, signed on the phone, stored on the client profile. |
+| **Full data export** | One-tap export of clients, appointments, payments, and formulas (CSV/JSON). **No lock-in** is a selling point against Vagaro. |
+| **Custom theme & branding** (later) | Salon logo, accent color, and app icon variant; also applied to the public booking page and emails. |
+| **Gift cards / packages / memberships** (TBD) | Confirm whether he uses these in Vagaro; build if needed before other salons adopt. |
+
+
 - **Provider adapter** interface with OpenAI, Anthropic, and Gemini implementations (all support tool calling + vision for screenshots).
 - **Owner assistant tools:** `parse_request`, `find_client`, `get_services`, `find_available_slots`, `hold_slot`, `create/reschedule/cancel_appointment`, `set_work_hours`, `get_day_summary`, `inventory_lookup/adjust`, `draft_client_reply`.
 - **Client concierge** (public page): only open slots, its own bookings, and FAQ. Server-side permission checks, not just the prompt.
@@ -231,16 +268,16 @@ supabase/functions/   ai-assistant, parse-capture, public-booking, notifier, str
 ## 16. Roadmap
 | Phase | Deliverable |
 |---|---|
-| **0. Foundation** | Monorepo, Expo (iOS + web), Supabase multi-tenant schema + RLS, auth, CI. **Kick off: LLC/D-U-N-S, Apple dev account, Tap to Pay entitlement.** |
-| **1. Services + Calendar** | Service builder (segments, variants, add-ons, combos) + **starter menu (Appendix A)**, Open/Tentative/Closed hours, availability engine, day/week/month views + donut/heatmap, manual booking |
-| **2. Agentic Inbox** ⭐ | AI provider settings, `/inbox` agent, **day-1 spike: iOS Shortcut message trigger**, push approve/edit/deny + follow-up nudge, one-tap reply via Messages, auto-create new clients, manual fallback |
-| **3. Payments** | Stripe Connect onboarding, **Tap to Pay on iPhone** checkout (services + add-ons + retail + tip), receipts, then optional deposits + cancellation policy |
-| **4. Public booking page + client cancel** | Self-serve booking with deposit, magic-link manage/cancel, email confirmations/reminders, reminder queue |
+| **0. Foundation** | Monorepo, Expo (iOS + web), Supabase multi-tenant schema + RLS, auth, CI, **design system + app shell (tabs, Ask Chairside, search) + clickable mockups**. **Kick off: LLC/D-U-N-S, Apple dev account, Tap to Pay entitlement.** |
+| **1. Services + Calendar** | Service builder (segments, variants, add-ons, combos) + **starter menu (Appendix A)**, Open/Tentative/Closed hours, availability engine, day/week/month views + donut/heatmap, manual booking, **Today screen, global search** |
+| **2. Agentic Inbox** ⭐ | AI provider settings, `/inbox` agent, **day-1 spike: iOS Shortcut "Chairside" keyword trigger**, push approve/edit/deny + follow-up nudge, one-tap reply via Messages, auto-create new clients, manual fallback, **running-late cascade** |
+| **3. Payments** | Stripe Connect onboarding, **Tap to Pay on iPhone** checkout (services + add-ons + retail + tip), receipts, **rebook at checkout**, then optional deposits + cancellation policy |
+| **4. Public booking page + client cancel** | Self-serve booking with deposit, magic-link manage/cancel, email confirmations/reminders, reminder queue, **intake & consent forms** |
 | **5. Vagaro import + Clients** | Excel importer (AI column mapping), service import from booking page, future appointments, client profiles/formulas/photos |
-| **6. TestFlight → he cancels Vagaro** 🎯 | Real-world pilot on his iPhone, 1–2 week overlap with Vagaro |
-| **7. Inventory** | Products, barcode, recipes, low stock |
-| **8. SaaS launch** | Web signup + Stripe Billing, onboarding wizard, App Store listing, Android build |
-| **v2** | Android notification bridge, AI booking line (toll-free), IG DMs, multi-stylist, waitlist auto-fill, calendar sync, marketing |
+| **6. TestFlight → he cancels Vagaro** 🎯 | Real-world pilot on his iPhone, 1–2 week overlap with Vagaro, **Live Activities/widgets, Siri intents** |
+| **7. Inventory + Business tools** | Products, barcode, recipes, low stock, **reports dashboard, booth-renter finances, data export** |
+| **8. SaaS launch** | Web signup + Stripe Billing, onboarding wizard, App Store listing, Android build, **custom theme & branding** |
+| **v2** | Android notification bridge, AI booking line (toll-free), IG DMs, multi-stylist, waitlist auto-fill, calendar sync, marketing, gift cards/packages/memberships (if needed) |
 
 ## 17. Resolved decisions (latest)
 - **Name:** Chairside.
