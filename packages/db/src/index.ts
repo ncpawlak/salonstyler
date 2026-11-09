@@ -17,6 +17,7 @@ export * from './inbox.ts';
 export * from './checkout.ts';
 export * from './replies.ts';
 export * from './import.ts';
+export * from './booking-page.ts';
 
 type PublicSchema = Database['public'];
 

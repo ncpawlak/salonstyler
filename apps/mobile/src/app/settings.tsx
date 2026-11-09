@@ -79,6 +79,12 @@ export default function SettingsScreen() {
             onPress={() => router.push('/services')}
           />
           <ListRow
+            title="Booking page"
+            subtitle="Your public link, online booking and the client concierge"
+            leading={<Icon name="globe-outline" color="primary" />}
+            onPress={() => router.push('/settings/booking-page')}
+          />
+          <ListRow
             title="Notifications"
             subtitle="Request reminders, quiet hours and daily agenda"
             leading={<Icon name="notifications-outline" color="primary" />}

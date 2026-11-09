@@ -273,7 +273,7 @@ const toExisting = (appointments: AppointmentWithDetails[]) =>
   appointments.map((a) => ({ id: a.id, segments: a.segments }));
 
 /** Picks up to `n` well-spread, high-scoring slots for one day, returned in time order. */
-function pickSpread(candidates: SlotCandidate[], n: number): SlotCandidate[] {
+export function pickSpread(candidates: SlotCandidate[], n: number): SlotCandidate[] {
   const byScore = [...candidates].sort(
     (a, b) => b.score - a.score || Date.parse(a.start) - Date.parse(b.start),
   );
