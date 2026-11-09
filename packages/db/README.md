@@ -1,0 +1,17 @@
+# @chairside/db
+
+Typed Supabase client for Chairside apps and scripts.
+
+```ts
+import { createChairsideClient, createSalon, listMySalons } from '@chairside/db';
+
+const supabase = createChairsideClient(process.env.EXPO_PUBLIC_SUPABASE_URL!, process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!);
+const salons = await listMySalons(supabase); // [] => first run: show "Create your salon"
+await createSalon(supabase, { name: 'Karina Hair', slug: 'karina-hair', timezone: 'America/Chicago' });
+```
+
+| Script | What it does |
+|---|---|
+| `npm run gen:types` | Regenerates `src/database.types.ts` from the local DB (`npx supabase start` first). Run after every migration and commit the result. |
+| `npm run typecheck` | `tsc --noEmit` |
+| `npm run smoke` | End-to-end first-run check against the local stack (needs `SUPABASE_ANON_KEY`). See `../../supabase/README.md`. |

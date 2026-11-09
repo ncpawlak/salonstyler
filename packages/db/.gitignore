@@ -1,0 +1,3 @@
+# Lockfile lives at the npm workspace root (#26).
+package-lock.json
+
