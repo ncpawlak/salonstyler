@@ -71,6 +71,12 @@ export default function SettingsScreen() {
             title="Work hours"
             leading={<Icon name="time-outline" color="primary" />}
             onPress={() => router.push('/hours')}
+          />
+          <ListRow
+            title="Services"
+            subtitle="Menu, timelines and add-ons"
+            leading={<Icon name="cut-outline" color="primary" />}
+            onPress={() => router.push('/services')}
             last
           />
         </ListGroup>

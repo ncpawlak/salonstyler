@@ -145,6 +145,275 @@ export type Database = {
         };
         Relationships: [];
       };
+      service_addons: {
+        Row: {
+          archived_at: string | null;
+          bookable_online: boolean;
+          created_at: string;
+          id: string;
+          name: string;
+          placement: Database['public']['Enums']['addon_placement'];
+          position: number;
+          price_cents: number | null;
+          salon_id: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          archived_at?: string | null;
+          bookable_online?: boolean;
+          created_at?: string;
+          id?: string;
+          name: string;
+          placement?: Database['public']['Enums']['addon_placement'];
+          position?: number;
+          price_cents?: number | null;
+          salon_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          archived_at?: string | null;
+          bookable_online?: boolean;
+          created_at?: string;
+          id?: string;
+          name?: string;
+          placement?: Database['public']['Enums']['addon_placement'];
+          position?: number;
+          price_cents?: number | null;
+          salon_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'service_addons_salon_id_fkey';
+            columns: ['salon_id'];
+            isOneToOne: false;
+            referencedRelation: 'salons';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      service_combo_items: {
+        Row: {
+          combo_id: string;
+          position: number;
+          replaces_previous_finish: boolean;
+          salon_id: string;
+          service_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          combo_id: string;
+          position: number;
+          replaces_previous_finish?: boolean;
+          salon_id: string;
+          service_id: string;
+        };
+        Update: {
+          combo_id?: string;
+          position?: number;
+          replaces_previous_finish?: boolean;
+          salon_id?: string;
+          service_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'service_combo_items_combo_fkey';
+            columns: ['salon_id', 'combo_id'];
+            isOneToOne: false;
+            referencedRelation: 'services';
+            referencedColumns: ['salon_id', 'id'];
+          },
+          {
+            foreignKeyName: 'service_combo_items_salon_id_fkey';
+            columns: ['salon_id'];
+            isOneToOne: false;
+            referencedRelation: 'salons';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'service_combo_items_service_fkey';
+            columns: ['salon_id', 'service_id'];
+            isOneToOne: false;
+            referencedRelation: 'services';
+            referencedColumns: ['salon_id', 'id'];
+          },
+        ];
+      };
+      service_segments: {
+        Row: {
+          addon_id: string | null;
+          created_at: string;
+          id: string;
+          kind: Database['public']['Enums']['segment_kind'];
+          label: string | null;
+          minutes: number;
+          position: number;
+          salon_id: string;
+          service_id: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          addon_id?: string | null;
+          created_at?: string;
+          id?: string;
+          kind: Database['public']['Enums']['segment_kind'];
+          label?: string | null;
+          minutes: number;
+          position: number;
+          salon_id: string;
+          service_id?: string | null;
+        };
+        Update: {
+          addon_id?: string | null;
+          created_at?: string;
+          id?: string;
+          kind?: Database['public']['Enums']['segment_kind'];
+          label?: string | null;
+          minutes?: number;
+          position?: number;
+          salon_id?: string;
+          service_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'service_segments_addon_fkey';
+            columns: ['salon_id', 'addon_id'];
+            isOneToOne: false;
+            referencedRelation: 'service_addons';
+            referencedColumns: ['salon_id', 'id'];
+          },
+          {
+            foreignKeyName: 'service_segments_salon_id_fkey';
+            columns: ['salon_id'];
+            isOneToOne: false;
+            referencedRelation: 'salons';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'service_segments_service_fkey';
+            columns: ['salon_id', 'service_id'];
+            isOneToOne: false;
+            referencedRelation: 'services';
+            referencedColumns: ['salon_id', 'id'];
+          },
+        ];
+      };
+      service_variants: {
+        Row: {
+          created_at: string;
+          delta_minutes: number;
+          id: string;
+          name: string;
+          position: number;
+          salon_id: string;
+          service_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          delta_minutes?: number;
+          id?: string;
+          name: string;
+          position?: number;
+          salon_id: string;
+          service_id: string;
+        };
+        Update: {
+          created_at?: string;
+          delta_minutes?: number;
+          id?: string;
+          name?: string;
+          position?: number;
+          salon_id?: string;
+          service_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'service_variants_salon_id_fkey';
+            columns: ['salon_id'];
+            isOneToOne: false;
+            referencedRelation: 'salons';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'service_variants_service_fkey';
+            columns: ['salon_id', 'service_id'];
+            isOneToOne: false;
+            referencedRelation: 'services';
+            referencedColumns: ['salon_id', 'id'];
+          },
+        ];
+      };
+      services: {
+        Row: {
+          archived_at: string | null;
+          bookable_online: boolean;
+          buffer_after_minutes: number;
+          buffer_before_minutes: number;
+          category: string;
+          color_tag: string;
+          consultation_required: boolean;
+          created_at: string;
+          description: string | null;
+          id: string;
+          is_combo: boolean;
+          name: string;
+          new_clients_only: boolean;
+          position: number;
+          price_cents: number | null;
+          salon_id: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          archived_at?: string | null;
+          bookable_online?: boolean;
+          buffer_after_minutes?: number;
+          buffer_before_minutes?: number;
+          category?: string;
+          color_tag?: string;
+          consultation_required?: boolean;
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          is_combo?: boolean;
+          name: string;
+          new_clients_only?: boolean;
+          position?: number;
+          price_cents?: number | null;
+          salon_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          archived_at?: string | null;
+          bookable_online?: boolean;
+          buffer_after_minutes?: number;
+          buffer_before_minutes?: number;
+          category?: string;
+          color_tag?: string;
+          consultation_required?: boolean;
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          is_combo?: boolean;
+          name?: string;
+          new_clients_only?: boolean;
+          position?: number;
+          price_cents?: number | null;
+          salon_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'services_salon_id_fkey';
+            columns: ['salon_id'];
+            isOneToOne: false;
+            referencedRelation: 'salons';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       settings: {
         Row: {
           autonomy: string;
@@ -304,10 +573,14 @@ export type Database = {
         };
       };
       is_salon_slug_available: { Args: { p_slug: string }; Returns: boolean };
+      save_service: { Args: { p_salon_id: string; p_service: Json }; Returns: string };
+      save_service_addon: { Args: { p_addon: Json; p_salon_id: string }; Returns: string };
     };
     Enums: {
+      addon_placement: 'before_finish' | 'end';
       push_platform: 'ios' | 'android' | 'web';
       salon_role: 'owner' | 'stylist';
+      segment_kind: 'busy' | 'processing' | 'style';
       work_hours_override_kind: 'custom' | 'day_off' | 'vacation';
     };
     CompositeTypes: {
@@ -420,8 +693,10 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      addon_placement: ['before_finish', 'end'],
       push_platform: ['ios', 'android', 'web'],
       salon_role: ['owner', 'stylist'],
+      segment_kind: ['busy', 'processing', 'style'],
       work_hours_override_kind: ['custom', 'day_off', 'vacation'],
     },
   },

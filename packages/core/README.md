@@ -28,6 +28,24 @@ const slots = findSlots({
 - `evaluateStart` validates one specific start (manual booking, drag-to-move) against the same rules.
 - `busyRanges` / `toTstzRanges` produce the half-open busy ranges that the `appointment_segments` exclusion constraint (#30) protects; `findBusyConflicts` mirrors that check in memory.
 
+## Service builder (`src/services`)
+
+Turns a service definition (+ chosen variant and add-ons, or a combo) into the `ServiceRequest` the availability engine consumes.
+
+```ts
+import { resolveService, resolveCombo, formatDuration, describeSegments } from '@chairside/core';
+
+const r = resolveService(fullColor, { variant: { deltaMinutes: 30 }, addons: [toner] });
+findSlots({ service: r, ... }); // r is a ServiceRequest with overrides already applied
+formatDuration(r.totalMinutes); // "1h35"
+```
+
+- **Order:** variant → add-ons → per-booking `overrides`.
+- **Variants** (hair length: Short +0, Medium +15, Long +30) spread their delta over `busy`/`style` segments in proportion to length, in 5-minute steps. `processing` is never stretched.
+- **Add-ons** go `before_finish` (before the trailing `style` run, e.g. toner before the blow-dry) or at the `end` (blowout finish).
+- **Combos** (`resolveCombo`) concatenate items; `replacesPreviousFinish` drops the previous item's trailing `style` (Balayage + Women's cut doesn't blow-dry twice). Buffer-before comes from the first item, buffer-after from the last.
+- `STARTER_MENU` is the Appendix A menu. `supabase/migrations/*_service_builder.sql` embeds the same JSON to seed new salons; a test keeps them in sync.
+
 ## Scripts
 
 ```sh
