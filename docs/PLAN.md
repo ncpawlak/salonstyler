@@ -10,7 +10,7 @@ A Vagaro replacement for independent stylists and small salons. The selling poin
 | Positioning | **Replace Vagaro** (~$30/mo). Cheaper, AI-first, built to resell. |
 | Tenancy | **Multi-tenant from day one** (`salon_id` on everything). v1 UI = one stylist per salon. |
 | Platforms | **iPhone first for v1** (owner app). Web for local testing + the public booking page. Android follows (same Expo codebase). |
-| Client channel | **Texts (iMessage/SMS) to his personal number** via the iOS Shortcut bridge (§4) |
+| Client channel | **Texts (iMessage/SMS) to his personal number** containing the keyword **"Chairside"** (e.g., "Chairside schedule me Fri for color"), forwarded by the iOS Shortcut bridge (§4) |
 | Autonomy | **Default = Draft.** Every reply needs his approval, and he can edit the message. Per-salon toggle to enable auto-replies later. |
 | Unanswered requests | Push → no response after **1 day (adjustable)** → **follow-up push**: "You haven't responded to Karina's request" [Respond] [Ignore]. Hold expiry is also adjustable (default 1 day). |
 | Booking window | Configurable, from weeks to months out. **Clients can cancel** (link in confirmation or by replying "cancel"). |
@@ -77,7 +77,7 @@ sequenceDiagram
 | # | Bridge | Platform | Smoothness | Notes |
 |---|---|---|---|---|
 | A | **Android notification listener** | Android | ⭐⭐⭐ fully hands-free | The app reads incoming message notifications (SMS, WhatsApp, IG, FB) with user-granted Notification Access. It replies with the notification's built-in **direct-reply** action, the same way Play Store auto-responder apps work. Needs a custom Expo native module. |
-| B | **iOS Shortcuts automation** (we ship a one-tap-install Shortcut) | iPhone | ⭐⭐ near hands-free | Message trigger → "Get contents of URL" posts sender + text to our API → can **Send Message** with the reply automatically ("Run Immediately"; iOS 17+). Caveats: the trigger needs a sender list or a "Message Contains" phrase (workaround: match common characters or tag clients); iMessage/SMS only. **Needs a prototype spike first.** |
+| B | **iOS Shortcuts automation** (we ship a one-tap-install Shortcut) | iPhone | ⭐⭐ near hands-free | Message trigger → "Get contents of URL" posts sender + text to our API → can **Send Message** with the reply automatically ("Run Immediately"; iOS 17+). Uses the native **"Message Contains: Chairside"** filter (§4 keyword trigger). iMessage/SMS only. **Needs a prototype spike first.** |
 | C | **Instagram DMs** (Meta Messaging API, business account) | Server-side | ⭐⭐⭐ | Webhook → AI → reply within Meta's 24h window. Many salon clients book via IG. Requires Meta app review. |
 | D | **AI booking line** (toll-free number, Twilio) | Server-side | ⭐⭐⭐ fully autonomous | Cleanest and most scalable for the SaaS. Toll-free verification takes days and costs ~$2/mo + ~1¢/msg. Clients text a different number, so this is offered as an upgrade. |
 | E | Share sheet / paste / screenshot | All | ⭐ manual fallback | Always available. Works with any app. |
@@ -86,13 +86,19 @@ sequenceDiagram
 
 **iOS Shortcut bridge details (v1):**
 - We ship an **"Add to Shortcuts" install link** from onboarding with his API token pre-filled. He creates the Message automation once (guided, about 60 sec). Set it to "Run Immediately".
-- Trigger filter: iOS requires senders or a "Message Contains" phrase. Plan: match on common characters (a known workaround), then filter on the server (known client or booking intent). The **day-1 spike** confirms this works reliably on current iOS.
+- **Keyword trigger (primary):** clients start their text with **"Chairside"**, e.g. *"Chairside schedule me Dec 18 for a cut"*. The automation uses iOS's native **Message Contains = "Chairside"** filter, so it runs only for intentional booking requests.
+  - Why: reliable native filter (no hacks), **private** (no other texts leave his phone), clear client intent, and every client learns the brand.
+  - Keyword is a per-salon setting (default "Chairside"). Onboarding sets up a second automation for the autocorrect variant **"Chair side"**.
+  - The server strips the keyword and parses the rest. Messages with only the keyword ("Chairside") get a help reply: *"Tell me the service + day, e.g. 'Chairside cut next Fri afternoon'"*.
+  - **Teaching the keyword:** every confirmation includes *"Next time just text 'Chairside' + what you need ✂️"*. Also add a station card / QR code and an Instagram bio line. Optionally, the reminder queue adds a one-time "new way to book" intro text to existing clients.
+  - **Texts without the keyword** are untouched. He can use the share-sheet fallback (Bridge E) or reply with the keyword tip.
+  - The **day-1 spike** confirms: whether matching ignores capitals, behavior with autocorrect, Run Immediately on a locked phone, iMessage and green-bubble SMS, and group threads (ignored).
 - Inbound: the Shortcut posts `{sender, text}` → the server returns `{action: none | notify}`. In v1 Draft mode the Shortcut just forwards. It never replies on its own.
 - Outbound on Approve: the push opens the app → the reply editor (prefilled, editable) → **Send** opens Messages prefilled to the client (one tap). When he enables auto-replies, the Shortcut sends the server's reply directly.
 - Lifecycle: request → push → (no response in **1 day**, adjustable) **follow-up push** "Still waiting: Karina's request" [Respond] [Ignore] → ignored requests release the hold.
 
 ### Privacy guardrails (these read his personal messages)
-- An on-device prefilter only forwards messages from known clients or messages that look like booking requests (keywords + a small classifier). Everything else stays on the phone.
+- On iPhone, only messages containing the salon keyword ("Chairside") are forwarded. Everything else stays on the phone. (Android bridge: an on-device prefilter does the same.)
 - The server stores parsed requests, not full message history. Clear disclosure + an on/off toggle per bridge.
 - The AI never replies to unknown or non-booking messages. Those are ignored or flagged.
 
