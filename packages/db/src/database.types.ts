@@ -96,6 +96,85 @@ export type Database = {
           },
         ];
       };
+      appointment_deposits: {
+        Row: {
+          amount_cents: number;
+          appointment_id: string;
+          created_at: string;
+          currency: string;
+          id: string;
+          paid_at: string | null;
+          pay_token: string;
+          refunded_cents: number;
+          resolution: string | null;
+          resolved_at: string | null;
+          salon_id: string;
+          status: Database['public']['Enums']['deposit_status'];
+          status_after: Database['public']['Enums']['appointment_status'];
+          stripe_checkout_session_id: string | null;
+          stripe_customer_id: string | null;
+          stripe_payment_intent_id: string | null;
+          stripe_payment_method_id: string | null;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          amount_cents: number;
+          appointment_id: string;
+          created_at?: string;
+          currency: string;
+          id?: string;
+          paid_at?: string | null;
+          pay_token?: string;
+          refunded_cents?: number;
+          resolution?: string | null;
+          resolved_at?: string | null;
+          salon_id: string;
+          status?: Database['public']['Enums']['deposit_status'];
+          status_after: Database['public']['Enums']['appointment_status'];
+          stripe_checkout_session_id?: string | null;
+          stripe_customer_id?: string | null;
+          stripe_payment_intent_id?: string | null;
+          stripe_payment_method_id?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          amount_cents?: number;
+          appointment_id?: string;
+          created_at?: string;
+          currency?: string;
+          id?: string;
+          paid_at?: string | null;
+          pay_token?: string;
+          refunded_cents?: number;
+          resolution?: string | null;
+          resolved_at?: string | null;
+          salon_id?: string;
+          status?: Database['public']['Enums']['deposit_status'];
+          status_after?: Database['public']['Enums']['appointment_status'];
+          stripe_checkout_session_id?: string | null;
+          stripe_customer_id?: string | null;
+          stripe_payment_intent_id?: string | null;
+          stripe_payment_method_id?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'appointment_deposits_appointment_fkey';
+            columns: ['salon_id', 'appointment_id'];
+            isOneToOne: false;
+            referencedRelation: 'appointments';
+            referencedColumns: ['salon_id', 'id'];
+          },
+          {
+            foreignKeyName: 'appointment_deposits_salon_id_fkey';
+            columns: ['salon_id'];
+            isOneToOne: false;
+            referencedRelation: 'salons';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       appointment_segments: {
         Row: {
           active: boolean;
@@ -1567,6 +1646,8 @@ export type Database = {
           color_tag: string;
           consultation_required: boolean;
           created_at: string;
+          deposit_kind: Database['public']['Enums']['deposit_kind'];
+          deposit_value: number;
           description: string | null;
           id: string;
           is_combo: boolean;
@@ -1588,6 +1669,8 @@ export type Database = {
           color_tag?: string;
           consultation_required?: boolean;
           created_at?: string;
+          deposit_kind?: Database['public']['Enums']['deposit_kind'];
+          deposit_value?: number;
           description?: string | null;
           id?: string;
           is_combo?: boolean;
@@ -1608,6 +1691,8 @@ export type Database = {
           color_tag?: string;
           consultation_required?: boolean;
           created_at?: string;
+          deposit_kind?: Database['public']['Enums']['deposit_kind'];
+          deposit_value?: number;
           description?: string | null;
           id?: string;
           is_combo?: boolean;
@@ -1637,12 +1722,14 @@ export type Database = {
           booking_page_faq: string | null;
           booking_page_intro: string | null;
           booking_window_days: number;
+          cancellation_window_hours: number;
           client_emails_enabled: boolean;
           client_reminder_hours: number[];
           client_self_service_enabled: boolean;
           created_at: string;
           currency: string;
           daily_agenda_enabled: boolean;
+          deposits_enabled: boolean;
           followup_nudge_hours: number;
           hold_expiry_hours: number;
           min_notice_minutes: number;
@@ -1666,12 +1753,14 @@ export type Database = {
           booking_page_faq?: string | null;
           booking_page_intro?: string | null;
           booking_window_days?: number;
+          cancellation_window_hours?: number;
           client_emails_enabled?: boolean;
           client_reminder_hours?: number[];
           client_self_service_enabled?: boolean;
           created_at?: string;
           currency?: string;
           daily_agenda_enabled?: boolean;
+          deposits_enabled?: boolean;
           followup_nudge_hours?: number;
           hold_expiry_hours?: number;
           min_notice_minutes?: number;
@@ -1694,12 +1783,14 @@ export type Database = {
           booking_page_faq?: string | null;
           booking_page_intro?: string | null;
           booking_window_days?: number;
+          cancellation_window_hours?: number;
           client_emails_enabled?: boolean;
           client_reminder_hours?: number[];
           client_self_service_enabled?: boolean;
           created_at?: string;
           currency?: string;
           daily_agenda_enabled?: boolean;
+          deposits_enabled?: boolean;
           followup_nudge_hours?: number;
           hold_expiry_hours?: number;
           min_notice_minutes?: number;
@@ -1968,7 +2059,12 @@ export type Database = {
         Args: { p_booking: Json; p_max_upcoming?: number; p_salon_id: string; p_user_id: string };
         Returns: Json;
       };
+      cancel_appointment_with_policy: {
+        Args: { p_appointment_id: string; p_deposit?: string; p_reason?: string };
+        Returns: Json;
+      };
       cancel_booking_by_token: { Args: { p_token: string }; Returns: Json };
+      cancellation_quote: { Args: { p_appointment_id: string }; Returns: Json };
       capture_inbox_request: { Args: { p_request: Json; p_salon_id: string }; Returns: Json };
       claim_client_emails: { Args: { p_limit?: number }; Returns: Json };
       claim_notifications: {
@@ -2056,6 +2152,7 @@ export type Database = {
         };
       };
       delete_ai_provider_config: { Args: { p_salon_id: string }; Returns: undefined };
+      deposit_pay_page: { Args: { p_token: string }; Returns: Json };
       finish_client_emails: { Args: { p_results: Json }; Returns: number };
       finish_notifications: { Args: { p_results: Json }; Returns: number };
       get_ai_provider_secret: {
@@ -2087,6 +2184,69 @@ export type Database = {
       };
       is_salon_slug_available: { Args: { p_slug: string }; Returns: boolean };
       manage_booking: { Args: { p_token: string }; Returns: Json };
+      mark_deposit_paid: {
+        Args: {
+          p_customer_id?: string;
+          p_deposit_id: string;
+          p_payment_intent_id: string;
+          p_payment_method_id?: string;
+        };
+        Returns: {
+          amount_cents: number;
+          appointment_id: string;
+          created_at: string;
+          currency: string;
+          id: string;
+          paid_at: string | null;
+          pay_token: string;
+          refunded_cents: number;
+          resolution: string | null;
+          resolved_at: string | null;
+          salon_id: string;
+          status: Database['public']['Enums']['deposit_status'];
+          status_after: Database['public']['Enums']['appointment_status'];
+          stripe_checkout_session_id: string | null;
+          stripe_customer_id: string | null;
+          stripe_payment_intent_id: string | null;
+          stripe_payment_method_id: string | null;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'appointment_deposits';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      mark_deposit_refunded: {
+        Args: { p_deposit_id: string; p_refunded_cents: number; p_resolution?: string };
+        Returns: {
+          amount_cents: number;
+          appointment_id: string;
+          created_at: string;
+          currency: string;
+          id: string;
+          paid_at: string | null;
+          pay_token: string;
+          refunded_cents: number;
+          resolution: string | null;
+          resolved_at: string | null;
+          salon_id: string;
+          status: Database['public']['Enums']['deposit_status'];
+          status_after: Database['public']['Enums']['appointment_status'];
+          stripe_checkout_session_id: string | null;
+          stripe_customer_id: string | null;
+          stripe_payment_intent_id: string | null;
+          stripe_payment_method_id: string | null;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'appointment_deposits';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       mark_text_reminder_sent: {
         Args: { p_appointment_id: string; p_sent?: boolean };
         Returns: string;
@@ -2467,6 +2627,8 @@ export type Database = {
       checkout_method: 'card' | 'cash' | 'other';
       checkout_status: 'open' | 'paid' | 'canceled';
       client_email_kind: 'confirmation' | 'reminder' | 'rescheduled' | 'cancellation';
+      deposit_kind: 'none' | 'flat' | 'percent';
+      deposit_status: 'pending' | 'paid' | 'refund_due' | 'refunded' | 'kept' | 'canceled';
       notification_kind:
         | 'request'
         | 'request_nudge'
@@ -2474,6 +2636,7 @@ export type Database = {
         | 'daily_agenda'
         | 'payout_summary'
         | 'public_booking'
+        | 'deposit_paid'
         | 'client_rescheduled';
       notification_status: 'pending' | 'sending' | 'sent' | 'skipped' | 'failed';
       payment_status:
@@ -2610,6 +2773,8 @@ export const Constants = {
       checkout_method: ['card', 'cash', 'other'],
       checkout_status: ['open', 'paid', 'canceled'],
       client_email_kind: ['confirmation', 'reminder', 'rescheduled', 'cancellation'],
+      deposit_kind: ['none', 'flat', 'percent'],
+      deposit_status: ['pending', 'paid', 'refund_due', 'refunded', 'kept', 'canceled'],
       notification_kind: [
         'request',
         'request_nudge',
@@ -2617,6 +2782,7 @@ export const Constants = {
         'daily_agenda',
         'payout_summary',
         'public_booking',
+        'deposit_paid',
         'client_rescheduled',
       ],
       notification_status: ['pending', 'sending', 'sent', 'skipped', 'failed'],

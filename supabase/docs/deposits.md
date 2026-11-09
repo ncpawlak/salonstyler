@@ -52,13 +52,20 @@ Cancellation is free until `settings.cancellation_window_hours` (default 24, 0�
 
 Charging a no-show fee beyond the deposit is a follow-up. The card is saved on the Stripe customer (`stripe_customer_id`, `stripe_payment_method_id`) for it.
 
-## Reusable entry points (for the client manage link, #10)
+## Reusable entry points
 
 - `public.cancellation_quote(appointment_id)` → `{ freeUntil, late, depositStatus, depositCents, outcome: 'free' | 'refund' | 'keep', … }`. TS: `getCancellationQuote` in `@chairside/db/deposits`. Pure version: `cancellationOutcome` in `@chairside/core/deposits`.
 - `public.cancel_appointment_with_policy(appointment_id, reason?, deposit?)` cancels and settles the deposit by the policy. Members may override with `deposit => 'refund' | 'keep'`; service-role callers always get the policy. TS: `cancelAppointmentWithPolicy`.
 - A `refund_due` deposit is refunded through Stripe by the `deposits` Edge Function, `{ action: 'refund', depositId }`, called with a member JWT or the service-role key, or directly with `refundDeposit` from `@chairside/payments/server`.
 
-So the #10 flow is: show the quote, call `cancel_appointment_with_policy` as the service role, then refund if `deposit.status = 'refund_due'`.
+## The client manage link (#10)
+
+Migration `20261109380000_deposits_client_policy.sql` runs after #10's and replaces its two policy hooks:
+
+- `private.client_change_policy` keeps #10's checks (self-service off, appointment started), then applies `cancellation_quote`. Cancelling is always allowed; inside the window `feeCents` is the deposit and `policyMessage` warns "Free cancellation ended … the salon keeps your deposit". Otherwise it says when free cancellation ends. Rescheduling is free and the deposit moves with the appointment.
+- `private.on_client_change` settles the deposit after a client cancel: `refund_due` / `cancelled_early` in time, `kept` / `cancelled_late` inside the window. Unpaid deposits are dropped.
+
+The `manage-booking` function then asks `deposits` to refund a `refund_due` deposit on Stripe. A failed refund is logged and stays "Refund due" on the appointment for the salon to retry. Covered by `tests/database/20_deposits_client_policy.test.sql`.
 
 ## `functions/deposits`
 
