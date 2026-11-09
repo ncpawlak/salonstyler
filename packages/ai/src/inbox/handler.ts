@@ -256,6 +256,7 @@ async function parse(
             clientName: null,
             services: [],
             date: null,
+            time: null,
             timeOfDay: null,
             notes: null,
           },
@@ -362,6 +363,7 @@ async function draft(input: DraftInput): Promise<CaptureInput> {
     clientName: parsed.clientName,
     services: [] as unknown[],
     date: parsed.date,
+    time: parsed.time,
     timeOfDay: parsed.timeOfDay,
     notes: parsed.notes,
     parser: input.parser,
@@ -410,7 +412,15 @@ type PickedSlot =
   | { ok: true; candidate: SlotCandidate; segments: { kind: string; start: string; end: string }[] }
   | { ok: false; note: string };
 
-/** The engine picks the slot: closest to the requested day, preferring the asked time of day. */
+function clockMinutes(hhmm: string): number {
+  const [h = 0, m = 0] = hhmm.split(':').map(Number);
+  return h * 60 + m;
+}
+
+/**
+ * The engine picks the slot: closest to the requested day, preferring the asked time of day, or
+ * the engine candidate nearest an exact clock time the client named.
+ */
 async function pickSlot(
   port: InboxPort,
   service: ReturnType<typeof resolveItems>['service'],
@@ -444,7 +454,17 @@ async function pickSlot(
     rules: schedule.rules,
     now,
   });
-  const candidate = candidates.find((c) => c.matchesPreference) ?? candidates[0];
+  const asked = parsed.time ? clockMinutes(parsed.time) : null;
+  const candidate =
+    asked === null
+      ? (candidates.find((c) => c.matchesPreference) ?? candidates[0])
+      : candidates.reduce<SlotCandidate | undefined>((best, c) => {
+          if (!best) return c;
+          const day = Math.abs(c.dayOffset) - Math.abs(best.dayOffset);
+          if (day !== 0) return day < 0 ? c : best;
+          const gap = (x: SlotCandidate) => Math.abs(clockMinutes(x.localTime) - asked);
+          return gap(c) < gap(best) ? c : best;
+        }, undefined);
   const label = formatDayLabel(requested);
   if (!candidate) return { ok: false, note: `No opening near ${label}. Pick a time to offer.` };
 

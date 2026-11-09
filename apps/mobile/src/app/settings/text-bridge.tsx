@@ -27,7 +27,7 @@ import { useCurrentSalon } from '@/providers/session-provider';
 const STEPS = [
   'In the Shortcuts app, open Automation → New → Message.',
   'Message Contains: your keyword. Run Immediately.',
-  'Add “Get Contents of URL”: the endpoint below, method POST, header X-Bridge-Token: your token.',
+  'Add “Get Contents of URL”: the endpoint above, method POST, header X-Bridge-Token: your token.',
   'Request body JSON: sender, senderPhone, text (the message), receivedAt (current date), bridgeVersion "1".',
 ];
 

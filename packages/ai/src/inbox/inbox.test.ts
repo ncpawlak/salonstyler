@@ -243,8 +243,9 @@ describe('parsing', () => {
   it('demo parser understands the common phrasings', () => {
     expect(demoParse('hey can I get color + trim fri afternoon?', ctx)).toMatchObject({
       intent: 'booking',
-      services: [{ serviceId: CUT }, { serviceId: COLOR }],
+      services: [{ serviceId: COLOR }, { serviceId: CUT }],
       date: '2026-12-04',
+      time: null,
       timeOfDay: 'afternoon',
     });
     expect(demoParse("it's Dana, can I book a cut tomorrow morning", ctx)).toMatchObject({
@@ -256,6 +257,48 @@ describe('parsing', () => {
     expect(demoParse('need to cancel my appt', ctx).intent).toBe('cancel');
     expect(demoParse('can I move my appointment to sat', ctx).intent).toBe('reschedule');
     expect(demoParse('thank you so much!!', ctx).intent).toBe('ignore');
+  });
+
+  it('demo parser picks one menu item per mention and reads clock times', () => {
+    const item = (id: string, name: string) => ({ ...MENU.services[0]!, id, name });
+    const menu = {
+      ...MENU,
+      services: [
+        item('womens', "Women's cut & style"),
+        item('mens', "Men's cut"),
+        item('kids', "Kids' cut (≤12)"),
+        item('haircut', 'Haircut'),
+        item('balayage', 'Balayage'),
+      ],
+      combos: [{ ...item('combo', "Balayage + Women's cut"), isCombo: true }],
+    } as typeof MENU;
+    const big = { ...ctx, menu };
+    expect(demoParse('Can I get a haircut tomorrow at 2pm?', big)).toMatchObject({
+      services: [{ serviceId: 'haircut' }],
+      date: '2026-12-02',
+      time: '14:00',
+      timeOfDay: 'afternoon',
+    });
+    expect(demoParse("balayage + women's cut sat at 10:30", big)).toMatchObject({
+      services: [{ serviceId: 'combo' }],
+      time: '10:30',
+      timeOfDay: 'morning',
+    });
+    expect(demoParse('kids cut at 4', big)).toMatchObject({
+      services: [{ serviceId: 'kids' }],
+      time: '16:00',
+    });
+  });
+
+  it('accepts a clock time from the model and derives the time of day', () => {
+    expect(normalizeParsed({ intent: 'booking', time: '09:15' }, MENU)).toMatchObject({
+      time: '09:15',
+      timeOfDay: 'morning',
+    });
+    expect(normalizeParsed({ intent: 'booking', time: '2pm' }, MENU)).toMatchObject({
+      time: null,
+      timeOfDay: null,
+    });
   });
 });
 
@@ -330,6 +373,21 @@ describe('handleInboxRequest', () => {
         outputTokens: 40,
       }),
     ]);
+  });
+
+  it('holds the engine slot nearest a clock time the client named', async () => {
+    const llm = fakeLlm({
+      intent: 'booking',
+      services: [{ serviceId: CUT }],
+      date: '2026-12-04',
+      time: '14:00',
+    });
+    const { deps, port } = setup({ llm });
+    await handleInboxRequest(TOKEN, body('Chairside cut fri at 2pm?'), deps);
+    const [req] = port.captured;
+    expect(req!.parsed).toMatchObject({ time: '14:00', timeOfDay: 'afternoon' });
+    const appt = port.base.appointments.find((a) => a.id === req!.appointmentId)!;
+    expect(local(appt.starts_at)).toBe('Fri, Dec 4, 2:00 PM');
   });
 
   it('acceptance: a non-booking message stores nothing', async () => {
