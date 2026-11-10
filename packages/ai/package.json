@@ -13,7 +13,8 @@
     "./assistant-server": "./src/server/assistant-handler.ts",
     "./inbox": "./src/inbox/index.ts",
     "./shortcut": "./src/inbox/shortcut.ts",
-    "./public-booking": "./src/public-booking/index.ts"
+    "./public-booking": "./src/public-booking/index.ts",
+    "./waitlist": "./src/waitlist/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

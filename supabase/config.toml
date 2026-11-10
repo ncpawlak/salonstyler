@@ -469,6 +469,10 @@ verify_jwt = false
 [functions.manage-booking]
 verify_jwt = false
 
+# Waitlist auto-fill: signed-out clients use /w/{token}; Postgres calls it with the notifier secret.
+[functions.waitlist]
+verify_jwt = false
+
 # Deposit pay page (/pay/{token}): signed-out clients call it without a JWT; the 64-hex pay token
 # gates page/start/status. Refunds verify a member JWT (or the service role) in the function.
 [functions.deposits]

@@ -65,6 +65,16 @@ describe('notificationIntent', () => {
     ).toEqual({ kind: 'open', href: '/inventory/reorder' });
   });
 
+  it('opens the waitlist for offers to approve or a claimed slot', () => {
+    expect(
+      notificationIntent(DEFAULT_ACTION_ID, {
+        type: 'waitlist',
+        salonId: 's1',
+        appointmentId: 'a1',
+      }),
+    ).toEqual({ kind: 'open', href: '/waitlist' });
+  });
+
   it('opens the calendar for a confirmed online booking', () => {
     expect(
       notificationIntent(DEFAULT_ACTION_ID, { type: 'public_booking', appointmentId: 'a1' }),

@@ -1972,6 +1972,9 @@ export type Database = {
           salon_id: string;
           slot_grid_minutes: number;
           updated_at: string;
+          waitlist_auto_offer: boolean;
+          waitlist_enabled: boolean;
+          waitlist_offer_minutes: number;
         };
         ComputedFields: never;
         Insert: {
@@ -2004,6 +2007,9 @@ export type Database = {
           salon_id: string;
           slot_grid_minutes?: number;
           updated_at?: string;
+          waitlist_auto_offer?: boolean;
+          waitlist_enabled?: boolean;
+          waitlist_offer_minutes?: number;
         };
         Update: {
           auto_send_replies?: boolean;
@@ -2035,6 +2041,9 @@ export type Database = {
           salon_id?: string;
           slot_grid_minutes?: number;
           updated_at?: string;
+          waitlist_auto_offer?: boolean;
+          waitlist_enabled?: boolean;
+          waitlist_offer_minutes?: number;
         };
         Relationships: [
           {
@@ -2167,6 +2176,232 @@ export type Database = {
             foreignKeyName: 'stripe_accounts_salon_id_fkey';
             columns: ['salon_id'];
             isOneToOne: true;
+            referencedRelation: 'salons';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      waitlist_entries: {
+        Row: {
+          appointment_id: string | null;
+          client_id: string;
+          created_at: string;
+          day: string;
+          id: string;
+          items: NonNullable<Json>;
+          notes: string | null;
+          salon_id: string;
+          services_label: string;
+          source: string;
+          status: Database['public']['Enums']['waitlist_entry_status'];
+          token: string;
+          updated_at: string;
+          window_end: string | null;
+          window_start: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          appointment_id?: string | null;
+          client_id: string;
+          created_at?: string;
+          day: string;
+          id?: string;
+          items: NonNullable<Json>;
+          notes?: string | null;
+          salon_id: string;
+          services_label: string;
+          source?: string;
+          status?: Database['public']['Enums']['waitlist_entry_status'];
+          token?: string;
+          updated_at?: string;
+          window_end?: string | null;
+          window_start?: string | null;
+        };
+        Update: {
+          appointment_id?: string | null;
+          client_id?: string;
+          created_at?: string;
+          day?: string;
+          id?: string;
+          items?: NonNullable<Json>;
+          notes?: string | null;
+          salon_id?: string;
+          services_label?: string;
+          source?: string;
+          status?: Database['public']['Enums']['waitlist_entry_status'];
+          token?: string;
+          updated_at?: string;
+          window_end?: string | null;
+          window_start?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'waitlist_entries_appointment_id_fkey';
+            columns: ['appointment_id'];
+            isOneToOne: false;
+            referencedRelation: 'appointments';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'waitlist_entries_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'client_summaries';
+            referencedColumns: ['client_id'];
+          },
+          {
+            foreignKeyName: 'waitlist_entries_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'clients';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'waitlist_entries_salon_id_fkey';
+            columns: ['salon_id'];
+            isOneToOne: false;
+            referencedRelation: 'salons';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      waitlist_offers: {
+        Row: {
+          accepted_at: string | null;
+          appointment_id: string | null;
+          created_at: string;
+          ends_at: string;
+          entry_id: string;
+          expires_at: string | null;
+          id: string;
+          opening_id: string;
+          price_cents: number | null;
+          salon_id: string;
+          segments: NonNullable<Json>;
+          sent_at: string | null;
+          sent_via: string | null;
+          services: NonNullable<Json>;
+          starts_at: string;
+          status: Database['public']['Enums']['waitlist_offer_status'];
+        };
+        ComputedFields: never;
+        Insert: {
+          accepted_at?: string | null;
+          appointment_id?: string | null;
+          created_at?: string;
+          ends_at: string;
+          entry_id: string;
+          expires_at?: string | null;
+          id?: string;
+          opening_id: string;
+          price_cents?: number | null;
+          salon_id: string;
+          segments: NonNullable<Json>;
+          sent_at?: string | null;
+          sent_via?: string | null;
+          services?: NonNullable<Json>;
+          starts_at: string;
+          status?: Database['public']['Enums']['waitlist_offer_status'];
+        };
+        Update: {
+          accepted_at?: string | null;
+          appointment_id?: string | null;
+          created_at?: string;
+          ends_at?: string;
+          entry_id?: string;
+          expires_at?: string | null;
+          id?: string;
+          opening_id?: string;
+          price_cents?: number | null;
+          salon_id?: string;
+          segments?: NonNullable<Json>;
+          sent_at?: string | null;
+          sent_via?: string | null;
+          services?: NonNullable<Json>;
+          starts_at?: string;
+          status?: Database['public']['Enums']['waitlist_offer_status'];
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'waitlist_offers_appointment_id_fkey';
+            columns: ['appointment_id'];
+            isOneToOne: false;
+            referencedRelation: 'appointments';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'waitlist_offers_entry_id_fkey';
+            columns: ['entry_id'];
+            isOneToOne: false;
+            referencedRelation: 'waitlist_entries';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'waitlist_offers_opening_id_fkey';
+            columns: ['opening_id'];
+            isOneToOne: false;
+            referencedRelation: 'waitlist_openings';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'waitlist_offers_salon_id_fkey';
+            columns: ['salon_id'];
+            isOneToOne: false;
+            referencedRelation: 'salons';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      waitlist_openings: {
+        Row: {
+          appointment_id: string;
+          created_at: string;
+          day: string;
+          ends_at: string;
+          id: string;
+          processed_at: string | null;
+          salon_id: string;
+          starts_at: string;
+          status: string;
+          stylist_id: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          appointment_id: string;
+          created_at?: string;
+          day: string;
+          ends_at: string;
+          id?: string;
+          processed_at?: string | null;
+          salon_id: string;
+          starts_at: string;
+          status?: string;
+          stylist_id?: string | null;
+        };
+        Update: {
+          appointment_id?: string;
+          created_at?: string;
+          day?: string;
+          ends_at?: string;
+          id?: string;
+          processed_at?: string | null;
+          salon_id?: string;
+          starts_at?: string;
+          status?: string;
+          stylist_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'waitlist_openings_appointment_id_fkey';
+            columns: ['appointment_id'];
+            isOneToOne: true;
+            referencedRelation: 'appointments';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'waitlist_openings_salon_id_fkey';
+            columns: ['salon_id'];
+            isOneToOne: false;
             referencedRelation: 'salons';
             referencedColumns: ['id'];
           },
@@ -2342,6 +2577,45 @@ export type Database = {
       };
     };
     Functions: {
+      accept_waitlist_offer: {
+        Args: { p_offer_id: string; p_segments?: Json; p_token: string };
+        Returns: Json;
+      };
+      add_waitlist_entry: {
+        Args: {
+          p_client_id: string;
+          p_day: string;
+          p_items: Json;
+          p_notes?: string;
+          p_salon_id: string;
+          p_services_label: string;
+          p_window_end?: string;
+          p_window_start?: string;
+        };
+        Returns: {
+          appointment_id: string | null;
+          client_id: string;
+          created_at: string;
+          day: string;
+          id: string;
+          items: NonNullable<Json>;
+          notes: string | null;
+          salon_id: string;
+          services_label: string;
+          source: string;
+          status: Database['public']['Enums']['waitlist_entry_status'];
+          token: string;
+          updated_at: string;
+          window_end: string | null;
+          window_start: string | null;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'waitlist_entries';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       adjust_stock: {
         Args: {
           p_delta: number;
@@ -2490,6 +2764,7 @@ export type Database = {
           isSetofReturn: true;
         };
       };
+      claim_waitlist_openings: { Args: { p_limit?: number; p_salon_id?: string }; Returns: Json };
       complete_card_checkout: {
         Args: {
           p_card_brand?: string;
@@ -2569,6 +2844,7 @@ export type Database = {
       };
       delete_ai_provider_config: { Args: { p_salon_id: string }; Returns: undefined };
       deposit_pay_page: { Args: { p_token: string }; Returns: Json };
+      dismiss_waitlist_offer: { Args: { p_offer_id: string }; Returns: undefined };
       finish_client_emails: { Args: { p_results: Json }; Returns: number };
       finish_notifications: { Args: { p_results: Json }; Returns: number };
       get_ai_provider_secret: {
@@ -2600,6 +2876,11 @@ export type Database = {
       };
       install_starter_forms: { Args: { p_salon_id: string }; Returns: number };
       is_salon_slug_available: { Args: { p_slug: string }; Returns: boolean };
+      join_waitlist: {
+        Args: { p_entry: Json; p_max_active?: number; p_salon_id: string; p_user_id: string };
+        Returns: Json;
+      };
+      leave_waitlist_by_token: { Args: { p_token: string }; Returns: Json };
       manage_booking: { Args: { p_token: string }; Returns: Json };
       mark_deposit_paid: {
         Args: {
@@ -2792,6 +3073,7 @@ export type Database = {
         };
       };
       reminder_queue: { Args: { p_day?: string; p_salon_id: string }; Returns: Json };
+      remove_waitlist_entry: { Args: { p_entry_id: string }; Returns: undefined };
       reschedule_appointment: {
         Args: {
           p_appointment_id: string;
@@ -2888,6 +3170,7 @@ export type Database = {
       };
       save_service: { Args: { p_salon_id: string; p_service: Json }; Returns: string };
       save_service_addon: { Args: { p_addon: Json; p_salon_id: string }; Returns: string };
+      save_waitlist_offers: { Args: { p_offers: Json; p_opening_id: string }; Returns: Json };
       search_salon: {
         Args: { p_limit?: number; p_query: string; p_salon_id: string };
         Returns: {
@@ -2901,6 +3184,7 @@ export type Database = {
           title: string;
         }[];
       };
+      send_waitlist_offer: { Args: { p_offer_id: string; p_via?: string }; Returns: Json };
       set_appointment_status: {
         Args: {
           p_appointment_id: string;
@@ -3037,6 +3321,7 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      waitlist_by_token: { Args: { p_token: string }; Returns: Json };
     };
     Enums: {
       addon_placement: 'before_finish' | 'end';
@@ -3063,7 +3348,8 @@ export type Database = {
         | 'public_booking'
         | 'deposit_paid'
         | 'client_rescheduled'
-        | 'low_stock';
+        | 'low_stock'
+        | 'waitlist';
       notification_status: 'pending' | 'sending' | 'sent' | 'skipped' | 'failed';
       payment_status:
         | 'pending'
@@ -3077,6 +3363,8 @@ export type Database = {
       salon_role: 'owner' | 'stylist';
       segment_kind: 'busy' | 'processing' | 'style';
       stock_movement_reason: 'receive' | 'sale' | 'adjust' | 'count' | 'use' | 'return';
+      waitlist_entry_status: 'waiting' | 'offered' | 'booked' | 'cancelled' | 'expired';
+      waitlist_offer_status: 'draft' | 'sent' | 'accepted' | 'taken' | 'expired' | 'withdrawn';
       work_hours_override_kind: 'custom' | 'day_off' | 'vacation';
     };
     CompositeTypes: {
@@ -3218,6 +3506,7 @@ export const Constants = {
         'deposit_paid',
         'client_rescheduled',
         'low_stock',
+        'waitlist',
       ],
       notification_status: ['pending', 'sending', 'sent', 'skipped', 'failed'],
       payment_status: [
@@ -3233,6 +3522,8 @@ export const Constants = {
       salon_role: ['owner', 'stylist'],
       segment_kind: ['busy', 'processing', 'style'],
       stock_movement_reason: ['receive', 'sale', 'adjust', 'count', 'use', 'return'],
+      waitlist_entry_status: ['waiting', 'offered', 'booked', 'cancelled', 'expired'],
+      waitlist_offer_status: ['draft', 'sent', 'accepted', 'taken', 'expired', 'withdrawn'],
       work_hours_override_kind: ['custom', 'day_off', 'vacation'],
     },
   },
