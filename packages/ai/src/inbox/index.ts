@@ -35,6 +35,7 @@ export {
 } from './handler.ts';
 export {
   authenticateBridgeToken,
+  createSupabaseAutoSchedulePort,
   createSupabaseInboxPort,
   markBridgeTested,
 } from './supabase-port.ts';
@@ -67,4 +68,24 @@ export {
   type ScreenshotConversation,
   type ScreenshotPlatform,
 } from './screenshot.ts';
+export {
+  autoScheduleSchema,
+  describeWindow,
+  fallbackWindow,
+  handleAutoSchedule,
+  interpretWithLlm,
+  isAutoSchedule,
+  normalizeWindow,
+  SUBMIT_WINDOW_TOOL,
+  windowPrompt,
+  type AutoScheduleDeps,
+  type AutoSchedulePort,
+  type AutoScheduleRequest,
+  type AutoScheduleResponse,
+  type AutoScheduleResult,
+  type AutoScheduleSuggestion,
+  type SchedulingWindow,
+  type StoredCapturedRequest,
+  type WindowContext,
+} from './auto-schedule.ts';
 export * from './shortcut.ts';

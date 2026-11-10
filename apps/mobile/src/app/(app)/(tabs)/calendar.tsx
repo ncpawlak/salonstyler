@@ -6,6 +6,7 @@ import {
   toSalonDate,
   zonedToUtc,
 } from '@chairside/core';
+import { defaultStart } from '@chairside/core/scheduling';
 import type { AppointmentWithDetails } from '@chairside/db/appointments';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
@@ -107,6 +108,7 @@ function DayMode({
   const workHours = useWorkHours(salon.id);
   const hours = workHours.data?.hours;
   const grid = workHours.data?.rules.slotGridMinutes ?? 15;
+  const notice = workHours.data?.rules.minNoticeMinutes ?? 0;
   const tz = hours?.timeZone ?? salon.timezone;
 
   const range = useMemo(() => {
@@ -143,14 +145,12 @@ function DayMode({
   };
 
   const newAppointment = useCallback(() => {
-    // Default to the next grid slot today, otherwise 10 AM.
-    const gridMs = grid * 60_000;
-    const start =
-      date === today
-        ? Math.ceil(Date.now() / gridMs) * gridMs
-        : zonedToUtc(parseLocalDate(date), 10 * 60, tz);
+    // The first open slot (after minimum notice) on this day, else the next working day.
+    const start = hours
+      ? defaultStart({ hours, date, now: Date.now(), leadTimeMinutes: notice, gridMinutes: grid })
+      : zonedToUtc(parseLocalDate(date), 10 * 60, tz);
     setBooking({ kind: 'new', start });
-  }, [date, today, grid, tz]);
+  }, [date, grid, tz, hours, notice]);
 
   const dragMove = async (appt: AppointmentWithDetails, deltaMinutes: number) => {
     setPendingMoves((m) => ({ ...m, [appt.id]: deltaMinutes }));

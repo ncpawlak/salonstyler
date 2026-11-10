@@ -26,13 +26,23 @@
 // → 200 { ok, status, requestId?, source, read? } · 401 not signed in · 403 not a member
 //   409 no AI provider · 422 no message in the screenshot · 429 AI budget
 //
+// Auto-Schedule (#84): the stylist's JWT again. The model only reads *when* the client can come in
+// (falling back to the stored parse); the engine ranks the openings by the request and the
+// client's habits. Nothing is booked: the app books the tapped slot (schedule_captured_request).
+//   { "action": "auto_schedule", "salonId": "…", "requestId": "…" }
+// → 200 { ok, intent, interpreter, window, fits, services, moving, suggestions: [{ start, label,
+//         tentative, reasons, segments }] } · 403 not a member · 404 / 409 request gone or handled
+//   422 a cancellation or no service to schedule
+//
 // Local development only: CHAIRSIDE_AI_DEMO=1 parses with rules instead of the salon's model (and
 // reads every screenshot as a fixed Instagram DM).
 // It is ignored unless SUPABASE_URL points at a local stack.
 import { createClient } from '@supabase/supabase-js';
 
+import { handleAutoSchedule, isAutoSchedule } from '@chairside/ai/inbox/auto-schedule.ts';
 import {
   authenticateBridgeToken,
+  createSupabaseAutoSchedulePort,
   createSupabaseInboxPort,
   markBridgeTested,
 } from '@chairside/ai/inbox/supabase-port.ts';
@@ -92,6 +102,21 @@ Deno.serve(async (req) => {
       });
       if (result.status === 500) {
         console.error('inbox capture failed', result.body.error.message);
+        return error(500, 'internal', 'Something went wrong');
+      }
+      return json(result.status, result.body);
+    }
+
+    if (!req.headers.get('X-Bridge-Token') && isAutoSchedule(parsed.body)) {
+      const ctx = await aiRequestContext(req);
+      if (ctx instanceof Response) return ctx;
+      const result = await handleAutoSchedule(parsed.body, {
+        ...ctx.deps,
+        createPort: (salonId) => createSupabaseAutoSchedulePort(db, salonId),
+        demo: demoEnabled(),
+      });
+      if (result.status === 500) {
+        console.error('inbox auto-schedule failed', result.body.error.message);
         return error(500, 'internal', 'Something went wrong');
       }
       return json(result.status, result.body);

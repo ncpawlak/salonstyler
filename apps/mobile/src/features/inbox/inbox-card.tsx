@@ -5,6 +5,7 @@ import type {
 } from '@chairside/db/appointments';
 import type { CapturedRequestAppointment } from '@chairside/db/inbox';
 import type { ClientReply } from '@chairside/db/replies';
+import type { ReactNode } from 'react';
 import { View } from 'react-native';
 import Animated, { FadeOut, LinearTransition, useReducedMotion } from 'react-native-reanimated';
 
@@ -18,7 +19,13 @@ import type { InboxItem } from './api';
 import { channelLabel } from './capture';
 
 export type InboxAction =
-  'approve' | 'decline' | 'other_time' | 'dismiss' | 'cancel_appointment' | 'offer';
+  | 'approve'
+  | 'decline'
+  | 'other_time'
+  | 'dismiss'
+  | 'cancel_appointment'
+  | 'offer'
+  | 'auto_schedule';
 
 const INTENT: Record<string, { label: string; tone: BadgeTone }> = {
   booking: { label: 'Booking', tone: 'warning' },
@@ -88,18 +95,22 @@ export function InboxCard({
   item,
   timeZone,
   reply,
+  autoSchedule,
   onAction,
 }: {
   item: InboxItem;
   timeZone: string;
   /** The latest reply texted about this request, if any. */
   reply?: Pick<ClientReply, 'kind' | 'status' | 'channel'> | null;
+  /** The open Auto-Schedule panel (#84), replacing the Auto-Schedule button. */
+  autoSchedule?: ReactNode;
   onAction: (action: InboxAction) => void;
 }) {
   const reduceMotion = useReducedMotion();
   const d = describe(item);
   const intent = INTENT[d.intent] ?? INTENT.booking!;
   const isCancel = item.kind === 'captured' && d.intent === 'cancel';
+  const canAutoSchedule = item.kind === 'captured' && !isCancel;
   const received =
     item.kind === 'captured' ? ` · ${receivedLabel(item.request.received_at, timeZone)}` : '';
 
@@ -182,6 +193,20 @@ export function InboxCard({
           </View>
         ) : null}
 
+        {canAutoSchedule
+          ? (autoSchedule ?? (
+              <Button
+                variant="secondary"
+                label="Auto-Schedule"
+                icon="sparkles"
+                fullWidth
+                accessibilityLabel={`Let AI find a time that works for ${d.name}`}
+                accessibilityHint="Reads the request and lists open times that fit"
+                onPress={() => onAction('auto_schedule')}
+                testID="inbox-auto-schedule"
+              />
+            ))
+          : null}
         {isCancel ? (
           <View className="flex-row gap-3">
             <Button

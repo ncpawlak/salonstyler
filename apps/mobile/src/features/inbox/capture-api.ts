@@ -9,7 +9,7 @@ import { AiRequestError } from '../ai-settings/api';
 
 export type CaptureInput = Omit<ManualCaptureRequest, 'action' | 'salonId'>;
 
-async function readError(error: unknown): Promise<AiRequestError> {
+export async function readError(error: unknown): Promise<AiRequestError> {
   const context = (error as { context?: unknown }).context;
   if (context instanceof Response) {
     try {
