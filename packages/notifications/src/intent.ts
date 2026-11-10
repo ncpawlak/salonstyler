@@ -8,9 +8,11 @@ export interface NotificationData {
     | 'cancellation'
     | 'daily_agenda'
     | 'payout_summary'
-    | 'public_booking';
+    | 'public_booking'
+    | 'low_stock';
   salonId?: string;
   appointmentId?: string;
+  productId?: string;
   date?: string;
 }
 
@@ -62,5 +64,6 @@ export function notificationIntent(
     return { kind: 'open', href: '/calendar' };
   }
   if (data.type === 'payout_summary') return { kind: 'open', href: '/settings/payments' };
+  if (data.type === 'low_stock') return { kind: 'open', href: '/inventory/reorder' };
   return { kind: 'none' };
 }

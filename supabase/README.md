@@ -16,6 +16,7 @@ Docs are split by feature so parallel PRs don't edit the same file. When you add
 - [Payments](docs/payments.md): Stripe Connect.
 - [Checkout and Tap to Pay](docs/checkout.md) (#11).
 - [Rebook at checkout](docs/rebook.md) (#42).
+- [Inventory](docs/inventory.md) (#17): products, barcode scanning, stock ledger and low-stock pushes.
 - [Deposits and cancellation policy](docs/deposits.md): `functions/deposits` (#12).
 - [Push notifications](docs/push-notifications.md) (#8), including the notifier Vault secrets.
 - [Client self-service](docs/client-self-service.md) (#10): manage link (`functions/manage-booking`), client emails and the reminder queue.

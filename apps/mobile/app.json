@@ -54,8 +54,16 @@
         "expo-image-picker",
         {
           "photosPermission": "Chairside saves before and after photos to your clients' profiles.",
-          "cameraPermission": "Chairside takes before and after photos for your clients' profiles.",
+          "cameraPermission": "Chairside uses the camera for before and after photos and to scan product barcodes.",
           "microphonePermission": false
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Chairside uses the camera for before and after photos and to scan product barcodes.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false
         }
       ]
     ],

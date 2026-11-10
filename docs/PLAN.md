@@ -199,6 +199,7 @@ Vagaro has no one-click export to other apps, and its API needs manual approval 
 
 ## 10. Inventory
 Products (brand, category, SKU/barcode, unit, on-hand, reorder point, cost, retail), barcode scan, stock movements, **service recipes** (auto-deduct color/developer on completion), retail sales at checkout, low-stock push, reorder list, and AI commands ("used 2 tubes of 6N").
+- **Shipped (#17):** products (brand, category, SKU/barcode, unit, on-hand, reorder point and quantity, cost, retail price or back bar, supplier) and an append-only stock_movements ledger. **Settings → Inventory** has a camera barcode scanner (Receive +1 / Use −1 / Look up; an unknown barcode starts a new product; manual or USB-scanner entry on web), +1/−1, receive, use and shelf counts per product, and a reorder list grouped by supplier with CSV export. Retail lines at checkout can be picked from inventory and decrement stock when paid. Dropping to the reorder point pushes the owner (`low_stock`, switchable). Service recipes and AI commands remain #18. See `supabase/docs/inventory.md`.
 
 ## 11. Client records
 Profile, contact, notes, **color formulas**, before/after photos, visit history, preferred services, per-client duration overrides, no-show count, marketing opt-in.
