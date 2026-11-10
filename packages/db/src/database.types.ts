@@ -2860,6 +2860,7 @@ export type Database = {
         };
       };
       rotate_inbox_bridge_token: { Args: { p_salon_id: string }; Returns: string };
+      sales_report: { Args: { p_from?: string; p_salon_id: string; p_to?: string }; Returns: Json };
       save_ai_provider_config: {
         Args: {
           p_api_key?: string;

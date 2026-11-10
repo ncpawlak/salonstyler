@@ -9,6 +9,7 @@ import type {
   AppointmentServiceSnapshot,
   AppointmentWithDetails,
 } from '@chairside/db/appointments';
+import type { SalesReport } from '@chairside/db/reports';
 import type { ServiceMenu } from '@chairside/db/services';
 
 /** One picked menu item: a service (optionally with a variant) or a combo. */
@@ -68,6 +69,8 @@ export interface ReplyContext {
 export interface AssistantPort {
   getSchedule(range: { from: string; to: string }): Promise<SalonSchedule>;
   getMenu(): Promise<ServiceMenu>;
+  /** Sales report over salon-local dates (inclusive, ≤ 1 year). */
+  salesReport(range: { from: string; to: string }): Promise<SalesReport>;
   listClients(): Promise<AssistantClient[]>;
   getClient(id: string): Promise<AssistantClient | null>;
   /** Most recent first. */

@@ -7,6 +7,7 @@ import type {
   AppointmentServiceSnapshot,
   AppointmentWithDetails,
 } from '@chairside/db/appointments';
+import type { SalesReport } from '@chairside/db/reports';
 import type { ServiceMenu } from '@chairside/db/services';
 
 import type {
@@ -141,6 +142,8 @@ export interface FakePort extends AssistantPort {
   notes: { clientId: string; kind: 'note' | 'formula'; text: string }[];
   replySettings: Omit<ReplyContext, 'request'>;
   requests: ReplyRequestInfo[];
+  /** Ranges passed to `salesReport`, in call order. */
+  reportRanges: { from: string; to: string }[];
 }
 
 export function createFakePort(): FakePort {
@@ -178,6 +181,7 @@ export function createFakePort(): FakePort {
       bridgeKeyword: null,
     },
     requests: [],
+    reportRanges: [],
     async getSchedule() {
       return {
         salonName: 'Studio K',
@@ -190,6 +194,10 @@ export function createFakePort(): FakePort {
       };
     },
     getMenu: async () => MENU,
+    async salesReport(range) {
+      port.reportRanges.push(range);
+      return salesReport(range);
+    },
     listClients: async () => clients,
     getClient: async (id) => clients.find((c) => c.id === id) ?? null,
     clientVisits: async (id, limit) => (visits.get(id) ?? []).slice(0, limit),
@@ -263,4 +271,40 @@ export function createFakePort(): FakePort {
     },
   };
   return port;
+}
+
+/** A canned October-style report for any range (the SQL itself is covered by pgTAP). */
+export function salesReport(range: { from: string; to: string }): SalesReport {
+  return {
+    ...range,
+    timeZone: TZ,
+    currency: 'usd',
+    checkouts: 4,
+    salesCents: 45_500,
+    servicesCents: 39_000,
+    retailCents: 6_000,
+    retailItems: 3,
+    otherSalesCents: 500,
+    tipsCents: 4_500,
+    depositsAppliedCents: 2_000,
+    collectedCents: 48_000,
+    cardCents: 38_000,
+    cashCents: 10_000,
+    otherCents: 0,
+    refundedCents: 1_000,
+    keptDepositsCents: 2_500,
+    keptDeposits: 1,
+    avgTicketCents: 11_375,
+    topServices: [
+      { name: 'All-over Color', count: 2, cents: 30_000 },
+      { name: "Women's Cut", count: 2, cents: 9_000 },
+    ],
+    daily: [
+      { date: range.from, salesCents: 20_000, tipsCents: 2_000, checkouts: 2 },
+      { date: range.to, salesCents: 25_500, tipsCents: 2_500, checkouts: 2 },
+    ],
+    clients: { served: 3, new: 2, returning: 1 },
+    appointments: { booked: 5, completed: 3, noShows: 1, cancelled: 1 },
+    rebook: { from: range.from, to: range.to, checkouts: 4, rebooked: 1, declined: 1, rate: 0.25 },
+  };
 }
