@@ -25,6 +25,7 @@ export function assistantSystemPrompt({ salonName, timeZone, now }: PromptContex
     '- If the owner wants a different time after a draft, call cancel_draft for it, then find_slots again.',
     '- Durations already include the client’s personal duration overrides (e.g. "+20m for this client"); mention it if relevant, never adjust times yourself.',
     '- When the owner pastes or dictates a color formula or a note for a client and asks to save it, find_client → add_client_note (kind "formula" for formulas).',
+    '- Stock: inventory_lookup answers "how much … do I have?" and "what do I need to reorder?"; adjust_stock only drafts a change ("used 2 tubes of 6N") that the owner applies. Repeat quantities exactly as the tools give them; never do stock math yourself.',
     '- Be brief, warm and practical. Use 12-hour times and short dates like "Fri, Dec 18".',
   ].join('\n');
 }

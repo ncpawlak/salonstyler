@@ -1,6 +1,6 @@
 # Inventory (#17)
 
-Retail and back-bar products, barcode scanning, a stock ledger, retail sales at checkout, low-stock pushes and an exportable reorder list. Service recipes (auto-deducting color on completion) and AI inventory commands ("used 2 tubes of 6N") are #18.
+Retail and back-bar products, barcode scanning, a stock ledger, retail sales at checkout, low-stock pushes and an exportable reorder list. Service recipes (auto-deducting color on completion) and AI inventory commands ("used 2 tubes of 6N") are in [service recipes](service-recipes.md) (#18).
 
 ## In the app
 

@@ -10,6 +10,7 @@ import {
 } from '@chairside/db/appointments';
 import { addClientFormula, addClientNote, listClientOverrides } from '@chairside/db/clients';
 import { getInboxBridge } from '@chairside/db/inbox';
+import { getReorderList, listProducts } from '@chairside/db/inventory';
 import { getReplySettings } from '@chairside/db/replies';
 import { getSalesReport } from '@chairside/db/reports';
 import { listServiceMenu } from '@chairside/db/services';
@@ -177,6 +178,28 @@ export function createSupabaseAssistantPort(
             }
           : null,
       };
+    },
+
+    async listProducts() {
+      const [products, reorder] = await Promise.all([
+        listProducts(client, salonId),
+        getReorderList(client, salonId),
+      ]);
+      const suggested = new Map(reorder.map((r) => [r.id, r.suggested_quantity]));
+      return products
+        .filter((p) => p.active)
+        .map((p) => ({
+          id: p.id,
+          name: p.name,
+          brand: p.brand,
+          sku: p.sku,
+          barcode: p.barcode,
+          unit: p.unit,
+          onHand: Number(p.on_hand),
+          reorderPoint: Number(p.reorder_point),
+          supplier: p.supplier,
+          suggestedQuantity: suggested.has(p.id) ? Number(suggested.get(p.id) ?? 0) : null,
+        }));
     },
 
     async audit(action, details) {
