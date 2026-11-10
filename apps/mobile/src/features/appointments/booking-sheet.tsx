@@ -1,4 +1,12 @@
-import { formatDuration, formatOverride, planBooking, type WorkHours } from '@chairside/core';
+import {
+  addDays,
+  formatDuration,
+  formatOverride,
+  planBooking,
+  type WorkHours,
+  zonedParts,
+  zonedToUtc,
+} from '@chairside/core';
 import type { ClientRow } from '@chairside/db';
 import type { AppointmentWithDetails } from '@chairside/db/appointments';
 import type { ServiceMenu } from '@chairside/db/services';
@@ -19,6 +27,7 @@ import {
 import { haptics } from '@/lib/haptics';
 
 import { useClientOverrides } from '../clients/api';
+import { AutoFind } from '../scheduling/auto-find';
 import { formatPrice, useServiceMenu } from '../services/data';
 import {
   errorMessage,
@@ -53,6 +62,11 @@ const statusOptions = [
   { value: 'held', label: 'Hold' },
 ] as const;
 
+/** Same wall-clock time, days local days later (DST-safe). */
+function shiftDays(ms: number, days: number, timeZone: string) {
+  const parts = zonedParts(ms, timeZone);
+  return zonedToUtc(addDays(parts, days), parts.minutes, timeZone);
+}
 const WARNING_TEXT = {
   'outside-hours': 'This is outside your work hours.',
   'lead-time': 'This is sooner than your minimum notice.',
@@ -74,14 +88,8 @@ export function BookingSheet({
       open={!!target}
       onOpenChange={(open) => !open && onClose()}
       title={editing ? 'Edit services' : 'New appointment'}
-      subtitle={
-        target
-          ? formatDay(
-              target.kind === 'new' ? target.start : Date.parse(target.appointment.starts_at),
-              hours.timeZone,
-            )
-          : undefined
-      }
+      // New bookings show (and can change) the day in the form.
+      subtitle={editing ? formatDay(Date.parse(editing.starts_at), hours.timeZone) : undefined}
     >
       {target ? (
         <BookingForm
@@ -216,6 +224,30 @@ function BookingForm({
       {resolved ? (
         <View className="gap-2">
           <Text variant="headline">When</Text>
+          {client && !editing ? (
+            <AutoFind
+              clientId={client.id}
+              clientName={client.name}
+              service={resolved.service}
+              services={resolved.snapshots}
+              hours={hours}
+              onPick={(pick) => {
+                haptics.selection();
+                setStart(pick.start);
+                // Tentative hours stay soft until the stylist confirms.
+                setStatus(pick.tentative ? 'held' : 'confirmed');
+              }}
+            />
+          ) : null}
+          {editing ? null : (
+            <Stepper
+              label={formatDay(start, hours.timeZone)}
+              decrementLabel="One day earlier"
+              incrementLabel="One day later"
+              onDecrement={() => setStart((s) => shiftDays(s, -1, hours.timeZone))}
+              onIncrement={() => setStart((s) => shiftDays(s, 1, hours.timeZone))}
+            />
+          )}
           <Stepper
             label={`Starts ${formatTime(start, hours.timeZone)}`}
             decrementLabel={`${gridMinutes} minutes earlier`}

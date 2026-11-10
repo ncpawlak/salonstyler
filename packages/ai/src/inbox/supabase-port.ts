@@ -1,6 +1,8 @@
 import type { ChairsideClient, Json } from '@chairside/db';
+import { listServiceRebookIntervals } from '@chairside/db/rebook';
 
 import { createSupabaseAssistantPort } from '../assistant/supabase-port.ts';
+import type { AutoSchedulePort, StoredCapturedRequest } from './auto-schedule.ts';
 import type {
   CaptureInput,
   CaptureResult,
@@ -133,6 +135,45 @@ export function createSupabaseInboxPort(client: ChairsideClient, salonId: string
   };
 }
 
+/**
+ * Auto-Schedule's data access (#84): the inbox port plus the stored request, the client's
+ * duration overrides and the services' rebook intervals. Service role, filtered by `salonId`
+ * (the caller's membership is checked before this is created).
+ */
+export function createSupabaseAutoSchedulePort(
+  client: ChairsideClient,
+  salonId: string,
+): AutoSchedulePort {
+  const base = createSupabaseAssistantPort(client, salonId);
+  return {
+    ...createSupabaseInboxPort(client, salonId),
+    clientOverrides: base.clientOverrides,
+    serviceRebookIntervals: () => listServiceRebookIntervals(client, salonId),
+    async getCapturedRequest(id) {
+      const { data, error } = await client
+        .from('captured_requests')
+        .select(
+          'id, status, intent, message, parsed, client_id, appointment_id, target_appointment_id, received_at',
+        )
+        .eq('salon_id', salonId)
+        .eq('id', id)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) return null;
+      return {
+        id: data.id,
+        status: data.status,
+        intent: data.intent,
+        message: data.message,
+        parsed: (data.parsed ?? {}) as StoredCapturedRequest['parsed'],
+        clientId: data.client_id,
+        appointmentId: data.appointment_id,
+        targetAppointmentId: data.target_appointment_id,
+        receivedAt: data.received_at,
+      };
+    },
+  };
+}
 /**
  * Looks up a bridge token (service role), counts the call against its hourly limit, and records
  * the Shortcut version it reported.

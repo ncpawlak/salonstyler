@@ -1,5 +1,6 @@
 import type { ReplyKind } from '@chairside/ai/assistant';
 import { OUTBOX_BRIDGE_VERSION, parseBridgeVersion } from '@chairside/ai/shortcut';
+import type { Appointment } from '@chairside/db';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { View } from 'react-native';
@@ -14,6 +15,7 @@ import {
   useInboxBridge,
   useResolveCapturedRequest,
 } from '@/features/inbox/api';
+import { AutoSchedulePanel } from '@/features/inbox/auto-schedule-panel';
 import { BridgeHealthBanner } from '@/features/inbox/bridge-ui';
 import { type InboxAction, InboxCard } from '@/features/inbox/inbox-card';
 import { useReplySettings, useRequestReplies } from '@/features/replies/api';
@@ -59,6 +61,7 @@ export default function InboxScreen() {
   const bridge = useInboxBridge();
   const [failure, setFailure] = useState<string | null>(null);
   const [replyTo, setReplyTo] = useState<ReplyTarget | null>(null);
+  const [autoFor, setAutoFor] = useState<string | null>(null);
   const items = useMemo(() => inbox.items ?? [], [inbox.items]);
 
   const requestIds = useMemo(
@@ -91,6 +94,10 @@ export default function InboxScreen() {
       if (appointmentId) router.push({ pathname: '/requests/[id]', params: { id: appointmentId } });
       return;
     }
+    if (action === 'auto_schedule') {
+      if (item.kind === 'captured') setAutoFor(item.request.id);
+      return;
+    }
     if (action === 'offer') {
       setReplyTo(replyTarget(item, 'offer'));
       return;
@@ -116,6 +123,19 @@ export default function InboxScreen() {
     }
   };
 
+  // Auto-Schedule booked / moved the appointment: draft the confirmation unless auto-send has it.
+  const scheduled = (item: InboxItem, appointment: Appointment, services: string[]) => {
+    setAutoFor(null);
+    if (item.kind !== 'captured') return;
+    const target: ReplyTarget = {
+      ...replyTarget(item, 'confirm'),
+      appointmentId: appointment.id,
+      start: appointment.starts_at,
+      services,
+    };
+    if (autoSends && target.phone) return;
+    setReplyTo(target);
+  };
   return (
     <Screen
       title="Inbox"
@@ -180,6 +200,22 @@ export default function InboxScreen() {
               item={item}
               timeZone={salon.timezone}
               reply={item.kind === 'captured' ? latestReply.get(item.request.id) : null}
+              autoSchedule={
+                item.kind === 'captured' && autoFor === item.request.id ? (
+                  <AutoSchedulePanel
+                    requestId={item.request.id}
+                    name={item.request.client?.name ?? item.request.sender ?? 'them'}
+                    onScheduled={(appointment, result) =>
+                      scheduled(
+                        item,
+                        appointment,
+                        result.services.map((s) => s.name),
+                      )
+                    }
+                    onClose={() => setAutoFor(null)}
+                  />
+                ) : null
+              }
               onAction={(action) => act(item, action)}
             />
           ))}
