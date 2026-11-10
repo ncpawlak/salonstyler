@@ -49,11 +49,14 @@ export function DayStrip({
   window,
   timeZone,
   height = 14,
+  now,
 }: {
   day: DayUtilization;
   window: HourWindow;
   timeZone: string;
   height?: number;
+  /** Draws a "now" line when this instant falls inside the strip. */
+  now?: number;
 }) {
   const { colors } = useTheme();
   const palette = useUtilizationPalette();
@@ -118,6 +121,9 @@ export function DayStrip({
               />
             );
           })}
+          {now !== undefined && now >= from && now < to ? (
+            <Rect x={Math.max(0, x(now) - 1)} width={2} height={height} fill={colors.destructive} />
+          ) : null}
         </Svg>
       ) : null}
     </View>
