@@ -14,6 +14,7 @@ import { Pressable, Switch, View } from 'react-native';
 
 import { DetailScreen } from '@/components/shell/screen';
 import { ServiceDepositEditor } from '@/features/deposits/service-deposit';
+import { ServiceFormsEditor } from '@/features/forms/service-forms-editor';
 import {
   Button,
   Card,
@@ -345,6 +346,7 @@ function ServiceEditor({ existing, canEdit }: { existing?: MenuService; canEdit:
           canEdit={canEdit}
         />
       ) : null}
+      {existing ? <ServiceFormsEditor serviceId={existing.id} canEdit={canEdit} /> : null}
 
       {existing ? <RebookIntervalField service={existing} canEdit={canEdit} /> : null}
 
