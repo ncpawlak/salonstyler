@@ -1073,6 +1073,8 @@ export type Database = {
           imported_last_visit_on: string | null;
           imported_no_show_count: number;
           marketing_opt_in: boolean;
+          marketing_opted_out_at: string | null;
+          marketing_token: string;
           name: string;
           notes: string | null;
           pending: boolean;
@@ -1092,6 +1094,8 @@ export type Database = {
           imported_last_visit_on?: string | null;
           imported_no_show_count?: number;
           marketing_opt_in?: boolean;
+          marketing_opted_out_at?: string | null;
+          marketing_token?: string;
           name: string;
           notes?: string | null;
           pending?: boolean;
@@ -1110,6 +1114,8 @@ export type Database = {
           imported_last_visit_on?: string | null;
           imported_no_show_count?: number;
           marketing_opt_in?: boolean;
+          marketing_opted_out_at?: string | null;
+          marketing_token?: string;
           name?: string;
           notes?: string | null;
           pending?: boolean;
@@ -1381,6 +1387,181 @@ export type Database = {
             foreignKeyName: 'inbox_bridges_salon_id_fkey';
             columns: ['salon_id'];
             isOneToOne: true;
+            referencedRelation: 'salons';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      marketing_campaigns: {
+        Row: {
+          audience: NonNullable<Json>;
+          body: string;
+          channel: Database['public']['Enums']['marketing_channel'];
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          name: string;
+          recipient_count: number;
+          salon_id: string;
+          send_at: string | null;
+          sent_at: string | null;
+          status: Database['public']['Enums']['marketing_campaign_status'];
+          subject: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          audience?: NonNullable<Json>;
+          body: string;
+          channel?: Database['public']['Enums']['marketing_channel'];
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          name: string;
+          recipient_count?: number;
+          salon_id: string;
+          send_at?: string | null;
+          sent_at?: string | null;
+          status?: Database['public']['Enums']['marketing_campaign_status'];
+          subject: string;
+          updated_at?: string;
+        };
+        Update: {
+          audience?: NonNullable<Json>;
+          body?: string;
+          channel?: Database['public']['Enums']['marketing_channel'];
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          name?: string;
+          recipient_count?: number;
+          salon_id?: string;
+          send_at?: string | null;
+          sent_at?: string | null;
+          status?: Database['public']['Enums']['marketing_campaign_status'];
+          subject?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'marketing_campaigns_salon_id_fkey';
+            columns: ['salon_id'];
+            isOneToOne: false;
+            referencedRelation: 'salons';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      marketing_messages: {
+        Row: {
+          appointment_id: string | null;
+          approved_at: string | null;
+          approved_by: string | null;
+          attempts: number;
+          body: string;
+          campaign_id: string | null;
+          channel: Database['public']['Enums']['marketing_channel'];
+          claimed_at: string | null;
+          client_id: string;
+          created_at: string;
+          dedupe_key: string;
+          due_at: string;
+          id: string;
+          kind: Database['public']['Enums']['marketing_message_kind'];
+          last_error: string | null;
+          meta: NonNullable<Json>;
+          provider_id: string | null;
+          salon_id: string;
+          sent_at: string | null;
+          status: Database['public']['Enums']['marketing_message_status'];
+          subject: string;
+          to_address: string | null;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          appointment_id?: string | null;
+          approved_at?: string | null;
+          approved_by?: string | null;
+          attempts?: number;
+          body: string;
+          campaign_id?: string | null;
+          channel?: Database['public']['Enums']['marketing_channel'];
+          claimed_at?: string | null;
+          client_id: string;
+          created_at?: string;
+          dedupe_key: string;
+          due_at?: string;
+          id?: string;
+          kind: Database['public']['Enums']['marketing_message_kind'];
+          last_error?: string | null;
+          meta?: NonNullable<Json>;
+          provider_id?: string | null;
+          salon_id: string;
+          sent_at?: string | null;
+          status?: Database['public']['Enums']['marketing_message_status'];
+          subject: string;
+          to_address?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          appointment_id?: string | null;
+          approved_at?: string | null;
+          approved_by?: string | null;
+          attempts?: number;
+          body?: string;
+          campaign_id?: string | null;
+          channel?: Database['public']['Enums']['marketing_channel'];
+          claimed_at?: string | null;
+          client_id?: string;
+          created_at?: string;
+          dedupe_key?: string;
+          due_at?: string;
+          id?: string;
+          kind?: Database['public']['Enums']['marketing_message_kind'];
+          last_error?: string | null;
+          meta?: NonNullable<Json>;
+          provider_id?: string | null;
+          salon_id?: string;
+          sent_at?: string | null;
+          status?: Database['public']['Enums']['marketing_message_status'];
+          subject?: string;
+          to_address?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'marketing_messages_appointment_id_fkey';
+            columns: ['appointment_id'];
+            isOneToOne: false;
+            referencedRelation: 'appointments';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'marketing_messages_campaign_id_fkey';
+            columns: ['campaign_id'];
+            isOneToOne: false;
+            referencedRelation: 'marketing_campaigns';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'marketing_messages_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'client_summaries';
+            referencedColumns: ['client_id'];
+          },
+          {
+            foreignKeyName: 'marketing_messages_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'clients';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'marketing_messages_salon_id_fkey';
+            columns: ['salon_id'];
+            isOneToOne: false;
             referencedRelation: 'salons';
             referencedColumns: ['id'];
           },
@@ -2155,6 +2336,13 @@ export type Database = {
           followup_nudge_hours: number;
           hold_expiry_hours: number;
           low_stock_alerts_enabled: boolean;
+          marketing_nudge_lead_days: number;
+          marketing_nudges_auto_send: boolean;
+          marketing_nudges_enabled: boolean;
+          marketing_review_delay_hours: number;
+          marketing_review_url: string | null;
+          marketing_reviews_auto_send: boolean;
+          marketing_reviews_enabled: boolean;
           min_notice_minutes: number;
           payout_summary_enabled: boolean;
           preferences: NonNullable<Json>;
@@ -2191,6 +2379,13 @@ export type Database = {
           followup_nudge_hours?: number;
           hold_expiry_hours?: number;
           low_stock_alerts_enabled?: boolean;
+          marketing_nudge_lead_days?: number;
+          marketing_nudges_auto_send?: boolean;
+          marketing_nudges_enabled?: boolean;
+          marketing_review_delay_hours?: number;
+          marketing_review_url?: string | null;
+          marketing_reviews_auto_send?: boolean;
+          marketing_reviews_enabled?: boolean;
           min_notice_minutes?: number;
           payout_summary_enabled?: boolean;
           preferences?: NonNullable<Json>;
@@ -2226,6 +2421,13 @@ export type Database = {
           followup_nudge_hours?: number;
           hold_expiry_hours?: number;
           low_stock_alerts_enabled?: boolean;
+          marketing_nudge_lead_days?: number;
+          marketing_nudges_auto_send?: boolean;
+          marketing_nudges_enabled?: boolean;
+          marketing_review_delay_hours?: number;
+          marketing_review_url?: string | null;
+          marketing_reviews_auto_send?: boolean;
+          marketing_reviews_enabled?: boolean;
           min_notice_minutes?: number;
           payout_summary_enabled?: boolean;
           preferences?: NonNullable<Json>;
@@ -2931,6 +3133,40 @@ export type Database = {
         Args: { p_from: string; p_salon_id: string; p_to: string };
         Returns: Json;
       };
+      approve_marketing_message: {
+        Args: { p_body?: string; p_message_id: string; p_subject?: string };
+        Returns: {
+          appointment_id: string | null;
+          approved_at: string | null;
+          approved_by: string | null;
+          attempts: number;
+          body: string;
+          campaign_id: string | null;
+          channel: Database['public']['Enums']['marketing_channel'];
+          claimed_at: string | null;
+          client_id: string;
+          created_at: string;
+          dedupe_key: string;
+          due_at: string;
+          id: string;
+          kind: Database['public']['Enums']['marketing_message_kind'];
+          last_error: string | null;
+          meta: NonNullable<Json>;
+          provider_id: string | null;
+          salon_id: string;
+          sent_at: string | null;
+          status: Database['public']['Enums']['marketing_message_status'];
+          subject: string;
+          to_address: string | null;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'marketing_messages';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       book_appointment: {
         Args: {
           p_client_id: string;
@@ -2982,9 +3218,14 @@ export type Database = {
         Returns: Json;
       };
       cancel_booking_by_token: { Args: { p_token: string }; Returns: Json };
+      cancel_marketing_campaign: { Args: { p_campaign_id: string }; Returns: undefined };
       cancellation_quote: { Args: { p_appointment_id: string }; Returns: Json };
       capture_inbox_request: { Args: { p_request: Json; p_salon_id: string }; Returns: Json };
       claim_client_emails: { Args: { p_limit?: number }; Returns: Json };
+      claim_marketing_messages: {
+        Args: { p_channels?: string[]; p_limit?: number };
+        Returns: Json;
+      };
       claim_notifications: {
         Args: { p_limit?: number };
         Returns: {
@@ -3095,12 +3336,47 @@ export type Database = {
       };
       delete_ai_provider_config: { Args: { p_salon_id: string }; Returns: undefined };
       deposit_pay_page: { Args: { p_token: string }; Returns: Json };
+      dismiss_marketing_message: {
+        Args: { p_message_id: string };
+        Returns: {
+          appointment_id: string | null;
+          approved_at: string | null;
+          approved_by: string | null;
+          attempts: number;
+          body: string;
+          campaign_id: string | null;
+          channel: Database['public']['Enums']['marketing_channel'];
+          claimed_at: string | null;
+          client_id: string;
+          created_at: string;
+          dedupe_key: string;
+          due_at: string;
+          id: string;
+          kind: Database['public']['Enums']['marketing_message_kind'];
+          last_error: string | null;
+          meta: NonNullable<Json>;
+          provider_id: string | null;
+          salon_id: string;
+          sent_at: string | null;
+          status: Database['public']['Enums']['marketing_message_status'];
+          subject: string;
+          to_address: string | null;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'marketing_messages';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       dismiss_waitlist_offer: { Args: { p_offer_id: string }; Returns: undefined };
       finance_report: {
         Args: { p_from?: string; p_salon_id: string; p_to?: string };
         Returns: Json;
       };
       finish_client_emails: { Args: { p_results: Json }; Returns: number };
+      finish_marketing_messages: { Args: { p_results: Json }; Returns: number };
       finish_notifications: { Args: { p_results: Json }; Returns: number };
       get_ai_provider_secret: {
         Args: { p_salon_id: string };
@@ -3204,6 +3480,12 @@ export type Database = {
         Args: { p_appointment_id: string; p_sent?: boolean };
         Returns: string;
       };
+      marketing_audience_count: { Args: { p_audience: Json; p_salon_id: string }; Returns: number };
+      marketing_nudge_candidates: {
+        Args: { p_before_at?: string; p_before_client?: string; p_limit?: number };
+        Returns: Json;
+      };
+      marketing_subscription_by_token: { Args: { p_token: string }; Returns: Json };
       pay_checkout_offline: {
         Args: { p_checkout_id: string; p_method: Database['public']['Enums']['checkout_method'] };
         Returns: {
@@ -3424,6 +3706,39 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      save_marketing_campaign: {
+        Args: {
+          p_audience?: Json;
+          p_body: string;
+          p_campaign_id: string;
+          p_name: string;
+          p_salon_id: string;
+          p_subject: string;
+        };
+        Returns: {
+          audience: NonNullable<Json>;
+          body: string;
+          channel: Database['public']['Enums']['marketing_channel'];
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          name: string;
+          recipient_count: number;
+          salon_id: string;
+          send_at: string | null;
+          sent_at: string | null;
+          status: Database['public']['Enums']['marketing_campaign_status'];
+          subject: string;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'marketing_campaigns';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      save_rebook_nudges: { Args: { p_nudges: Json }; Returns: Json };
       save_service: { Args: { p_salon_id: string; p_service: Json }; Returns: string };
       save_service_addon: { Args: { p_addon: Json; p_salon_id: string }; Returns: string };
       save_waitlist_offers: { Args: { p_offers: Json; p_opening_id: string }; Returns: Json };
@@ -3439,6 +3754,31 @@ export type Database = {
           subtitle: string;
           title: string;
         }[];
+      };
+      send_marketing_campaign: {
+        Args: { p_campaign_id: string; p_send_at?: string };
+        Returns: {
+          audience: NonNullable<Json>;
+          body: string;
+          channel: Database['public']['Enums']['marketing_channel'];
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          name: string;
+          recipient_count: number;
+          salon_id: string;
+          send_at: string | null;
+          sent_at: string | null;
+          status: Database['public']['Enums']['marketing_campaign_status'];
+          subject: string;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'marketing_campaigns';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
       };
       send_waitlist_offer: { Args: { p_offer_id: string; p_via?: string }; Returns: Json };
       set_appointment_status: {
@@ -3476,6 +3816,10 @@ export type Database = {
           isOneToOne: true;
           isSetofReturn: false;
         };
+      };
+      set_marketing_subscription_by_token: {
+        Args: { p_subscribed: boolean; p_token: string };
+        Returns: Json;
       };
       set_service_recipe: {
         Args: { p_lines: Json; p_service_id: string };
@@ -3614,6 +3958,11 @@ export type Database = {
       deposit_status: 'pending' | 'paid' | 'refund_due' | 'refunded' | 'kept' | 'canceled';
       expense_category: 'booth_rent' | 'products' | 'tools' | 'education' | 'other';
       expense_frequency: 'weekly' | 'monthly';
+      marketing_campaign_status: 'draft' | 'scheduled' | 'sent' | 'cancelled';
+      marketing_channel: 'email' | 'sms';
+      marketing_message_kind: 'rebook_nudge' | 'review_request' | 'campaign';
+      marketing_message_status:
+        'draft' | 'queued' | 'sending' | 'sent' | 'skipped' | 'failed' | 'dismissed';
       notification_kind:
         | 'request'
         | 'request_nudge'
@@ -3774,6 +4123,18 @@ export const Constants = {
       deposit_status: ['pending', 'paid', 'refund_due', 'refunded', 'kept', 'canceled'],
       expense_category: ['booth_rent', 'products', 'tools', 'education', 'other'],
       expense_frequency: ['weekly', 'monthly'],
+      marketing_campaign_status: ['draft', 'scheduled', 'sent', 'cancelled'],
+      marketing_channel: ['email', 'sms'],
+      marketing_message_kind: ['rebook_nudge', 'review_request', 'campaign'],
+      marketing_message_status: [
+        'draft',
+        'queued',
+        'sending',
+        'sent',
+        'skipped',
+        'failed',
+        'dismissed',
+      ],
       notification_kind: [
         'request',
         'request_nudge',

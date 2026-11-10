@@ -18,6 +18,8 @@ export interface EmailMessage {
   html: string;
   replyTo?: string;
   attachments?: EmailAttachment[];
+  /** Extra headers, e.g. List-Unsubscribe on marketing email. Names must be plain tokens. */
+  headers?: Record<string, string>;
 }
 
 /** A send failure. `permanent` (e.g. 5xx, bad address) won't be retried. */
@@ -113,6 +115,9 @@ export function buildMime(
     `Subject: ${encodeHeader(message.subject)}`,
     `Date: ${(options.date ?? new Date()).toUTCString()}`,
     `Message-ID: ${messageId}`,
+    ...Object.entries(message.headers ?? {})
+      .filter(([name]) => /^[A-Za-z][A-Za-z0-9-]*$/.test(name))
+      .map(([name, value]) => `${name}: ${value.replace(/[\r\n]+/g, ' ')}`),
     'MIME-Version: 1.0',
     `Content-Type: multipart/mixed; boundary="${mixed}"`,
   ];

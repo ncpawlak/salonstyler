@@ -253,6 +253,7 @@ export function resendTransport(apiKey: string, fetchImpl?: FetchLike): EmailTra
           text: message.text,
           html: message.html,
           ...(message.replyTo ? { reply_to: message.replyTo } : {}),
+          ...(message.headers ? { headers: message.headers } : {}),
           ...(message.attachments
             ? {
                 attachments: message.attachments.map((a) => ({

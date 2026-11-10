@@ -15,7 +15,8 @@
     "./finances": "./src/finances/index.ts",
     "./shortcut": "./src/inbox/shortcut.ts",
     "./public-booking": "./src/public-booking/index.ts",
-    "./waitlist": "./src/waitlist/index.ts"
+    "./waitlist": "./src/waitlist/index.ts",
+    "./marketing": "./src/marketing/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
