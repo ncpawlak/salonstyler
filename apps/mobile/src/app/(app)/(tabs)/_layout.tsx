@@ -5,6 +5,7 @@ import type { ColorValue } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { TAB_BAR_HEIGHT } from '@/components/shell/ask-chairside';
+import { useGlanceSync } from '@/features/glance/use-glance-sync';
 import { useInbox } from '@/features/inbox/api';
 import { useSalonRealtime } from '@/features/realtime/use-salon-realtime';
 import { haptics } from '@/lib/haptics';
@@ -30,6 +31,7 @@ export default function TabsLayout() {
   const insets = useSafeAreaInsets();
   const pending = useInbox().items?.length ?? 0;
   useSalonRealtime();
+  useGlanceSync();
 
   return (
     <Tabs

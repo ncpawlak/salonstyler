@@ -80,6 +80,52 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         disableAutoUpload: !process.env.SENTRY_AUTH_TOKEN,
       },
     ],
+    // WidgetKit extension (#40): the processing-timer Live Activity (Lock Screen + Dynamic Island)
+    // and the Home/Lock Screen widgets, written in TSX with @expo/ui in `src/widgets/`. It shares
+    // the share extension's App Group. Live Activities need no entry here. See
+    // supabase/docs/timers-widgets.md. Listed before expo-share-intent so its (de-duplicating)
+    // App Group entitlement mod runs after the share extension's.
+    [
+      'expo-widgets',
+      {
+        bundleIdentifier: `${baseBundleId}${suffix}.widgets`,
+        groupIdentifier: `group.${baseBundleId}${suffix}`,
+        widgets: [
+          {
+            name: 'ChairsideNextClient',
+            displayName: 'Next client',
+            description: 'Who’s next and when, plus who’s in the chair.',
+            ios: {
+              supportedFamilies: [
+                'systemSmall',
+                'systemMedium',
+                'accessoryRectangular',
+                'accessoryInline',
+              ],
+              initialLayout: 'src/widgets/next-client-widget.tsx',
+            },
+          },
+          {
+            name: 'ChairsideDayBooked',
+            displayName: 'Today booked',
+            description: 'How much of today is booked.',
+            ios: {
+              supportedFamilies: ['systemSmall', 'accessoryCircular'],
+              initialLayout: 'src/widgets/day-booked-widget.tsx',
+            },
+          },
+          {
+            name: 'ChairsideRequests',
+            displayName: 'Requests',
+            description: 'Booking requests waiting for you.',
+            ios: {
+              supportedFamilies: ['systemSmall', 'accessoryCircular', 'accessoryInline'],
+              initialLayout: 'src/widgets/requests-widget.tsx',
+            },
+          },
+        ],
+      },
+    ],
     // iOS Share Extension (#2): share a client's message or a screenshot of it from any app into
     // the Inbox. Its bundle ID (`<app>.share-extension`) and App Group (`group.<app>`) follow the
     // variant's bundle ID; EAS creates both from `extra.eas.build.experimental.ios.appExtensions`,

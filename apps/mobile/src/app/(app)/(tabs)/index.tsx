@@ -203,7 +203,7 @@ export default function TodayScreen() {
 
           <View className="mt-3 gap-3">
             <DayCard summary={summary} />
-            <ProcessingTimers timers={summary.processing} />
+            <ProcessingTimers appointments={list} />
           </View>
 
           <SectionHeader
