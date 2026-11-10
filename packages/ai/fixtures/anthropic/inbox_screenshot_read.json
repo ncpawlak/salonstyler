@@ -1,0 +1,107 @@
+{
+  "provider": "anthropic",
+  "scenario": "inbox_screenshot_read",
+  "model": "claude-haiku-4-5",
+  "source": "hand-authored from the provider API reference (no live call); request captured from the adapter",
+  "request": {
+    "method": "POST",
+    "url": "https://api.anthropic.com/v1/messages",
+    "body": {
+      "model": "claude-haiku-4-5",
+      "max_tokens": 800,
+      "system": "You read screenshots of message threads between Studio K, a hair salon, and one of its clients, and transcribe them by calling read_conversation.\nToday is Tue, Dec 1 (2026-12-01), time zone America/Chicago.\nCopy the words exactly. Do not summarize, translate, or interpret what the client wants, and never suggest a time.\nThe salon is the phone owner: its messages are the outgoing (right-side, colored) bubbles. Transcribe only the client.",
+      "messages": [
+        {
+          "role": "user",
+          "content": [
+            { "type": "text", "text": "Transcribe this screenshot." },
+            {
+              "type": "image",
+              "source": {
+                "type": "base64",
+                "media_type": "image/png",
+                "data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+              }
+            }
+          ]
+        }
+      ],
+      "temperature": 0,
+      "tools": [
+        {
+          "name": "read_conversation",
+          "description": "Record what the screenshot shows. Call exactly once.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "isConversation": {
+                "type": "boolean",
+                "description": "False if the image is not a message thread (a photo, a menu, a web page)."
+              },
+              "platform": {
+                "type": "string",
+                "enum": ["imessage", "sms", "instagram", "whatsapp", "messenger", "other"],
+                "description": "imessage: blue/grey bubbles. sms: green bubbles. instagram: Instagram DM. whatsapp. messenger: Facebook Messenger. other."
+              },
+              "sender": {
+                "type": ["string", "null"],
+                "description": "The other person in the thread (the client): their display name from the header, or the @handle when no name is shown. Null if neither is shown."
+              },
+              "senderPhone": {
+                "type": ["string", "null"],
+                "description": "A phone number shown for the client, as written. Null if none is shown."
+              },
+              "text": {
+                "type": "string",
+                "description": "The client's most recent messages, word for word, oldest first, one per line. Only the client's (incoming, left-side) bubbles, never the salon's own (outgoing, right-side) ones. Empty if the client wrote nothing."
+              },
+              "sentOn": {
+                "type": ["string", "null"],
+                "description": "The day of the client's latest message as YYYY-MM-DD, resolving labels like \"Yesterday\" or \"Tue\" from today. Null if not shown."
+              },
+              "sentTime": {
+                "type": ["string", "null"],
+                "description": "The time of the client's latest message as 24-hour HH:MM. Null if not shown."
+              }
+            },
+            "required": ["isConversation", "platform", "text"]
+          }
+        }
+      ]
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "id": "msg_01Inbox1Xk3",
+      "type": "message",
+      "role": "assistant",
+      "model": "claude-haiku-4-5-20251001",
+      "content": [
+        {
+          "type": "tool_use",
+          "id": "toolu_01Inbox1q8",
+          "name": "read_conversation",
+          "input": {
+            "isConversation": true,
+            "platform": "instagram",
+            "sender": "Karina Lopez",
+            "senderPhone": null,
+            "text": "Hey! can I get color + trim fri afternoon?",
+            "sentOn": "2026-12-01",
+            "sentTime": "09:03"
+          }
+        }
+      ],
+      "stop_reason": "tool_use",
+      "stop_sequence": null,
+      "usage": {
+        "input_tokens": 1412,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "output_tokens": 88,
+        "service_tier": "standard"
+      }
+    }
+  }
+}

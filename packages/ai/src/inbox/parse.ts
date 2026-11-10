@@ -34,6 +34,11 @@ export interface InboxParseContext {
   todayLabel: string;
   timeZone: string;
   salonName: string;
+  /**
+   * Salon-local `YYYY-MM-DD` the message was sent, when that was before today (a screenshot of an
+   * older thread). Relative days ("tomorrow") are resolved from it.
+   */
+  sentOn?: string | null;
 }
 
 const localDate = z
@@ -113,6 +118,11 @@ export function inboxParsePrompt(ctx: InboxParseContext): string {
   return [
     `You read text messages that clients send to ${ctx.salonName}, a hair salon, and record what they want by calling submit_request.`,
     `Today is ${ctx.todayLabel} (${ctx.today}), time zone ${ctx.timeZone}. Resolve days like "fri" or "next week" to dates.`,
+    ...(ctx.sentOn && ctx.sentOn < ctx.today
+      ? [
+          `The message was sent on ${ctx.sentOn}. Resolve relative days ("tomorrow", "fri") from that date, not from today.`,
+        ]
+      : []),
     'You only interpret the message. Never suggest or choose a time; the scheduling engine does that. Record a clock time only if they name one.',
     'Map services to the menu below by id; leave services empty if none is mentioned. Treat "trim" as a haircut.',
     `Menu: ${JSON.stringify(menuSummary(ctx.menu))}`,
@@ -142,7 +152,7 @@ export function normalizeParsed(raw: unknown, menu: ServiceMenu): ParsedInboxReq
   };
 }
 
-function extractJson(text: string | null): unknown {
+export function extractJson(text: string | null): unknown {
   const match = text ? /\{[\s\S]*\}/.exec(text) : null;
   if (!match) return null;
   try {
@@ -277,7 +287,7 @@ export function demoParse(text: string, ctx: InboxParseContext): ParsedInboxRequ
   const t = text.toLowerCase();
   const services = demoServices(text, ctx);
 
-  const date = parseDemoDate(text, ctx.today);
+  const date = parseDemoDate(text, ctx.sentOn && ctx.sentOn < ctx.today ? ctx.sentOn : ctx.today);
   const time = demoClockTime(t);
   const timeOfDay: TimeOfDay | null = /\bmorning\b/.test(t)
     ? 'morning'

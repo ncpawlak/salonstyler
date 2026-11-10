@@ -15,6 +15,7 @@ import { replyStatusLabel } from '../replies/compose';
 import { formatPrice } from '../services/data';
 import { ServicePills } from '../today/service-pills';
 import type { InboxItem } from './api';
+import { channelLabel } from './capture';
 
 export type InboxAction =
   'approve' | 'decline' | 'other_time' | 'dismiss' | 'cancel_appointment' | 'offer';
@@ -72,7 +73,7 @@ function describe(item: InboxItem) {
     name: r.client?.name ?? r.sender ?? 'Unknown sender',
     isNew: r.client_created || !!r.client?.pending,
     intent: r.intent,
-    source: r.sender_phone ? `Text from ${r.sender_phone}` : 'Text',
+    source: channelLabel(r.channel, r.sender_phone),
     message: r.message,
     note: r.note,
     slot: r.appointment?.status === 'requested' ? (r.appointment as Slot) : null,

@@ -116,4 +116,23 @@ describe('app.config', () => {
     vi.stubEnv('SENTRY_AUTH_TOKEN', 'x');
     expect(sentry(resolve())?.disableAutoUpload).toBe(false);
   });
+
+  it('adds the iOS Share Extension, named per variant so dev and TestFlight builds coexist', () => {
+    const share = (config: ExpoConfig) =>
+      (config.plugins ?? []).find(
+        (p): p is [string, Record<string, unknown>] =>
+          Array.isArray(p) && p[0] === 'expo-share-intent',
+      )?.[1];
+    vi.stubEnv('APP_VARIANT', 'development');
+    expect(share(resolve())).toMatchObject({
+      iosShareExtensionName: 'Save to Chairside Dev',
+      iosActivationRules: {
+        NSExtensionActivationSupportsText: true,
+        NSExtensionActivationSupportsImageWithMaxCount: 1,
+      },
+      disableAndroid: true,
+    });
+    vi.stubEnv('APP_VARIANT', 'production');
+    expect(share(resolve())?.iosShareExtensionName).toBe('Save to Chairside');
+  });
 });

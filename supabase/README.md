@@ -8,6 +8,7 @@ Docs are split by feature so parallel PRs don't edit the same file. When you add
 - [Schema](docs/schema.md): foundation tables, the service builder, and adding a tenant table.
 - [AI providers](docs/ai-providers.md): bring your own key, the `ai` gateway, and Ask Chairside (`functions/ai-assistant`).
 - [Inbox agent](docs/inbox.md): `functions/inbox` (#34).
+- [Manual capture](docs/manual-capture.md): paste, share sheet and screenshot into the Inbox (#2).
 - [Client replies](docs/client-replies.md) (#7).
 - [Public booking page](docs/public-booking.md): `functions/public-booking` (#14).
 - [Import from Vagaro](docs/import-vagaro.md) (#15).

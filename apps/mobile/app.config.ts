@@ -80,6 +80,22 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         disableAutoUpload: !process.env.SENTRY_AUTH_TOKEN,
       },
     ],
+    // iOS Share Extension (#2): share a client's message or a screenshot of it from any app into
+    // the Inbox. Its bundle ID (`<app>.share-extension`) and App Group (`group.<app>`) follow the
+    // variant's bundle ID; EAS creates both from `extra.eas.build.experimental.ios.appExtensions`,
+    // which the plugin fills in. Android share targets are off until they can be routed (Paste and
+    // screenshot upload work there). See supabase/docs/manual-capture.md.
+    [
+      'expo-share-intent',
+      {
+        iosShareExtensionName: `Save to Chairside${nameSuffix}`,
+        iosActivationRules: {
+          NSExtensionActivationSupportsText: true,
+          NSExtensionActivationSupportsImageWithMaxCount: 1,
+        },
+        disableAndroid: true,
+      },
+    ],
   ];
   if (hasTerminalSdk()) {
     plugins.push([

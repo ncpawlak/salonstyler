@@ -1,0 +1,107 @@
+{
+  "provider": "anthropic",
+  "scenario": "inbox_screenshot_parse",
+  "model": "claude-haiku-4-5",
+  "source": "hand-authored from the provider API reference (no live call); request captured from the adapter",
+  "request": {
+    "method": "POST",
+    "url": "https://api.anthropic.com/v1/messages",
+    "body": {
+      "model": "claude-haiku-4-5",
+      "max_tokens": 400,
+      "system": "You read text messages that clients send to Studio K, a hair salon, and record what they want by calling submit_request.\nToday is Tue, Dec 1 (2026-12-01), time zone America/Chicago. Resolve days like \"fri\" or \"next week\" to dates.\nYou only interpret the message. Never suggest or choose a time; the scheduling engine does that. Record a clock time only if they name one.\nMap services to the menu below by id; leave services empty if none is mentioned. Treat \"trim\" as a haircut.\nMenu: [{\"id\":\"00000000-0000-4000-8000-0000000000c1\",\"name\":\"Women's Haircut\",\"category\":\"Cuts\",\"minutes\":60,\"variants\":[]},{\"id\":\"00000000-0000-4000-8000-0000000000c2\",\"name\":\"All-over Color\",\"category\":\"Color\",\"minutes\":120,\"variants\":[{\"id\":\"v-long\",\"name\":\"Long hair\"}]}]",
+      "messages": [
+        {
+          "role": "user",
+          "content": [{ "type": "text", "text": "Hey! can I get color + trim fri afternoon?" }]
+        }
+      ],
+      "temperature": 0,
+      "tools": [
+        {
+          "name": "submit_request",
+          "description": "Record what the client is asking for. Call exactly once.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "intent": {
+                "type": "string",
+                "enum": ["booking", "reschedule", "cancel", "ignore"],
+                "description": "booking: wants a new appointment. reschedule: wants to move an existing one. cancel: wants to cancel one. ignore: anything else (thanks, running late, questions, chit-chat)."
+              },
+              "clientName": {
+                "type": ["string", "null"],
+                "description": "The name the client gives for themselves, if they do. Never guess."
+              },
+              "services": {
+                "type": "array",
+                "description": "Menu items they ask for, by id. Empty if they don’t say.",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "serviceId": { "type": "string" },
+                    "variantId": { "type": ["string", "null"] }
+                  },
+                  "required": ["serviceId"]
+                }
+              },
+              "date": {
+                "type": ["string", "null"],
+                "description": "The day they ask for as YYYY-MM-DD (the next such day), or null."
+              },
+              "timeOfDay": {
+                "type": ["string", "null"],
+                "enum": ["morning", "afternoon", "evening", null]
+              },
+              "time": {
+                "type": ["string", "null"],
+                "description": "A clock time they name, as 24-hour HH:MM (\"2pm\" is \"14:00\"), or null."
+              },
+              "notes": {
+                "type": ["string", "null"],
+                "description": "Other details the stylist should see, briefly. Null if none."
+              }
+            },
+            "required": ["intent"]
+          }
+        }
+      ]
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "id": "msg_01Inbox2Xk3",
+      "type": "message",
+      "role": "assistant",
+      "model": "claude-haiku-4-5-20251001",
+      "content": [
+        {
+          "type": "tool_use",
+          "id": "toolu_01Inbox2q8",
+          "name": "submit_request",
+          "input": {
+            "intent": "booking",
+            "clientName": null,
+            "services": [
+              { "serviceId": "00000000-0000-4000-8000-0000000000c2" },
+              { "serviceId": "00000000-0000-4000-8000-0000000000c1" }
+            ],
+            "date": "2026-12-04",
+            "timeOfDay": "afternoon",
+            "notes": null
+          }
+        }
+      ],
+      "stop_reason": "tool_use",
+      "stop_sequence": null,
+      "usage": {
+        "input_tokens": 1186,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "output_tokens": 74,
+        "service_tier": "standard"
+      }
+    }
+  }
+}

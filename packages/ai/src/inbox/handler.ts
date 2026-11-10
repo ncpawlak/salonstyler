@@ -182,7 +182,7 @@ export interface InboxServiceDeps extends Omit<AiServiceDeps, 'createProvider' |
  * `reply` is only present in the bridge's auto-reply mode (#6): the Shortcut texts it back to the
  * sender as is.
  */
-type InboxOutcome =
+export type InboxOutcome =
   | { ok: true; status: 'ignored'; reason: 'empty' | 'not_a_request'; reply?: string }
   | { ok: true; status: 'test'; reply?: string }
   | { ok: true; status: 'duplicate'; requestId: string }
@@ -225,7 +225,7 @@ function readVersion(rawBody: unknown): string | null {
 const isUnexpired = (a: AppointmentWithDetails) =>
   ['held', 'requested', 'confirmed'].includes(a.status);
 
-type OutcomeResult =
+export type OutcomeResult =
   { status: 200; body: InboxOutcome } | Exclude<InboxServiceResult, { status: 200 }>;
 
 /**
@@ -247,7 +247,7 @@ export async function handleInboxRequest(
   const outbox = inboxOutboxSchema.safeParse(rawBody).success;
   const outcome: OutcomeResult = outbox
     ? { status: 200, body: { ok: true, status: 'outbox' } }
-    : await handleMessage(bridge, rawBody, port, deps);
+    : await captureInboxMessage(bridge, rawBody, port, deps);
   if (outcome.status !== 200) return outcome;
   // Older Shortcuts ignore `replies`; claiming would mark texts sent that never leave the phone.
   const sendsReplies =
@@ -271,11 +271,38 @@ export function isAffirmative(message: string): boolean {
   return text.length > 0 && text.length <= 60 && AFFIRMATIVE.test(text);
 }
 
-async function handleMessage(
+/** What capturing a message needs besides the port: the salon's model, metering and the clock. */
+export type CaptureDeps = Pick<
+  InboxServiceDeps,
+  | 'loadConfig'
+  | 'tokensUsedThisMonth'
+  | 'recordUsage'
+  | 'createProvider'
+  | 'demo'
+  | 'now'
+  | 'markTested'
+>;
+
+export interface CaptureMessageOptions {
+  /**
+   * Captured in the app (paste, share sheet, screenshot; #2) rather than forwarded by the
+   * Shortcut: there is no bridge to test, so "Chairside test" is just a message.
+   */
+  manual?: boolean;
+  /** Salon-local `YYYY-MM-DD` the message was sent, when a screenshot shows it. */
+  sentOn?: string | null;
+}
+
+/**
+ * The shared request pipeline (every bridge, #34): parse, match the client, let the engine hold a
+ * slot, capture. Also confirms an offer the client said yes to.
+ */
+export async function captureInboxMessage(
   bridge: InboxBridge,
   rawBody: unknown,
   port: InboxPort,
-  deps: InboxServiceDeps,
+  deps: CaptureDeps,
+  options: CaptureMessageOptions = {},
 ): Promise<OutcomeResult> {
   const body = inboxRequestSchema.safeParse(rawBody);
   if (!body.success) return fail(400, 'invalid_request', z.prettifyError(body.error));
@@ -285,7 +312,7 @@ async function handleMessage(
 
   const message = stripKeyword(request.text, bridge.keyword).slice(0, 2000);
   // A hand run has no message; "<keyword> test" checks the bridge from another phone.
-  if (!request.text || isTestMessage(message)) {
+  if (!options.manual && (!request.text || isTestMessage(message))) {
     await deps.markTested?.(bridge.salonId);
     const reply = request.text ? withReply(TEST_REPLY) : {};
     return { status: 200, body: { ok: true, status: 'test', ...reply } };
@@ -350,6 +377,7 @@ async function handleMessage(
       todayLabel: formatDayLabel(localToday),
       timeZone,
       salonName: schedule.salonName,
+      sentOn: options.sentOn ?? null,
     };
 
     const outcome = await parse(message, ctx, bridge.salonId, deps);
@@ -396,7 +424,7 @@ async function parse(
   message: string,
   ctx: InboxParseContext,
   salonId: string,
-  deps: InboxServiceDeps,
+  deps: CaptureDeps,
 ): Promise<{ parsed: ParsedInboxRequest; parser: 'llm' | 'demo' | 'none' } | InboxServiceResult> {
   if (deps.demo) return { parsed: demoParse(message, ctx), parser: 'demo' };
 
