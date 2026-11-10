@@ -1,0 +1,115 @@
+{
+  "provider": "openai",
+  "scenario": "finances_receipt_read",
+  "model": "gpt-4.1-mini",
+  "source": "hand-authored from the provider API reference (no live call); request captured from the adapter",
+  "request": {
+    "method": "POST",
+    "url": "https://api.openai.com/v1/chat/completions",
+    "body": {
+      "model": "gpt-4.1-mini",
+      "messages": [
+        {
+          "role": "system",
+          "content": "You read photos of receipts for a hairstylist who rents a booth, and record them by calling read_receipt.\nToday is 2026-11-10.\nCopy the total, store name and date exactly as printed. If several totals are shown, use the final amount paid.\nDo not guess numbers you cannot read, and do not give tax advice."
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "Read this receipt."
+            },
+            {
+              "type": "image_url",
+              "image_url": {
+                "url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+              }
+            }
+          ]
+        }
+      ],
+      "max_completion_tokens": 400,
+      "temperature": 0,
+      "tools": [
+        {
+          "type": "function",
+          "function": {
+            "name": "read_receipt",
+            "description": "Record what the receipt shows. Call exactly once.",
+            "parameters": {
+              "type": "object",
+              "properties": {
+                "isReceipt": {
+                  "type": "boolean",
+                  "description": "False if the image is not a receipt or invoice."
+                },
+                "total": {
+                  "type": ["number", "null"],
+                  "description": "The total actually paid, including tax, as a number in the receipt currency (e.g. 48.62). Null if it cannot be read."
+                },
+                "currency": {
+                  "type": ["string", "null"],
+                  "description": "ISO 4217 code if the receipt shows one (USD, CAD, EUR). Null otherwise."
+                },
+                "vendor": {
+                  "type": ["string", "null"],
+                  "description": "The store or business name at the top of the receipt. Null if not shown."
+                },
+                "date": {
+                  "type": ["string", "null"],
+                  "description": "The purchase date as YYYY-MM-DD. Null if not shown."
+                },
+                "category": {
+                  "type": "string",
+                  "enum": ["products", "tools", "education", "booth_rent", "other"],
+                  "description": "products: hair color, shampoo, styling or back-bar supplies. tools: shears, dryers, irons, brushes, capes. education: classes, courses, certifications. booth_rent: chair or booth rent. other: anything else."
+                }
+              },
+              "required": ["isReceipt", "total", "category"]
+            }
+          }
+        }
+      ]
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "id": "chatcmpl-C2xReceipt1",
+      "object": "chat.completion",
+      "created": 1794326400,
+      "model": "gpt-4.1-mini-2025-04-14",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call_Receipt1Qm4",
+                "type": "function",
+                "function": {
+                  "name": "read_receipt",
+                  "arguments": "{\"isReceipt\":true,\"total\":48.62,\"currency\":\"USD\",\"vendor\":\"SalonCentric\",\"date\":\"2026-11-02\",\"category\":\"products\"}"
+                }
+              }
+            ],
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "tool_calls"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 1288,
+        "completion_tokens": 52,
+        "total_tokens": 1340
+      },
+      "service_tier": "default",
+      "system_fingerprint": "fp_6f2eabb9a5"
+    }
+  }
+}

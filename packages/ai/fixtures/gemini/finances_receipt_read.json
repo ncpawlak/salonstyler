@@ -1,0 +1,116 @@
+{
+  "provider": "gemini",
+  "scenario": "finances_receipt_read",
+  "model": "gemini-2.5-flash",
+  "source": "hand-authored from the provider API reference (no live call); request captured from the adapter",
+  "request": {
+    "method": "POST",
+    "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+    "body": {
+      "systemInstruction": {
+        "parts": [
+          {
+            "text": "You read photos of receipts for a hairstylist who rents a booth, and record them by calling read_receipt.\nToday is 2026-11-10.\nCopy the total, store name and date exactly as printed. If several totals are shown, use the final amount paid.\nDo not guess numbers you cannot read, and do not give tax advice."
+          }
+        ]
+      },
+      "contents": [
+        {
+          "role": "user",
+          "parts": [
+            {
+              "text": "Read this receipt."
+            },
+            {
+              "inlineData": {
+                "mimeType": "image/png",
+                "data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+              }
+            }
+          ]
+        }
+      ],
+      "tools": [
+        {
+          "functionDeclarations": [
+            {
+              "name": "read_receipt",
+              "description": "Record what the receipt shows. Call exactly once.",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "isReceipt": {
+                    "type": "boolean",
+                    "description": "False if the image is not a receipt or invoice."
+                  },
+                  "total": {
+                    "type": ["number", "null"],
+                    "description": "The total actually paid, including tax, as a number in the receipt currency (e.g. 48.62). Null if it cannot be read."
+                  },
+                  "currency": {
+                    "type": ["string", "null"],
+                    "description": "ISO 4217 code if the receipt shows one (USD, CAD, EUR). Null otherwise."
+                  },
+                  "vendor": {
+                    "type": ["string", "null"],
+                    "description": "The store or business name at the top of the receipt. Null if not shown."
+                  },
+                  "date": {
+                    "type": ["string", "null"],
+                    "description": "The purchase date as YYYY-MM-DD. Null if not shown."
+                  },
+                  "category": {
+                    "type": "string",
+                    "enum": ["products", "tools", "education", "booth_rent", "other"],
+                    "description": "products: hair color, shampoo, styling or back-bar supplies. tools: shears, dryers, irons, brushes, capes. education: classes, courses, certifications. booth_rent: chair or booth rent. other: anything else."
+                  }
+                },
+                "required": ["isReceipt", "total", "category"]
+              }
+            }
+          ]
+        }
+      ],
+      "generationConfig": {
+        "maxOutputTokens": 400,
+        "temperature": 0
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "candidates": [
+        {
+          "content": {
+            "parts": [
+              {
+                "functionCall": {
+                  "name": "read_receipt",
+                  "args": {
+                    "isReceipt": true,
+                    "total": 48.62,
+                    "currency": "USD",
+                    "vendor": "SalonCentric",
+                    "date": "2026-11-02",
+                    "category": "products"
+                  }
+                }
+              }
+            ],
+            "role": "model"
+          },
+          "finishReason": "STOP",
+          "index": 0
+        }
+      ],
+      "usageMetadata": {
+        "promptTokenCount": 1288,
+        "candidatesTokenCount": 52,
+        "totalTokenCount": 1340
+      },
+      "modelVersion": "gemini-2.5-flash",
+      "responseId": "cmVjZWlwdDE"
+    }
+  }
+}

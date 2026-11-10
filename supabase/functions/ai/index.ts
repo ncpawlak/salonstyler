@@ -5,9 +5,10 @@
 //   { "action": "test", "salonId": "...", "provider"?, "model"?, "apiKey"? }
 //   { "action": "chat", "salonId": "...", "messages": [...], "tools"?: [...] }
 //   { "action": "map_columns", "salonId": "...", "kind": "clients", "headers": [...], "samples": [[...]] }
+//   { "action": "read_receipt", "salonId": "...", "image": { "type": "image", ... }, "today": "YYYY-MM-DD" }
 //
 // Local development only: CHAIRSIDE_AI_DEMO=1 answers map_columns with the deterministic header
-// guess (no key, no usage). It is ignored unless SUPABASE_URL points at a local stack.
+// guess and read_receipt with a fixed receipt (no key, no usage). It is ignored unless SUPABASE_URL points at a local stack.
 import { handleAiRequest } from '@chairside/ai/server/handler.ts';
 
 import { aiRequestContext, corsHeaders, error, json, readJson } from '../_shared/ai-deps.ts';

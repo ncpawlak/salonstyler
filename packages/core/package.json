@@ -11,6 +11,7 @@
     "./appointments": "./src/appointments/index.ts",
     "./clients": "./src/clients/index.ts",
     "./deposits": "./src/deposits/index.ts",
+    "./finances": "./src/finances/index.ts",
     "./forms": "./src/forms/index.ts",
     "./availability": "./src/availability/index.ts",
     "./hours": "./src/hours/index.ts",
