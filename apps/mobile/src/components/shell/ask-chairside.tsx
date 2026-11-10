@@ -28,8 +28,8 @@ export function AskChairsideButton() {
 
   // Signed-in screens sit inside the (app) group; look past it to the screen itself.
   const first = segments[0] === '(app)' ? segments[1] : segments[0];
-  // Hidden on client-facing screens (checkout is shown to the client; receipts, manage links and
-  // the booking page are public).
+  // Hidden on client-facing screens (checkout is shown to the client; receipts, manage links,
+  // deposit pay links and the booking page are public).
   if (
     first === '(auth)' ||
     first === '(onboarding)' ||
@@ -37,6 +37,7 @@ export function AskChairsideButton() {
     first === 'checkout' ||
     first === 'receipt' ||
     first === 'm' ||
+    first === 'pay' ||
     first === 'b'
   ) {
     return null;

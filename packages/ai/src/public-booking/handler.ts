@@ -9,6 +9,7 @@ import { PublicBookingError, planPublicBooking, publicMenu, publicSlots } from '
 import { type ConciergeMessage, runConciergeTurn } from './concierge.ts';
 import type {
   ConciergeCard,
+  PublicBookingDeposit,
   PublicBookingPort,
   PublicClientBooking,
   PublicService,
@@ -139,11 +140,13 @@ export type PublicSendCodeResponse = { sent: true };
 export type PublicBookResponse = {
   booking: {
     appointmentId: string;
-    status: 'confirmed' | 'requested';
+    /** `held` while a deposit is due: send the client to `/pay/{deposit.payToken}`. */
+    status: 'confirmed' | 'requested' | 'held';
     start: string;
     end: string;
     label: string;
     serviceSummary: string;
+    deposit?: PublicBookingDeposit;
   };
 };
 export type PublicMyBookingsResponse = { bookings: PublicClientBooking[] };
@@ -310,6 +313,7 @@ export async function handlePublicBookingRequest(
               end: plan.end,
               label: plan.label,
               serviceSummary: plan.serviceSummary,
+              ...(booked.deposit ? { deposit: booked.deposit } : {}),
             },
           },
         };

@@ -38,6 +38,17 @@ class MemoryStore implements PaymentsStore {
   ]);
   payments = new Map<string, PaymentUpsert>();
   completed: [string, string, string][] = [];
+  deposits: [string, string, string, string | null, string | null][] = [];
+
+  async markDepositPaid(
+    salonId: string,
+    depositId: string,
+    paymentIntentId: string,
+    customerId: string | null,
+    paymentMethodId: string | null,
+  ) {
+    this.deposits.push([salonId, depositId, paymentIntentId, customerId, paymentMethodId]);
+  }
 
   async completeCheckout(salonId: string, checkoutId: string, paymentIntentId: string) {
     this.completed.push([salonId, checkoutId, paymentIntentId]);
@@ -234,6 +245,30 @@ describe('payments', () => {
     direct.data.object.metadata.checkout_id = CHECKOUT;
     await deliver(direct);
     expect(store.completed).toEqual([]);
+  });
+
+  it('records a deposit paid through hosted Checkout (destination charge)', async () => {
+    const event = fixture('payment_intent.succeeded');
+    delete event.account;
+    event.data.object.on_behalf_of = ACCOUNT_A;
+    event.data.object.transfer_data = { destination: ACCOUNT_A };
+    event.data.object.customer = 'cus_TestClient01';
+    event.data.object.payment_method = 'pm_TestCard01';
+    event.data.object.metadata = { purpose: 'deposit', deposit_id: CHECKOUT };
+    await deliver(event);
+    expect(store.deposits).toEqual([
+      [SALON_A, CHECKOUT, 'pi_3TestTapToPay0001', 'cus_TestClient01', 'pm_TestCard01'],
+    ]);
+  });
+
+  it('does not record deposits from failed payments or connected-account events', async () => {
+    const failed = fixture('payment_intent.payment_failed');
+    failed.data.object.metadata = { purpose: 'deposit', deposit_id: CHECKOUT };
+    await deliver(failed);
+    const direct = fixture('payment_intent.succeeded');
+    direct.data.object.metadata = { purpose: 'deposit', deposit_id: CHECKOUT };
+    await deliver(direct);
+    expect(store.deposits).toEqual([]);
   });
 
   it('ignores salon metadata on connected-account events (only the account mapping counts)', async () => {

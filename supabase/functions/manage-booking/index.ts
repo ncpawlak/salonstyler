@@ -24,6 +24,46 @@ function clientIp(req: Request): string {
   return forwarded || req.headers.get('X-Real-IP') || 'unknown';
 }
 
+/**
+ * Deposits (#12): a client who cancels in time gets their deposit back. The cancel RPC marks it
+ * refund_due; this asks the deposits function to refund it on Stripe. Failures are logged, not
+ * shown to the client: the salon still sees "Refund due" and can refund from the appointment.
+ */
+async function refundDepositIfDue(
+  serviceClient: ReturnType<typeof createClient>,
+  supabaseUrl: string,
+  serviceKey: string,
+  token: string,
+): Promise<void> {
+  try {
+    const { data: appt } = await serviceClient
+      .from('appointments')
+      .select('id')
+      .eq('manage_token', token)
+      .maybeSingle();
+    if (!appt) return;
+    const { data: deposit } = await serviceClient
+      .from('appointment_deposits')
+      .select('id')
+      .eq('appointment_id', (appt as { id: string }).id)
+      .eq('status', 'refund_due')
+      .maybeSingle();
+    if (!deposit) return;
+    const res = await fetch(`${supabaseUrl}/functions/v1/deposits`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${serviceKey}`,
+        apikey: serviceKey,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ action: 'refund', depositId: (deposit as { id: string }).id }),
+    });
+    if (!res.ok) console.error('deposit refund failed', res.status, await res.text());
+  } catch (e) {
+    console.error('deposit refund failed', e instanceof Error ? e.message : e);
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return error(405, 'method_not_allowed', 'Use POST');
@@ -40,12 +80,20 @@ Deno.serve(async (req) => {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
+  const basePort = createSupabaseManageBookingPort(serviceClient as unknown as ChairsideClient);
+  const port: typeof basePort = {
+    ...basePort,
+    async cancel(token) {
+      const result = await basePort.cancel(token);
+      if (result.ok && !result.alreadyCancelled) {
+        await refundDepositIfDue(serviceClient, supabaseUrl, serviceKey, token);
+      }
+      return result;
+    },
+  };
+
   try {
-    const result = await handleManageBookingRequest(
-      parsed.body,
-      { ip: clientIp(req) },
-      { port: createSupabaseManageBookingPort(serviceClient as unknown as ChairsideClient) },
-    );
+    const result = await handleManageBookingRequest(parsed.body, { ip: clientIp(req) }, { port });
     return json(result.status, result.body);
   } catch (e) {
     console.error('manage-booking failed', e instanceof Error ? e.message : e);

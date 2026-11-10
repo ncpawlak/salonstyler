@@ -468,3 +468,8 @@ verify_jwt = false
 # token is the only credential and unlocks one appointment; every action is rate limited.
 [functions.manage-booking]
 verify_jwt = false
+
+# Deposit pay page (/pay/{token}): signed-out clients call it without a JWT; the 64-hex pay token
+# gates page/start/status. Refunds verify a member JWT (or the service role) in the function.
+[functions.deposits]
+verify_jwt = false
