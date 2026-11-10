@@ -196,6 +196,15 @@ select a, (select id from public.services s where s.salon_id = ids.a and not s.i
        product1, 0.25 from ids;
 insert into public.stock_movements (salon_id, product_id, reason, delta, on_hand_after, appointment_id, created_by)
 select a, product1, 'use', -0.25, 4.25, appt1, owner_a from ids;
+insert into public.recurring_expenses (salon_id, label, vendor, amount_cents, starts_on, posted_through)
+select a, 'Booth rent', 'Main St Salon', 120000, '2026-10-01', '2026-11-01' from ids;
+insert into public.expenses (salon_id, spent_on, category, amount_cents, vendor, note, receipt_path,
+                             recurring_expense_id, created_by)
+select a, '2026-11-01', 'booth_rent', 120000, 'Main St Salon', 'November', a::text || '/rent-nov.jpg',
+       (select id from public.recurring_expenses r where r.salon_id = ids.a), owner_a from ids;
+insert into public.expenses (salon_id, spent_on, category, amount_cents, vendor, stock_movement_id, created_by)
+select a, '2026-11-03', 'products', 5400, 'Kevin',
+       (select id from public.stock_movements m where m.salon_id = ids.a and m.reason = 'sale'), owner_a from ids;
 
 insert into public.captured_requests (id, salon_id, channel, sender, client_id, message, parsed, intent,
                                       appointment_id, status, dedupe_key)

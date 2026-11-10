@@ -17,9 +17,9 @@ chairside-export-<slug>-<date>.zip
 ├── data.json           the full export (the restore source of truth)
 ├── members.csv         who was on the team (informational; not restored)
 ├── csv/<table>.csv     one RFC 4180 CSV per table, for spreadsheets
-└── photos/
-    ├── <client photo files>
-    └── links.csv       photos over the zip budget: signed links instead of files
+├── photos/<path>       client photos (client_photos.storage_path)
+├── receipts/<path>     expense receipts (expenses.receipt_path)
+└── links.csv           files over the 64 MB zip budget: signed 24-hour links instead
 ```
 
 `data.json` has `format`/`version`, the salon header (name, slug, timezone), and one array of rows per registered table. Bearer-token columns (manage, receipt, pay and waitlist tokens) are left out; the restore generates fresh ones. In the CSVs, text that starts with `= + - @` is prefixed with `'` so spreadsheets don't run it as a formula. Numbers and phone numbers are left as they are.
@@ -32,7 +32,7 @@ chairside-export-<slug>-<date>.zip
   2. Inserts the tables in foreign-key order.
   3. Checks the foreign keys itself, because the triggers are off during the load.
   4. Remaps user references (`stylist_id`, `created_by`, ...): a user who isn't in the new salon becomes the importing owner when the column is required, and is cleared when it's optional.
-- Photos are re-uploaded to `client-photos` under the new salon.
+- Photos and receipts are re-uploaded to `client-photos` / `receipts` under the new salon.
 - `private.data_export_diff(a, b)` compares two salons' exports with IDs normalised. The round-trip test uses it.
 - The function `functions/data-export` verifies the caller's JWT. Its zip assembly and the photo, email and signed-URL logic live in `packages/ai/src/data-export` and `packages/core/src/data-export`, where they are unit tested.
 
@@ -58,7 +58,8 @@ select private.exclude_from_data_export('my_queue', 'Delivery queue');  -- delib
 
 - `supabase/tests/database/29_data_export.test.sql` **fails** when a `salon_id` table is in neither list, so a new table can't silently fall out of exports.
 - Insert order on restore is derived from foreign keys, so you don't need to edit anything else. Foreign keys must be composite `(salon_id, id)` like the rest of the schema.
-- If your migration ran before this one (as service recipes #18 did), register the table in a small follow-up migration with a later timestamp, like `20261109480001_data_export_service_recipes.sql`.
+- Your migration must sort after `20261109470000_data_export.sql`. A feature that merged before #46 without registering gets a small follow-up migration with a later timestamp, like `20261109480001_data_export_service_recipes.sql`.
+- **Files in storage:** if a row points at a storage object (like `client_photos.storage_path` or `expenses.receipt_path`), add one entry to `EXPORT_FILE_SOURCES` in `packages/core/src/data-export/types.ts` (table, path column, bucket, archive folder). The path must start with `{salon_id}/`. The function then zips the files and restores them under the new ids.
 - Add a row to your own pgTAP seed if you want the round trip to cover your data. The shared test seeds every table that existed when #46 shipped.
 
 ## Local testing

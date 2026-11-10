@@ -184,6 +184,8 @@ select private.register_data_export('waitlist_entries', array['token'],
   'Waitlist links are bearer tokens; the import issues new ones');
 select private.register_data_export('waitlist_openings');
 select private.register_data_export('waitlist_offers');
+select private.register_data_export('recurring_expenses');
+select private.register_data_export('expenses', '{}', 'Receipt images are zipped under receipts/');
 select private.register_data_export('audit_log');
 
 select private.exclude_from_data_export('salons', 'Exported as the header (name, slug, timezone)');

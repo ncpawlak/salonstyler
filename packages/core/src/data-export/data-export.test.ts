@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildExportArchive,
   exportCounts,
-  exportPhotoPaths,
+  exportFiles,
   ExportFormatError,
   parseCsv,
   readExportArchive,
@@ -60,6 +60,13 @@ function sampleExport(): SalonExport {
         columns: ['id', 'details', 'amount'],
         rows: [{ id: OTHER, details: { bowls: [{ grams: 30 }] }, amount: -5 }],
       },
+      expenses: {
+        columns: ['id', 'salon_id', 'receipt_path'],
+        rows: [
+          { id: OTHER, salon_id: SALON, receipt_path: `${SALON}/r.jpg` },
+          { id: OTHER, salon_id: SALON, receipt_path: null },
+        ],
+      },
     },
   };
 }
@@ -97,17 +104,25 @@ describe('remapUuids', () => {
 });
 
 describe('archive', () => {
-  it('only lists photos inside the salon folder', () => {
-    expect(exportPhotoPaths(sampleExport())).toEqual([`${SALON}/${CLIENT}/a.jpg`]);
+  it('only lists photos and receipts inside the salon folder', () => {
+    expect(exportFiles(sampleExport())).toEqual([
+      { bucket: 'client-photos', path: `${SALON}/${CLIENT}/a.jpg` },
+      { bucket: 'receipts', path: `${SALON}/r.jpg` },
+    ]);
   });
 
-  it('round-trips the document and photos through the zip', () => {
+  it('round-trips the document, photos and receipts through the zip', () => {
     const doc = sampleExport();
-    const photo = { path: `${SALON}/${CLIENT}/a.jpg`, bytes: new Uint8Array([1, 2, 3]) };
+    const photo = {
+      bucket: 'client-photos',
+      path: `${SALON}/${CLIENT}/a.jpg`,
+      bytes: new Uint8Array([1, 2, 3]),
+    };
+    const receipt = { bucket: 'receipts', path: `${SALON}/r.jpg`, bytes: new Uint8Array([4]) };
     const zip = buildExportArchive({
       doc,
-      photos: [photo],
-      photoLinks: [{ path: 'p.jpg', url: 'https://x/p' }],
+      files: [photo, receipt],
+      links: [{ bucket: 'client-photos', path: 'p.jpg', url: 'https://x/p' }],
     });
 
     const entries = unzipSync(zip);
@@ -116,20 +131,27 @@ describe('archive', () => {
       'csv/client_formulas.csv',
       'csv/client_photos.csv',
       'csv/clients.csv',
+      'csv/expenses.csv',
       'data.json',
+      'links.csv',
       'members.csv',
       `photos/${SALON}/${CLIENT}/a.jpg`,
-      'photos/links.csv',
+      `receipts/${SALON}/r.jpg`,
     ]);
     const readme = strFromU8(entries['README.txt']!);
     expect(readme).toContain('Studio "A"');
-    expect(readme).toContain('1 photo(s)');
+    expect(readme).toContain('1 file(s)');
     expect(readme).toMatch(/clients\s+1/);
 
     const back = readExportArchive(zip);
     expect(back.doc).toEqual(doc);
-    expect(back.photos).toEqual([photo]);
-    expect(exportCounts(back.doc)).toEqual({ clients: 1, client_photos: 3, client_formulas: 1 });
+    expect(back.files).toEqual([photo, receipt]);
+    expect(exportCounts(back.doc)).toEqual({
+      clients: 1,
+      client_photos: 3,
+      client_formulas: 1,
+      expenses: 2,
+    });
   });
 
   it('accepts a bare data.json and rejects anything else', () => {

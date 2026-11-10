@@ -2,12 +2,11 @@ import { strFromU8, strToU8, unzipSync, zipSync, type Zippable } from 'fflate';
 
 import { tableToCsv } from './csv.ts';
 import {
+  EXPORT_FILE_SOURCES,
   EXPORT_FORMAT,
   EXPORT_VERSION,
-  PHOTO_PATH_COLUMN,
-  PHOTO_TABLE,
   type ArchiveFile,
-  type PhotoLink,
+  type FileLink,
   type SalonExport,
 } from './types.ts';
 
@@ -23,14 +22,26 @@ export function exportCounts(doc: SalonExport): Record<string, number> {
   return Object.fromEntries(Object.entries(doc.tables).map(([name, t]) => [name, t.rows.length]));
 }
 
-/** Storage paths of every client photo in the export that belongs to `salonId`. */
-export function exportPhotoPaths(doc: SalonExport, salonId: string = doc.salon.id): string[] {
-  const rows = doc.tables[PHOTO_TABLE]?.rows ?? [];
-  return rows
-    .map((row) => row[PHOTO_PATH_COLUMN])
-    .filter(
-      (p): p is string => typeof p === 'string' && p.startsWith(`${salonId}/`) && !p.includes('..'),
-    );
+/** Storage files (photos, receipts) the export references that belong to `salonId`. */
+export function exportFiles(
+  doc: SalonExport,
+  salonId: string = doc.salon.id,
+): { bucket: string; path: string }[] {
+  return EXPORT_FILE_SOURCES.flatMap((source) =>
+    (doc.tables[source.table]?.rows ?? [])
+      .map((row) => row[source.column])
+      .filter(
+        (p): p is string =>
+          typeof p === 'string' && p.startsWith(`${salonId}/`) && !p.includes('..'),
+      )
+      .map((path) => ({ bucket: source.bucket, path })),
+  );
+}
+
+function folderOf(bucket: string): string {
+  const source = EXPORT_FILE_SOURCES.find((s) => s.bucket === bucket);
+  if (!source) throw new ExportFormatError(`Unknown storage bucket ${bucket}`);
+  return source.folder;
 }
 
 export function exportReadme(doc: SalonExport, extras: { links: number } = { links: 0 }): string {
@@ -48,11 +59,12 @@ export function exportReadme(doc: SalonExport, extras: { links: number } = { lin
     '              JSON columns (like formula details) are written as JSON text.',
     '  members.csv Who had access (by email) and their role.',
     '  photos/     Client photos, in the same folders as storage_path in csv/client_photos.csv.',
+    '  receipts/   Expense receipts, as receipt_path in csv/expenses.csv.',
   ];
   if (extras.links > 0) {
     lines.push(
-      `              ${extras.links} photo(s) didn't fit; photos/links.csv has download links`,
-      '              that expire in 24 hours.',
+      `  links.csv   ${extras.links} file(s) didn't fit in the zip; download links that`,
+      '              expire in 24 hours.',
     );
   }
   lines.push(
@@ -67,15 +79,15 @@ export function exportReadme(doc: SalonExport, extras: { links: number } = { lin
   return lines.join('\r\n');
 }
 
-/** Builds the zip: README.txt, data.json, csv/*.csv, members.csv and photos/. */
+/** Builds the zip: README.txt, data.json, csv/*.csv, members.csv and the storage files. */
 export function buildExportArchive(input: {
   doc: SalonExport;
-  photos?: ArchiveFile[];
-  photoLinks?: PhotoLink[];
+  files?: ArchiveFile[];
+  links?: FileLink[];
 }): Uint8Array {
-  const { doc, photos = [], photoLinks = [] } = input;
+  const { doc, files: stored = [], links = [] } = input;
   const files: Zippable = {
-    'README.txt': strToU8(exportReadme(doc, { links: photoLinks.length })),
+    'README.txt': strToU8(exportReadme(doc, { links: links.length })),
     'data.json': strToU8(JSON.stringify(doc, null, 2)),
     'members.csv': strToU8(
       tableToCsv({
@@ -87,13 +99,14 @@ export function buildExportArchive(input: {
   for (const [name, table] of Object.entries(doc.tables)) {
     files[`csv/${name}.csv`] = strToU8(tableToCsv(table));
   }
-  // Photos are already compressed: store them as-is.
-  for (const photo of photos) files[`photos/${photo.path}`] = [photo.bytes, { level: 0 }];
-  if (photoLinks.length > 0) {
-    files['photos/links.csv'] = strToU8(
+  // Photos and receipts are already-compressed images: store them as-is.
+  for (const file of stored)
+    files[`${folderOf(file.bucket)}/${file.path}`] = [file.bytes, { level: 0 }];
+  if (links.length > 0) {
+    files['links.csv'] = strToU8(
       tableToCsv({
-        columns: ['storage_path', 'url'],
-        rows: photoLinks.map((l) => ({ storage_path: l.path, url: l.url })),
+        columns: ['bucket', 'storage_path', 'url'],
+        rows: links.map((l) => ({ bucket: l.bucket, storage_path: l.path, url: l.url })),
       }),
     );
   }
@@ -121,14 +134,14 @@ export function parseExportJson(text: string): SalonExport {
   return d as SalonExport;
 }
 
-/** Reads an export zip (or a bare data.json) back into the document and its photos. */
-export function readExportArchive(bytes: Uint8Array): { doc: SalonExport; photos: ArchiveFile[] } {
-  if (!isZip(bytes)) return { doc: parseExportJson(strFromU8(bytes)), photos: [] };
+/** Reads an export zip (or a bare data.json) back into the document and its storage files. */
+export function readExportArchive(bytes: Uint8Array): { doc: SalonExport; files: ArchiveFile[] } {
+  if (!isZip(bytes)) return { doc: parseExportJson(strFromU8(bytes)), files: [] };
+  const folders = EXPORT_FILE_SOURCES.map((s) => `${s.folder}/`);
   let entries: Record<string, Uint8Array>;
   try {
     entries = unzipSync(bytes, {
-      filter: (f) =>
-        f.name === 'data.json' || (f.name.startsWith('photos/') && f.name !== 'photos/links.csv'),
+      filter: (f) => f.name === 'data.json' || folders.some((dir) => f.name.startsWith(dir)),
     });
   } catch {
     throw new ExportFormatError("That zip couldn't be opened");
@@ -136,13 +149,12 @@ export function readExportArchive(bytes: Uint8Array): { doc: SalonExport; photos
   const data = entries['data.json'];
   if (!data) throw new ExportFormatError('That zip has no data.json');
   const doc = parseExportJson(strFromU8(data));
-  const known = new Set(exportPhotoPaths(doc));
-  const photos: ArchiveFile[] = [];
+  // Only files a row points at come back, so a hand-edited zip can't plant extra objects.
+  const known = new Map(exportFiles(doc).map((f) => [`${folderOf(f.bucket)}/${f.path}`, f]));
+  const files: ArchiveFile[] = [];
   for (const [name, content] of Object.entries(entries)) {
-    const path = name.slice('photos/'.length);
-    if (name.startsWith('photos/') && known.has(path) && content.length > 0) {
-      photos.push({ path, bytes: content });
-    }
+    const file = known.get(name);
+    if (file && content.length > 0) files.push({ ...file, bytes: content });
   }
-  return { doc, photos };
+  return { doc, files };
 }

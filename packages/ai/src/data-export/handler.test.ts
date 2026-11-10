@@ -44,6 +44,10 @@ function doc(): SalonExport {
         columns: ['id', 'salon_id', 'client_id', 'storage_path'],
         rows: [photo('a.jpg'), photo('b.png'), photo('gone.jpg'), photo('x.jpg', OTHER_SALON)],
       },
+      expenses: {
+        columns: ['id', 'salon_id', 'receipt_path'],
+        rows: [{ id: CLIENT, salon_id: SALON, receipt_path: `${SALON}/r.jpg` }],
+      },
     },
   };
 }
@@ -51,9 +55,10 @@ function doc(): SalonExport {
 interface Fake {
   port: DataExportPort;
   exportsBucket: Map<string, { bytes: Uint8Array; createdAt: string }>;
-  photos: Map<string, Uint8Array>;
+  /** Storage files keyed `{bucket}:{path}`. */
+  files: Map<string, Uint8Array>;
   emails: DataExportEmail[];
-  photoReads: string[];
+  fileReads: string[];
   signed: { path: string; seconds: number; name?: string }[];
   imported: { salonId: string; doc: SalonExport }[];
   rateKeys: string[];
@@ -67,10 +72,11 @@ function fakePort(
     uploads?: Record<string, Uint8Array>;
   } = {},
 ): Fake {
-  const photos = new Map<string, Uint8Array>([
-    [`${SALON}/${CLIENT}/a.jpg`, new Uint8Array(10).fill(1)],
-    [`${SALON}/${CLIENT}/b.png`, new Uint8Array(10).fill(2)],
-    [`${OTHER_SALON}/${CLIENT}/x.jpg`, new Uint8Array(10).fill(9)],
+  const files = new Map<string, Uint8Array>([
+    [`client-photos:${SALON}/${CLIENT}/a.jpg`, new Uint8Array(10).fill(1)],
+    [`client-photos:${SALON}/${CLIENT}/b.png`, new Uint8Array(10).fill(2)],
+    [`client-photos:${OTHER_SALON}/${CLIENT}/x.jpg`, new Uint8Array(10).fill(9)],
+    [`receipts:${SALON}/r.jpg`, new Uint8Array(3).fill(3)],
   ]);
   const exportsBucket = new Map<string, { bytes: Uint8Array; createdAt: string }>();
   for (const [path, bytes] of Object.entries(options.uploads ?? {})) {
@@ -78,9 +84,9 @@ function fakePort(
   }
   const fake: Fake = {
     exportsBucket,
-    photos,
+    files,
     emails: [],
-    photoReads: [],
+    fileReads: [],
     signed: [],
     imported: [],
     rateKeys: [],
@@ -100,17 +106,17 @@ function fakePort(
         fake.rateKeys.push(key);
         return options.allowed ?? true;
       },
-      async readPhoto(path) {
-        fake.photoReads.push(path);
-        return photos.get(path) ?? null;
+      async readFile(bucket, path) {
+        fake.fileReads.push(`${bucket}:${path}`);
+        return files.get(`${bucket}:${path}`) ?? null;
       },
-      async writePhoto(path, bytes) {
-        if (photos.has(path)) throw new Error('exists');
-        photos.set(path, bytes);
+      async writeFile(bucket, path, bytes) {
+        if (files.has(`${bucket}:${path}`)) throw new Error('exists');
+        files.set(`${bucket}:${path}`, bytes);
       },
-      async signPhoto(path, seconds) {
+      async signFile(bucket, path, seconds) {
         fake.signed.push({ path, seconds });
-        return `https://signed/photo/${path}`;
+        return `https://signed/${bucket}/${path}`;
       },
       async saveExport(path, bytes) {
         exportsBucket.set(path, { bytes, createdAt: new Date(NOW).toISOString() });
@@ -174,11 +180,11 @@ describe('export', () => {
       expiresAt: new Date(NOW + SHARE_LINK_SECONDS * 1000).toISOString(),
       fileName: 'chairside-export-studio-a-2026-11-09.zip',
       emailedTo: 'owner@example.com',
-      counts: { clients: 1, client_photos: 4 },
-      photos: { included: 2, linked: 0, missing: 1 },
+      counts: { clients: 1, client_photos: 4, expenses: 1 },
+      photos: { included: 3, linked: 0, missing: 1 },
     });
     // Never touches another salon's photo, even when a row points at it.
-    expect(fake.photoReads).not.toContain(`${OTHER_SALON}/${CLIENT}/x.jpg`);
+    expect(fake.fileReads).not.toContain(`client-photos:${OTHER_SALON}/${CLIENT}/x.jpg`);
     expect(fake.emails).toEqual([
       {
         to: 'owner@example.com',
@@ -186,13 +192,14 @@ describe('export', () => {
         url: `https://signed/${path}?ttl=${EMAIL_LINK_SECONDS}`,
         expiresAt: new Date(NOW + EMAIL_LINK_SECONDS * 1000).toISOString(),
         fileName: 'chairside-export-studio-a-2026-11-09.zip',
-        counts: { clients: 1, client_photos: 4 },
+        counts: { clients: 1, client_photos: 4, expenses: 1 },
       },
     ]);
     expect(fake.exportsBucket.has(old)).toBe(false);
     expect(fake.exportsBucket.has(staleUpload)).toBe(false);
     const entries = Object.keys(unzipSync(fake.exportsBucket.get(path)!.bytes));
     expect(entries).toContain(`photos/${SALON}/${CLIENT}/a.jpg`);
+    expect(entries).toContain(`receipts/${SALON}/r.jpg`);
     expect(entries).toContain('csv/clients.csv');
     expect(fake.rateKeys).toEqual([`data-export:${USER}`]);
   });
@@ -205,13 +212,14 @@ describe('export', () => {
       deps(fake, { photoBudgetBytes: 15 }),
     );
     const body = result.body as DataExportResponse;
-    expect(body.photos).toEqual({ included: 1, linked: 2, missing: 0 });
+    expect(body.photos).toEqual({ included: 1, linked: 3, missing: 0 });
     expect(body.emailedTo).toBeNull();
     const entries = unzipSync(fake.exportsBucket.get(`${SALON}/${NOW}-abc.zip`)!.bytes);
-    expect(Object.keys(entries)).toContain('photos/links.csv');
+    expect(Object.keys(entries)).toContain('links.csv');
     expect(fake.signed.filter((s) => s.path.endsWith('.jpg') || s.path.endsWith('.png'))).toEqual([
       { path: `${SALON}/${CLIENT}/b.png`, seconds: EMAIL_LINK_SECONDS },
       { path: `${SALON}/${CLIENT}/gone.jpg`, seconds: EMAIL_LINK_SECONDS },
+      { path: `${SALON}/r.jpg`, seconds: EMAIL_LINK_SECONDS },
     ]);
   });
 
@@ -245,15 +253,16 @@ describe('import', () => {
   const zip = () =>
     buildExportArchive({
       doc: doc(),
-      photos: [
-        { path: `${SALON}/${CLIENT}/a.jpg`, bytes: new Uint8Array([7]) },
-        { path: `${SALON}/${CLIENT}/b.png`, bytes: new Uint8Array([8]) },
+      files: [
+        { bucket: 'client-photos', path: `${SALON}/${CLIENT}/a.jpg`, bytes: new Uint8Array([7]) },
+        { bucket: 'client-photos', path: `${SALON}/${CLIENT}/b.png`, bytes: new Uint8Array([8]) },
+        { bucket: 'receipts', path: `${SALON}/r.jpg`, bytes: new Uint8Array([6]) },
       ],
     });
 
-  it('restores rows, moves photos to the new ids and removes the upload', async () => {
+  it('restores rows, moves photos and receipts to the new ids and removes the upload', async () => {
     const fake = fakePort({ uploads: { [upload]: zip() } });
-    fake.photos.set(`${NEW_SALON}/${NEW_CLIENT}/b.png`, new Uint8Array([0]));
+    fake.files.set(`client-photos:${NEW_SALON}/${NEW_CLIENT}/b.png`, new Uint8Array([0]));
     const result = await handleDataExportRequest(
       { action: 'import', salonId: NEW_SALON, path: upload },
       caller,
@@ -262,10 +271,13 @@ describe('import', () => {
     expect(result.status).toBe(200);
     expect(result.body as DataImportResponse).toEqual({
       counts: { clients: 1 },
-      photos: { restored: 1, failed: 1 },
+      photos: { restored: 2, failed: 1 },
     });
     expect(fake.imported).toEqual([{ salonId: NEW_SALON, doc: doc() }]);
-    expect(fake.photos.get(`${NEW_SALON}/${NEW_CLIENT}/a.jpg`)).toEqual(new Uint8Array([7]));
+    expect(fake.files.get(`client-photos:${NEW_SALON}/${NEW_CLIENT}/a.jpg`)).toEqual(
+      new Uint8Array([7]),
+    );
+    expect(fake.files.get(`receipts:${NEW_SALON}/r.jpg`)).toEqual(new Uint8Array([6]));
     expect(fake.exportsBucket.has(upload)).toBe(false);
   });
 

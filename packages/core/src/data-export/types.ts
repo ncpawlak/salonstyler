@@ -6,10 +6,22 @@
 export const EXPORT_FORMAT = 'chairside-export';
 export const EXPORT_VERSION = 1;
 
-/** Storage bucket and table that hold client photos; the archive copies them under `photos/`. */
-export const PHOTO_BUCKET = 'client-photos';
-export const PHOTO_TABLE = 'client_photos';
-export const PHOTO_PATH_COLUMN = 'storage_path';
+/**
+ * Storage files referenced by exported rows. Each is copied into the archive under
+ * `{folder}/{storage path}` and re-uploaded on restore with the path's ids remapped.
+ * A feature whose table points at a storage object adds one entry here.
+ */
+export interface ExportFileSource {
+  table: string;
+  column: string;
+  bucket: string;
+  folder: string;
+}
+
+export const EXPORT_FILE_SOURCES: readonly ExportFileSource[] = [
+  { table: 'client_photos', column: 'storage_path', bucket: 'client-photos', folder: 'photos' },
+  { table: 'expenses', column: 'receipt_path', bucket: 'receipts', folder: 'receipts' },
+];
 
 export type ExportValue = string | number | boolean | null | ExportValue[] | ExportObject;
 export interface ExportObject {
@@ -37,14 +49,16 @@ export interface SalonExport {
   tables: Record<string, ExportTable>;
 }
 
-/** A file inside the archive (photos keep their original storage path under `photos/`). */
+/** A storage file inside the archive, at `{folder of its bucket}/{path}`. */
 export interface ArchiveFile {
+  bucket: string;
   path: string;
   bytes: Uint8Array;
 }
 
-/** A photo that didn't fit in the archive: listed in `photos/links.csv` with a signed URL. */
-export interface PhotoLink {
+/** A file that didn't fit in the archive: listed in `links.csv` with a signed URL. */
+export interface FileLink {
+  bucket: string;
   path: string;
   url: string;
 }

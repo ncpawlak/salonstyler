@@ -1,6 +1,6 @@
 import type { ChairsideClient } from '@chairside/db';
 import { DATA_EXPORT_BUCKET, exportSalonData, importSalonData } from '@chairside/db/data-export';
-import { PHOTO_BUCKET } from '@chairside/core/data-export';
+import { EXPORT_FILE_SOURCES } from '@chairside/core/data-export';
 
 import { photoContentType } from './handler.ts';
 import type { DataExportEmail, DataExportPort } from './types.ts';
@@ -24,7 +24,7 @@ async function bytesOf(blob: Blob | null): Promise<Uint8Array | null> {
 
 /**
  * `user` carries the caller's JWT (RPC owner checks, storage RLS on the restore upload);
- * `service` is the service-role client for photos and the exports bucket.
+ * `service` is the service-role client for photos, receipts and the exports bucket.
  */
 export function createSupabaseDataExportPort(
   user: ChairsideClient,
@@ -33,7 +33,13 @@ export function createSupabaseDataExportPort(
   publicUrl?: string | null,
 ): DataExportPort {
   const exportsBucket = () => service.storage.from(DATA_EXPORT_BUCKET);
-  const photos = () => service.storage.from(PHOTO_BUCKET);
+  // The service client bypasses storage RLS, so only the buckets the export knows about.
+  const files = (bucket: string) => {
+    if (!EXPORT_FILE_SOURCES.some((s) => s.bucket === bucket)) {
+      throw new Error(`Bucket ${bucket} is not part of the export`);
+    }
+    return service.storage.from(bucket);
+  };
 
   return {
     exportSalon: (salonId) => exportSalonData(user, salonId),
@@ -56,22 +62,22 @@ export function createSupabaseDataExportPort(
       return data;
     },
 
-    async readPhoto(path) {
-      const { data, error } = await photos().download(path);
+    async readFile(bucket, path) {
+      const { data, error } = await files(bucket).download(path);
       if (error) return null;
       return bytesOf(data);
     },
 
-    async writePhoto(path, bytes) {
-      const { error } = await photos().upload(path, bytes, {
+    async writeFile(bucket, path, bytes) {
+      const { error } = await files(bucket).upload(path, bytes, {
         contentType: photoContentType(path),
         upsert: false,
       });
       if (error) throw error;
     },
 
-    async signPhoto(path, expiresInSeconds) {
-      const { data, error } = await photos().createSignedUrl(path, expiresInSeconds);
+    async signFile(bucket, path, expiresInSeconds) {
+      const { data, error } = await files(bucket).createSignedUrl(path, expiresInSeconds);
       if (error) throw error;
       return publicSignedUrl(data.signedUrl, publicUrl);
     },

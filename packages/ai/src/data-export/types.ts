@@ -22,9 +22,10 @@ export interface DataExportPort {
   /** The caller's restore upload, read with their own client (null when missing or not theirs). */
   readUpload(path: string): Promise<Uint8Array | null>;
   hitRateLimit(key: string, limit: number, windowSeconds: number): Promise<boolean>;
-  readPhoto(path: string): Promise<Uint8Array | null>;
-  writePhoto(path: string, bytes: Uint8Array): Promise<void>;
-  signPhoto(path: string, expiresInSeconds: number): Promise<string>;
+  /** Storage files rows point at (photos, receipts); only buckets in EXPORT_FILE_SOURCES. */
+  readFile(bucket: string, path: string): Promise<Uint8Array | null>;
+  writeFile(bucket: string, path: string, bytes: Uint8Array): Promise<void>;
+  signFile(bucket: string, path: string, expiresInSeconds: number): Promise<string>;
   saveExport(path: string, bytes: Uint8Array): Promise<void>;
   signExport(path: string, expiresInSeconds: number, downloadName: string): Promise<string>;
   /** Files directly in `folder` of the exports bucket (not sub-folders). */

@@ -16,7 +16,7 @@ function formatTime(iso: string): string {
 
 /**
  * Settings → Export your data (#46). One tap builds a zip of everything the salon owns (CSV +
- * data.json + photos), emails the owner a 24-hour link and offers a 1-hour link to share now.
+ * data.json + photos and receipts), emails the owner a 24-hour link and offers a 1-hour link to share now.
  */
 export default function DataExportScreen() {
   const salon = useCurrentSalon();
@@ -76,8 +76,8 @@ export default function DataExportScreen() {
         <Text variant="headline">Your data is yours</Text>
         <Text variant="body" tone="muted">
           Download everything {salon.name} keeps in Chairside: clients, appointments, services,
-          payments, formulas, notes, forms, inventory, the waitlist and client photos. You get
-          spreadsheets (CSV) for any app, plus a data.json file Chairside can restore from.
+          payments, formulas, notes, forms, inventory, the waitlist, expenses and client photos. You
+          get spreadsheets (CSV) for any app, plus a data.json file Chairside can restore from.
         </Text>
         <Button
           icon="download-outline"
@@ -101,7 +101,8 @@ export default function DataExportScreen() {
           </Text>
           {done.photos.linked > 0 ? (
             <Text variant="footnote" tone="muted">
-              {done.photos.linked} photos were too big to include; the zip has links to them.
+              {done.photos.linked} photos or receipts were too big to include; the zip has links to
+              them.
             </Text>
           ) : null}
           <Text variant="body">
@@ -143,7 +144,7 @@ export default function DataExportScreen() {
         {restored ? (
           <Text variant="footnote">
             Restored {summarizeCounts(restored.counts)}
-            {restored.photos.failed > 0 ? ` (${restored.photos.failed} photos failed)` : ''}.
+            {restored.photos.failed > 0 ? ` (${restored.photos.failed} files failed)` : ''}.
           </Text>
         ) : null}
       </Card>

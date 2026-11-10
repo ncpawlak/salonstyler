@@ -1,12 +1,12 @@
 import {
   buildExportArchive,
   exportCounts,
-  exportPhotoPaths,
+  exportFiles,
   ExportFormatError,
   readExportArchive,
   remapUuids,
   type ArchiveFile,
-  type PhotoLink,
+  type FileLink,
 } from '@chairside/core/data-export';
 import type {
   DataExportErrorBody,
@@ -26,7 +26,7 @@ export const DATA_EXPORT_LIMITS = {
 export const SHARE_LINK_SECONDS = 60 * 60;
 export const EMAIL_LINK_SECONDS = 24 * 60 * 60;
 export const EXPORT_RETENTION_MS = EMAIL_LINK_SECONDS * 1000;
-/** Photos copied into the zip; the rest are listed in photos/links.csv (Edge memory is finite). */
+/** Photos and receipts copied into the zip; the rest go in links.csv (Edge memory is finite). */
 export const PHOTO_ZIP_BUDGET_BYTES = 64 * 1024 * 1024;
 
 export const dataExportRequestSchema = z.discriminatedUnion('action', [
@@ -124,32 +124,32 @@ async function runExport(
   const doc = await port.exportSalon(salonId);
   if (doc.salon.id !== salonId) return fail(500, 'internal', 'Export returned another salon');
 
-  const photos: ArchiveFile[] = [];
-  const links: PhotoLink[] = [];
+  const files: ArchiveFile[] = [];
+  const links: FileLink[] = [];
   let missing = 0;
   let used = 0;
-  for (const path of exportPhotoPaths(doc, salonId)) {
+  for (const { bucket, path } of exportFiles(doc, salonId)) {
     if (used < budget) {
-      const bytes = await port.readPhoto(path);
+      const bytes = await port.readFile(bucket, path);
       if (!bytes) {
         missing++;
         continue;
       }
       if (used + bytes.length <= budget) {
-        photos.push({ path, bytes });
+        files.push({ bucket, path, bytes });
         used += bytes.length;
         continue;
       }
       used = budget;
     }
     try {
-      links.push({ path, url: await port.signPhoto(path, EMAIL_LINK_SECONDS) });
+      links.push({ bucket, path, url: await port.signFile(bucket, path, EMAIL_LINK_SECONDS) });
     } catch {
       missing++;
     }
   }
 
-  const zip = buildExportArchive({ doc, photos, photoLinks: links });
+  const zip = buildExportArchive({ doc, files, links });
   const fileName = slugFile(doc.salon.slug, now);
   const path = `${salonId}/${now}-${(deps.randomId ?? defaultRandomId)()}.zip`;
   await port.saveExport(path, zip);
@@ -187,7 +187,7 @@ async function runExport(
       fileName,
       emailedTo,
       counts,
-      photos: { included: photos.length, linked: links.length, missing },
+      photos: { included: files.length, linked: links.length, missing },
     },
   };
 }
@@ -217,17 +217,17 @@ async function runImport(
 
   let restored = 0;
   let failed = 0;
-  for (const photo of archive.photos) {
-    const target = remapUuids(photo.path, result.ids);
+  for (const file of archive.files) {
+    const target = remapUuids(file.path, result.ids);
     if (!target.startsWith(`${salonId}/`) || target.includes('..')) {
       failed++;
       continue;
     }
     try {
-      await port.writePhoto(target, photo.bytes);
+      await port.writeFile(file.bucket, target, file.bytes);
       restored++;
     } catch (e) {
-      console.error('data import photo failed', e instanceof Error ? e.message : e);
+      console.error('data import file failed', e instanceof Error ? e.message : e);
       failed++;
     }
   }

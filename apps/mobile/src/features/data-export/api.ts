@@ -43,6 +43,7 @@ const LABELS: [table: string, one: string, many: string][] = [
   ['client_formulas', 'formula', 'formulas'],
   ['client_photos', 'photo', 'photos'],
   ['products', 'product', 'products'],
+  ['expenses', 'expense', 'expenses'],
 ];
 
 /** "12 clients · 40 appointments · …" for the tables owners care about most. */
