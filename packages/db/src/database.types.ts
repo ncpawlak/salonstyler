@@ -3371,6 +3371,7 @@ export type Database = {
         };
       };
       dismiss_waitlist_offer: { Args: { p_offer_id: string }; Returns: undefined };
+      export_salon_data: { Args: { p_salon_id: string }; Returns: Json };
       finance_report: {
         Args: { p_from?: string; p_salon_id: string; p_to?: string };
         Returns: Json;
@@ -3394,6 +3395,7 @@ export type Database = {
       };
       import_appointments: { Args: { p_appointments: Json; p_salon_id: string }; Returns: Json };
       import_clients: { Args: { p_clients: Json; p_salon_id: string }; Returns: Json };
+      import_salon_data: { Args: { p_export: Json; p_salon_id: string }; Returns: Json };
       inbox_bridge_for_token: {
         Args: { p_bridge_version?: string; p_hourly_limit?: number; p_token: string };
         Returns: {
