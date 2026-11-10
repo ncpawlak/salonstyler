@@ -1336,6 +1336,75 @@ export type Database = {
           },
         ];
       };
+      products: {
+        Row: {
+          active: boolean;
+          barcode: string | null;
+          brand: string | null;
+          category: string | null;
+          cost_cents: number | null;
+          created_at: string;
+          id: string;
+          name: string;
+          on_hand: number;
+          reorder_point: number;
+          reorder_quantity: number | null;
+          retail_price_cents: number | null;
+          salon_id: string;
+          sku: string | null;
+          supplier: string | null;
+          unit: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          active?: boolean;
+          barcode?: string | null;
+          brand?: string | null;
+          category?: string | null;
+          cost_cents?: number | null;
+          created_at?: string;
+          id?: string;
+          name: string;
+          on_hand?: number;
+          reorder_point?: number;
+          reorder_quantity?: number | null;
+          retail_price_cents?: number | null;
+          salon_id: string;
+          sku?: string | null;
+          supplier?: string | null;
+          unit?: string;
+          updated_at?: string;
+        };
+        Update: {
+          active?: boolean;
+          barcode?: string | null;
+          brand?: string | null;
+          category?: string | null;
+          cost_cents?: number | null;
+          created_at?: string;
+          id?: string;
+          name?: string;
+          on_hand?: number;
+          reorder_point?: number;
+          reorder_quantity?: number | null;
+          retail_price_cents?: number | null;
+          salon_id?: string;
+          sku?: string | null;
+          supplier?: string | null;
+          unit?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'products_salon_id_fkey';
+            columns: ['salon_id'];
+            isOneToOne: false;
+            referencedRelation: 'salons';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       push_tokens: {
         Row: {
           created_at: string;
@@ -1732,6 +1801,7 @@ export type Database = {
           deposits_enabled: boolean;
           followup_nudge_hours: number;
           hold_expiry_hours: number;
+          low_stock_alerts_enabled: boolean;
           min_notice_minutes: number;
           payout_summary_enabled: boolean;
           preferences: NonNullable<Json>;
@@ -1763,6 +1833,7 @@ export type Database = {
           deposits_enabled?: boolean;
           followup_nudge_hours?: number;
           hold_expiry_hours?: number;
+          low_stock_alerts_enabled?: boolean;
           min_notice_minutes?: number;
           payout_summary_enabled?: boolean;
           preferences?: NonNullable<Json>;
@@ -1793,6 +1864,7 @@ export type Database = {
           deposits_enabled?: boolean;
           followup_nudge_hours?: number;
           hold_expiry_hours?: number;
+          low_stock_alerts_enabled?: boolean;
           min_notice_minutes?: number;
           payout_summary_enabled?: boolean;
           preferences?: NonNullable<Json>;
@@ -1811,6 +1883,78 @@ export type Database = {
             foreignKeyName: 'settings_salon_id_fkey';
             columns: ['salon_id'];
             isOneToOne: true;
+            referencedRelation: 'salons';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      stock_movements: {
+        Row: {
+          checkout_id: string | null;
+          checkout_item_id: string | null;
+          created_at: string;
+          created_by: string | null;
+          delta: number;
+          id: string;
+          note: string | null;
+          on_hand_after: number;
+          product_id: string;
+          reason: Database['public']['Enums']['stock_movement_reason'];
+          salon_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          checkout_id?: string | null;
+          checkout_item_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          delta: number;
+          id?: string;
+          note?: string | null;
+          on_hand_after: number;
+          product_id: string;
+          reason: Database['public']['Enums']['stock_movement_reason'];
+          salon_id: string;
+        };
+        Update: {
+          checkout_id?: string | null;
+          checkout_item_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          delta?: number;
+          id?: string;
+          note?: string | null;
+          on_hand_after?: number;
+          product_id?: string;
+          reason?: Database['public']['Enums']['stock_movement_reason'];
+          salon_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'stock_movements_checkout_fkey';
+            columns: ['salon_id', 'checkout_id'];
+            isOneToOne: false;
+            referencedRelation: 'checkouts';
+            referencedColumns: ['salon_id', 'id'];
+          },
+          {
+            foreignKeyName: 'stock_movements_product_fkey';
+            columns: ['salon_id', 'product_id'];
+            isOneToOne: false;
+            referencedRelation: 'products';
+            referencedColumns: ['salon_id', 'id'];
+          },
+          {
+            foreignKeyName: 'stock_movements_product_fkey';
+            columns: ['salon_id', 'product_id'];
+            isOneToOne: false;
+            referencedRelation: 'reorder_list';
+            referencedColumns: ['salon_id', 'id'];
+          },
+          {
+            foreignKeyName: 'stock_movements_salon_id_fkey';
+            columns: ['salon_id'];
+            isOneToOne: false;
             referencedRelation: 'salons';
             referencedColumns: ['id'];
           },
@@ -1978,8 +2122,95 @@ export type Database = {
           },
         ];
       };
+      reorder_list: {
+        Row: {
+          barcode: string | null;
+          brand: string | null;
+          category: string | null;
+          cost_cents: number | null;
+          id: string;
+          name: string;
+          on_hand: number;
+          reorder_point: number;
+          reorder_quantity: number | null;
+          salon_id: string;
+          sku: string | null;
+          suggested_quantity: number | null;
+          supplier: string | null;
+          unit: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          barcode?: string | null;
+          brand?: string | null;
+          category?: string | null;
+          cost_cents?: number | null;
+          id?: string | null;
+          name?: string | null;
+          on_hand?: number | null;
+          reorder_point?: number | null;
+          reorder_quantity?: number | null;
+          salon_id?: string | null;
+          sku?: string | null;
+          suggested_quantity?: never;
+          supplier?: string | null;
+          unit?: string | null;
+        };
+        Update: {
+          barcode?: string | null;
+          brand?: string | null;
+          category?: string | null;
+          cost_cents?: number | null;
+          id?: string | null;
+          name?: string | null;
+          on_hand?: number | null;
+          reorder_point?: number | null;
+          reorder_quantity?: number | null;
+          salon_id?: string | null;
+          sku?: string | null;
+          suggested_quantity?: never;
+          supplier?: string | null;
+          unit?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'products_salon_id_fkey';
+            columns: ['salon_id'];
+            isOneToOne: false;
+            referencedRelation: 'salons';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
     };
     Functions: {
+      adjust_stock: {
+        Args: {
+          p_delta: number;
+          p_note?: string;
+          p_product_id: string;
+          p_reason?: Database['public']['Enums']['stock_movement_reason'];
+        };
+        Returns: {
+          checkout_id: string | null;
+          checkout_item_id: string | null;
+          created_at: string;
+          created_by: string | null;
+          delta: number;
+          id: string;
+          note: string | null;
+          on_hand_after: number;
+          product_id: string;
+          reason: Database['public']['Enums']['stock_movement_reason'];
+          salon_id: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'stock_movements';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       ai_tokens_used_this_month: { Args: { p_salon_id: string }; Returns: number };
       apply_running_late: {
         Args: { p_delay_minutes: number; p_moves: Json; p_salon_id: string; p_strategy?: string };
@@ -2129,6 +2360,28 @@ export type Database = {
         SetofOptions: {
           from: '*';
           to: 'checkouts';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      count_stock: {
+        Args: { p_note?: string; p_on_hand: number; p_product_id: string };
+        Returns: {
+          checkout_id: string | null;
+          checkout_item_id: string | null;
+          created_at: string;
+          created_by: string | null;
+          delta: number;
+          id: string;
+          note: string | null;
+          on_hand_after: number;
+          product_id: string;
+          reason: Database['public']['Enums']['stock_movement_reason'];
+          salon_id: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'stock_movements';
           isOneToOne: true;
           isSetofReturn: false;
         };
@@ -2639,7 +2892,8 @@ export type Database = {
         | 'payout_summary'
         | 'public_booking'
         | 'deposit_paid'
-        | 'client_rescheduled';
+        | 'client_rescheduled'
+        | 'low_stock';
       notification_status: 'pending' | 'sending' | 'sent' | 'skipped' | 'failed';
       payment_status:
         | 'pending'
@@ -2652,6 +2906,7 @@ export type Database = {
       push_platform: 'ios' | 'android' | 'web';
       salon_role: 'owner' | 'stylist';
       segment_kind: 'busy' | 'processing' | 'style';
+      stock_movement_reason: 'receive' | 'sale' | 'adjust' | 'count' | 'use' | 'return';
       work_hours_override_kind: 'custom' | 'day_off' | 'vacation';
     };
     CompositeTypes: {
@@ -2786,6 +3041,7 @@ export const Constants = {
         'public_booking',
         'deposit_paid',
         'client_rescheduled',
+        'low_stock',
       ],
       notification_status: ['pending', 'sending', 'sent', 'skipped', 'failed'],
       payment_status: [
@@ -2800,6 +3056,7 @@ export const Constants = {
       push_platform: ['ios', 'android', 'web'],
       salon_role: ['owner', 'stylist'],
       segment_kind: ['busy', 'processing', 'style'],
+      stock_movement_reason: ['receive', 'sale', 'adjust', 'count', 'use', 'return'],
       work_hours_override_kind: ['custom', 'day_off', 'vacation'],
     },
   },

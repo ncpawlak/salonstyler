@@ -59,6 +59,12 @@ describe('notificationIntent', () => {
     ).toEqual({ kind: 'open', href: '/settings/payments' });
   });
 
+  it('opens the reorder list for a low-stock alert', () => {
+    expect(
+      notificationIntent(DEFAULT_ACTION_ID, { type: 'low_stock', salonId: 's1', productId: 'p1' }),
+    ).toEqual({ kind: 'open', href: '/inventory/reorder' });
+  });
+
   it('opens the calendar for a confirmed online booking', () => {
     expect(
       notificationIntent(DEFAULT_ACTION_ID, { type: 'public_booking', appointmentId: 'a1' }),

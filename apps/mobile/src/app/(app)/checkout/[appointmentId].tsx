@@ -40,6 +40,7 @@ import {
   useSaveCheckout,
 } from '@/features/checkout/api';
 import { CardReaderProvider, useCardReader } from '@/features/checkout/terminal';
+import { ProductPicker } from '@/features/inventory/product-picker';
 import { RebookSection } from '@/features/rebook/rebook-card';
 import { haptics } from '@/lib/haptics';
 import { supabase } from '@/lib/supabase';
@@ -288,7 +289,7 @@ function CheckoutForm({
             setLines((prev) =>
               editingLine
                 ? prev.map((l) => (l.key === editingLine.key ? { ...l, ...next } : l))
-                : [...prev, { key: nextKey(), sourceId: null, ...next }],
+                : [...prev, { key: nextKey(), ...next }],
             );
             setEditing(null);
           }}
@@ -409,7 +410,7 @@ function LineEditor({
   onRemove,
 }: {
   line?: Line;
-  onSave: (line: Omit<Line, 'key' | 'sourceId'>) => void;
+  onSave: (line: Omit<Line, 'key'>) => void;
   onCancel: () => void;
   onRemove?: () => void;
 }) {
@@ -417,6 +418,7 @@ function LineEditor({
   const [name, setName] = useState(line?.name ?? '');
   const [price, setPrice] = useState(line ? centsText(line.unitAmountCents) : '');
   const [quantity, setQuantity] = useState(String(line?.quantity ?? 1));
+  const [sourceId, setSourceId] = useState(line?.sourceId ?? null);
 
   const priceCents = parseAmountInput(price);
   const qty = /^\d+$/.test(quantity.trim()) ? Number(quantity) : NaN;
@@ -441,6 +443,18 @@ function LineEditor({
         onChangeText={setName}
         autoFocus={!line}
       />
+      {kind === 'retail' ? (
+        <ProductPicker
+          query={name}
+          linkedId={sourceId}
+          onPick={(p) => {
+            setSourceId(p.id);
+            setName(p.name);
+            setPrice(centsText(p.unitAmountCents));
+          }}
+          onUnlink={() => setSourceId(null)}
+        />
+      ) : null}
       <View className="flex-row gap-3">
         <Input
           className="flex-1"
@@ -476,7 +490,13 @@ function LineEditor({
           grow
           disabled={!valid}
           onPress={() =>
-            onSave({ kind, name: name.trim(), unitAmountCents: priceCents ?? 0, quantity: qty })
+            onSave({
+              kind,
+              name: name.trim(),
+              unitAmountCents: priceCents ?? 0,
+              quantity: qty,
+              sourceId: kind === 'retail' || kind === line?.kind ? sourceId : null,
+            })
           }
         />
       </View>
