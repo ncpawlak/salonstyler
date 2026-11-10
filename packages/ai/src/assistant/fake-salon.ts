@@ -13,6 +13,7 @@ import type { ServiceMenu } from '@chairside/db/services';
 import type {
   AssistantClient,
   AssistantPort,
+  AssistantProduct,
   ClientVisit,
   ReplyContext,
   ReplyRequestInfo,
@@ -133,6 +134,56 @@ export const CLIENTS: AssistantClient[] = [
   { id: MARIA, name: 'Maria Garcia', phone: null, email: null },
 ];
 
+export const TUBE_6N = '00000000-0000-4000-8000-0000000000d1';
+export const TUBE_6NB = '00000000-0000-4000-8000-0000000000d2';
+export const DEVELOPER = '00000000-0000-4000-8000-0000000000d3';
+export const SHAMPOO = '00000000-0000-4000-8000-0000000000d4';
+
+const product = (p: Partial<AssistantProduct> & Pick<AssistantProduct, 'id' | 'name'>) => ({
+  brand: null,
+  sku: null,
+  barcode: null,
+  unit: 'each',
+  onHand: 0,
+  reorderPoint: 0,
+  supplier: null,
+  suggestedQuantity: null,
+  ...p,
+});
+
+/** Stock levels as the database reports them (suggestedQuantity comes from reorder_list). */
+export const PRODUCTS: AssistantProduct[] = [
+  product({
+    id: TUBE_6N,
+    name: '6N',
+    brand: 'Shades EQ',
+    unit: 'tube',
+    onHand: 5,
+    reorderPoint: 2,
+  }),
+  product({
+    id: TUBE_6NB,
+    name: '6NB',
+    brand: 'Shades EQ',
+    unit: 'tube',
+    onHand: 1,
+    reorderPoint: 2,
+    suggestedQuantity: 3,
+    supplier: 'SalonCentric',
+  }),
+  product({ id: DEVELOPER, name: 'Processing Solution', unit: 'ml', onHand: 940 }),
+  product({
+    id: SHAMPOO,
+    name: 'Color Extend Shampoo',
+    brand: 'Redken',
+    sku: 'RK-CES-300',
+    onHand: 2,
+    reorderPoint: 3,
+    suggestedQuantity: 6,
+    supplier: 'SalonCentric',
+  }),
+];
+
 export interface FakePort extends AssistantPort {
   appointments: FakeAppointment[];
   clients: AssistantClient[];
@@ -142,6 +193,7 @@ export interface FakePort extends AssistantPort {
   notes: { clientId: string; kind: 'note' | 'formula'; text: string }[];
   replySettings: Omit<ReplyContext, 'request'>;
   requests: ReplyRequestInfo[];
+  products: AssistantProduct[];
   /** Ranges passed to `salesReport`, in call order. */
   reportRanges: { from: string; to: string }[];
 }
@@ -181,6 +233,7 @@ export function createFakePort(): FakePort {
       bridgeKeyword: null,
     },
     requests: [],
+    products: PRODUCTS.map((p) => ({ ...p })),
     reportRanges: [],
     async getSchedule() {
       return {
@@ -266,6 +319,7 @@ export function createFakePort(): FakePort {
       ...port.replySettings,
       request: port.requests.find((r) => r.id === requestId) ?? null,
     }),
+    listProducts: async () => port.products,
     async audit(action, details) {
       port.audits.push({ action, details });
     },

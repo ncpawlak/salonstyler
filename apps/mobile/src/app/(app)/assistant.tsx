@@ -24,6 +24,7 @@ import {
   Text,
 } from '@/components/ui';
 import { assistantApi } from '@/features/assistant/api';
+import { StockDraftCardView } from '@/features/inventory/stock-draft-card';
 import { haptics } from '@/lib/haptics';
 import { supabase } from '@/lib/supabase';
 import { useCurrentSalon } from '@/providers/session-provider';
@@ -399,6 +400,8 @@ function EntryView({
             );
           case 'running_late':
             return <RunningLateCardView key={i} card={card} />;
+          case 'stock_adjustment':
+            return <StockDraftCardView key={i} card={card} />;
         }
       })}
     </View>

@@ -1758,6 +1758,63 @@ export type Database = {
           },
         ];
       };
+      service_recipes: {
+        Row: {
+          created_at: string;
+          id: string;
+          product_id: string;
+          quantity: number;
+          salon_id: string;
+          service_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          id?: string;
+          product_id: string;
+          quantity: number;
+          salon_id: string;
+          service_id: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          product_id?: string;
+          quantity?: number;
+          salon_id?: string;
+          service_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'service_recipes_product_fkey';
+            columns: ['salon_id', 'product_id'];
+            isOneToOne: false;
+            referencedRelation: 'products';
+            referencedColumns: ['salon_id', 'id'];
+          },
+          {
+            foreignKeyName: 'service_recipes_product_fkey';
+            columns: ['salon_id', 'product_id'];
+            isOneToOne: false;
+            referencedRelation: 'reorder_list';
+            referencedColumns: ['salon_id', 'id'];
+          },
+          {
+            foreignKeyName: 'service_recipes_salon_id_fkey';
+            columns: ['salon_id'];
+            isOneToOne: false;
+            referencedRelation: 'salons';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'service_recipes_service_fkey';
+            columns: ['salon_id', 'service_id'];
+            isOneToOne: false;
+            referencedRelation: 'services';
+            referencedColumns: ['salon_id', 'id'];
+          },
+        ];
+      };
       service_segments: {
         Row: {
           addon_id: string | null;
@@ -2057,6 +2114,7 @@ export type Database = {
       };
       stock_movements: {
         Row: {
+          appointment_id: string | null;
           checkout_id: string | null;
           checkout_item_id: string | null;
           created_at: string;
@@ -2071,6 +2129,7 @@ export type Database = {
         };
         ComputedFields: never;
         Insert: {
+          appointment_id?: string | null;
           checkout_id?: string | null;
           checkout_item_id?: string | null;
           created_at?: string;
@@ -2084,6 +2143,7 @@ export type Database = {
           salon_id: string;
         };
         Update: {
+          appointment_id?: string | null;
           checkout_id?: string | null;
           checkout_item_id?: string | null;
           created_at?: string;
@@ -2097,6 +2157,13 @@ export type Database = {
           salon_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: 'stock_movements_appointment_fkey';
+            columns: ['salon_id', 'appointment_id'];
+            isOneToOne: false;
+            referencedRelation: 'appointments';
+            referencedColumns: ['salon_id', 'id'];
+          },
           {
             foreignKeyName: 'stock_movements_checkout_fkey';
             columns: ['salon_id', 'checkout_id'];
@@ -2624,6 +2691,7 @@ export type Database = {
           p_reason?: Database['public']['Enums']['stock_movement_reason'];
         };
         Returns: {
+          appointment_id: string | null;
           checkout_id: string | null;
           checkout_item_id: string | null;
           created_at: string;
@@ -2805,6 +2873,7 @@ export type Database = {
       count_stock: {
         Args: { p_note?: string; p_on_hand: number; p_product_id: string };
         Returns: {
+          appointment_id: string | null;
           checkout_id: string | null;
           checkout_item_id: string | null;
           created_at: string;
@@ -3220,6 +3289,23 @@ export type Database = {
           to: 'appointments';
           isOneToOne: true;
           isSetofReturn: false;
+        };
+      };
+      set_service_recipe: {
+        Args: { p_lines: Json; p_service_id: string };
+        Returns: {
+          created_at: string;
+          id: string;
+          product_id: string;
+          quantity: number;
+          salon_id: string;
+          service_id: string;
+        }[];
+        SetofOptions: {
+          from: '*';
+          to: 'service_recipes';
+          isOneToOne: false;
+          isSetofReturn: true;
         };
       };
       skip_rebook: {

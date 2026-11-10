@@ -17,6 +17,7 @@ Docs are split by feature so parallel PRs don't edit the same file. When you add
 - [Checkout and Tap to Pay](docs/checkout.md) (#11).
 - [Rebook at checkout](docs/rebook.md) (#42).
 - [Inventory](docs/inventory.md) (#17): products, barcode scanning, stock ledger and low-stock pushes.
+- [Service recipes](docs/service-recipes.md) (#18): auto-deduct product on completion, and the `inventory_lookup` / `adjust_stock` assistant tools.
 - [Reports](docs/reports.md) (#43): `sales_report` and the Reports screen.
 - [Deposits and cancellation policy](docs/deposits.md): `functions/deposits` (#12).
 - [Push notifications](docs/push-notifications.md) (#8), including the notifier Vault secrets.

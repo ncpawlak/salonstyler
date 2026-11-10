@@ -62,6 +62,21 @@ export interface ReplyContext {
   request: ReplyRequestInfo | null;
 }
 
+/** A product as the assistant sees it. Quantities are in the product's unit. */
+export interface AssistantProduct {
+  id: string;
+  name: string;
+  brand: string | null;
+  sku: string | null;
+  barcode: string | null;
+  unit: string;
+  onHand: number;
+  reorderPoint: number;
+  supplier: string | null;
+  /** From the reorder_list view; null unless at or below the reorder point. */
+  suggestedQuantity: number | null;
+}
+
 /**
  * Everything the assistant's tools read or write. In production this is backed by a user-scoped
  * Supabase client, so RLS limits every call to the caller's salon; tests use an in-memory fake.
@@ -97,6 +112,8 @@ export interface AssistantPort {
   createClient(input: { name: string; phone?: string | null }): Promise<AssistantClient>;
   /** Reply settings, plus the given inbox request (null if it isn't this salon's). */
   getReplyContext(requestId?: string | null): Promise<ReplyContext>;
+  /** Active products with stock levels and reorder suggestions (issue #18). */
+  listProducts(): Promise<AssistantProduct[]>;
   audit(action: string, details: Record<string, unknown>): Promise<void>;
 }
 
@@ -162,5 +179,24 @@ export interface RunningLateCard {
   overtimeMinutes: number;
 }
 
+/**
+ * "Used 2 tubes of 6N": a stock change for the owner to approve. Nothing is written until they
+ * tap Apply, which calls adjust_stock (the database does the math and fires low-stock pushes).
+ */
+export interface StockAdjustmentCard {
+  type: 'stock_adjustment';
+  productId: string;
+  productName: string;
+  unit: string;
+  reason: 'use' | 'receive' | 'adjust';
+  /** Signed change in the product's unit. */
+  delta: number;
+  onHandBefore: number;
+  /** Preview only; the database recomputes it. */
+  onHandAfter: number;
+  note: string | null;
+}
+
 /** Structured output the app renders next to the assistant's text. */
-export type AssistantCard = SlotsCard | DraftCard | ClientNotFoundCard | RunningLateCard;
+export type AssistantCard =
+  SlotsCard | DraftCard | ClientNotFoundCard | RunningLateCard | StockAdjustmentCard;
