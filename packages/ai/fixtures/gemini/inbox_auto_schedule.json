@@ -1,0 +1,109 @@
+{
+  "provider": "gemini",
+  "scenario": "inbox_auto_schedule",
+  "model": "gemini-2.5-flash",
+  "source": "hand-authored from the provider API reference (no live call); request captured from the adapter",
+  "request": {
+    "method": "POST",
+    "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+    "body": {
+      "systemInstruction": {
+        "parts": [
+          {
+            "text": "You read a client's text to Studio K, a hair salon, and record when they can come in by calling submit_window.\nToday is Tue, Dec 1 (2026-12-01), time zone America/Chicago.\nResolve relative days (\"tomorrow\", \"next week\") from today.\nThey are moving their appointment on Thu, Dec 3 · 11:00 AM.\nYou only interpret the message. Never suggest or choose a time; the scheduling engine does that."
+          }
+        ]
+      },
+      "contents": [
+        {
+          "role": "user",
+          "parts": [
+            {
+              "text": "any chance we can move my appointment to next week? Mornings are best"
+            }
+          ]
+        }
+      ],
+      "tools": [
+        {
+          "functionDeclarations": [
+            {
+              "name": "submit_window",
+              "description": "Record when the client can come in. Call exactly once.",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "dateFrom": {
+                    "type": ["string", "null"],
+                    "description": "First day that works, YYYY-MM-DD. \"next week\" is next Monday; a single day is both dateFrom and dateTo. Null if they give no days."
+                  },
+                  "dateTo": {
+                    "type": ["string", "null"],
+                    "description": "Last day that works, YYYY-MM-DD (inclusive). \"next week\" ends on Sunday."
+                  },
+                  "weekdays": {
+                    "type": "array",
+                    "description": "Days of the week they can do, 0 = Sunday … 6 = Saturday (\"mondays\" = [1], \"weekends\" = [0, 6]). Empty if any day.",
+                    "items": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 6
+                    }
+                  },
+                  "timeOfDay": {
+                    "type": ["string", "null"],
+                    "enum": ["morning", "afternoon", "evening", null]
+                  },
+                  "time": {
+                    "type": ["string", "null"],
+                    "description": "A clock time they name, as 24-hour HH:MM (\"2pm\" is \"14:00\"), or null."
+                  }
+                },
+                "required": ["dateFrom", "dateTo", "weekdays", "timeOfDay", "time"]
+              }
+            }
+          ]
+        }
+      ],
+      "generationConfig": {
+        "maxOutputTokens": 200,
+        "temperature": 0
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "candidates": [
+        {
+          "content": {
+            "parts": [
+              {
+                "functionCall": {
+                  "name": "submit_window",
+                  "args": {
+                    "dateFrom": "2026-12-07",
+                    "dateTo": "2026-12-13",
+                    "weekdays": [],
+                    "timeOfDay": "morning",
+                    "time": null
+                  }
+                }
+              }
+            ],
+            "role": "model"
+          },
+          "finishReason": "STOP",
+          "index": 0
+        }
+      ],
+      "usageMetadata": {
+        "promptTokenCount": 512,
+        "candidatesTokenCount": 58,
+        "totalTokenCount": 570
+      },
+      "modelVersion": "gemini-2.5-flash",
+      "responseId": "YXV0b3NjaGVk"
+    }
+  }
+}

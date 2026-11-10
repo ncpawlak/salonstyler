@@ -3744,6 +3744,38 @@ export type Database = {
       save_service: { Args: { p_salon_id: string; p_service: Json }; Returns: string };
       save_service_addon: { Args: { p_addon: Json; p_salon_id: string }; Returns: string };
       save_waitlist_offers: { Args: { p_offers: Json; p_opening_id: string }; Returns: Json };
+      schedule_captured_request: {
+        Args: { p_price_cents?: number; p_request_id: string; p_segments: Json; p_services?: Json };
+        Returns: {
+          cancel_reason: string | null;
+          cancelled_at: string | null;
+          client_id: string | null;
+          created_at: string;
+          created_by: string | null;
+          ends_at: string;
+          hold_expires_at: string | null;
+          id: string;
+          import_key: string | null;
+          manage_token: string;
+          notes: string | null;
+          price_cents: number | null;
+          requested_at: string | null;
+          salon_id: string;
+          services: NonNullable<Json>;
+          source: Database['public']['Enums']['appointment_source'];
+          starts_at: string;
+          status: Database['public']['Enums']['appointment_status'];
+          stylist_id: string;
+          text_reminder_sent_at: string | null;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'appointments';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       search_salon: {
         Args: { p_limit?: number; p_query: string; p_salon_id: string };
         Returns: {

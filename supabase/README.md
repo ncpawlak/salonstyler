@@ -26,6 +26,7 @@ Docs are split by feature so parallel PRs don't edit the same file. When you add
 - [Intake & consent forms](docs/client-forms.md) (#45): form builder, the client's `/f/<token>` page, and the forms email.
 - [Waitlist](docs/waitlist.md) (#21): auto-fill cancellations (`functions/waitlist`), offers and the client's `/w/<token>` link.
 - [Marketing](docs/marketing.md) (#27): rebook nudges, review requests and campaigns (`functions/marketing`), consent and the `/u/<token>` unsubscribe link.
+- [Auto-Schedule and Auto-Find](docs/auto-schedule.md) (#84, #88): AI slot suggestions for Inbox requests and new appointments, ranked by the client's booking habits (`schedule_captured_request`).
 - [Full data export](docs/data-export.md) (#46): `functions/data-export`, restore, and **registering new salon tables with the export**.
 - [Hosted project setup](docs/hosted-setup.md).
 - [Sign in with Apple](docs/sign-in-with-apple.md).
