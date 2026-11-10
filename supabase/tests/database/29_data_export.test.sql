@@ -102,7 +102,8 @@ create temp table ids as
          '00000000-0000-4000-f290-0000000e0002'::uuid as opening1,
          '00000000-0000-4000-f290-0000000ac001'::uuid as addon1,
          '00000000-0000-4000-f290-0000000c0b01'::uuid as combo1,
-         '00000000-0000-4000-f290-0000000cf001'::uuid as captured1;
+         '00000000-0000-4000-f290-0000000cf001'::uuid as captured1,
+         '00000000-0000-4000-f290-0000000ca901'::uuid as campaign1;
 grant select on ids to authenticated;
 create temp table t (name text primary key, val jsonb);
 grant select, insert, update on t to authenticated;
@@ -231,6 +232,28 @@ insert into public.waitlist_offers (salon_id, opening_id, entry_id, starts_at, e
 select a, opening1, entry1, '2026-11-20 16:00+00', '2026-11-20 17:00+00', '[]', '[]', 'accepted', 'email', appt1
   from ids;
 
+update public.settings set marketing_nudges_auto_send = true, marketing_nudge_lead_days = 5,
+                           marketing_review_url = 'https://g.page/r/export-test'
+ where salon_id = (select a from ids);
+update public.clients set marketing_opt_in = false, marketing_opted_out_at = '2026-11-05 09:00+00'
+ where id = (select client1 from ids);
+insert into public.marketing_campaigns (id, salon_id, name, subject, body, audience, status, sent_at,
+                                        recipient_count, created_by)
+select campaign1, a, 'Holiday hours', 'We''re open Dec 24', 'Hi {firstName}, book now: {bookingLink}',
+       '{"tags": ["vip"]}', 'sent', '2026-11-06 15:00+00', 1, owner_a from ids;
+insert into public.marketing_messages (salon_id, client_id, kind, campaign_id, appointment_id, subject, body,
+                                       status, due_at, to_address, dedupe_key, attempts, sent_at, provider_id,
+                                       meta, approved_by, approved_at)
+select a, client2, 'campaign'::public.marketing_message_kind, campaign1, null::uuid, 'We''re open Dec 24', 'Hi {firstName}',
+       'sent'::public.marketing_message_status,
+       '2026-11-06 15:00+00'::timestamptz, 'bo@client.test', 'campaign:' || campaign1 || ':' || client2, 1,
+       '2026-11-06 15:01+00'::timestamptz, 'msg_1', '{}'::jsonb, owner_a, '2026-11-06 14:59+00'::timestamptz from ids
+union all
+select a, client1, 'rebook_nudge'::public.marketing_message_kind, null, appt1, 'Time for a touch-up?', 'Hi {firstName}',
+       'draft'::public.marketing_message_status,
+       '2026-12-01 15:00+00', null, 'rebook_nudge:' || appt1, 0, null, null,
+       jsonb_build_object('serviceIds', jsonb_build_array(combo1)), null, null from ids;
+
 set local session_replication_role = origin;
 
 -- ---------------------------------------------------------------------------
@@ -292,6 +315,8 @@ select ok(
       and not (val #> '{tables,checkouts,rows,0}') ? 'receipt_token'
       and not (val #> '{tables,appointment_deposits,rows,0}') ? 'pay_token'
       and not (val #> '{tables,waitlist_entries,rows,0}') ? 'token'
+      and not (val #> '{tables,clients,columns}') ? 'marketing_token'
+      and not (val #> '{tables,clients,rows,0}') ? 'marketing_token'
      from t where name = 'a'),
   'bearer tokens are left out');
 

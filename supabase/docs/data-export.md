@@ -22,7 +22,7 @@ chairside-export-<slug>-<date>.zip
 └── links.csv           files over the 64 MB zip budget: signed 24-hour links instead
 ```
 
-`data.json` has `format`/`version`, the salon header (name, slug, timezone), and one array of rows per registered table. Bearer-token columns (manage, receipt, pay and waitlist tokens) are left out; the restore generates fresh ones. In the CSVs, text that starts with `= + - @` is prefixed with `'` so spreadsheets don't run it as a formula. Numbers and phone numbers are left as they are.
+`data.json` has `format`/`version`, the salon header (name, slug, timezone), and one array of rows per registered table. Bearer-token columns (manage, receipt, pay, waitlist and marketing-unsubscribe tokens) are left out; the restore generates fresh ones. In the CSVs, text that starts with `= + - @` is prefixed with `'` so spreadsheets don't run it as a formula. Numbers and phone numbers are left as they are.
 
 ## How it works
 
@@ -58,7 +58,7 @@ select private.exclude_from_data_export('my_queue', 'Delivery queue');  -- delib
 
 - `supabase/tests/database/29_data_export.test.sql` **fails** when a `salon_id` table is in neither list, so a new table can't silently fall out of exports.
 - Insert order on restore is derived from foreign keys, so you don't need to edit anything else. Foreign keys must be composite `(salon_id, id)` like the rest of the schema.
-- Your migration must sort after `20261109470000_data_export.sql`. A feature that merged before #46 without registering gets a small follow-up migration with a later timestamp, like `20261109480001_data_export_service_recipes.sql`.
+- Your migration must sort after `20261109470000_data_export.sql`. A feature that merged before #46 without registering gets a small follow-up migration with a later timestamp, like `20261109480001_data_export_service_recipes.sql` or `20261109490001_data_export_marketing.sql`.
 - **Files in storage:** if a row points at a storage object (like `client_photos.storage_path` or `expenses.receipt_path`), add one entry to `EXPORT_FILE_SOURCES` in `packages/core/src/data-export/types.ts` (table, path column, bucket, archive folder). The path must start with `{salon_id}/`. The function then zips the files and restores them under the new ids.
 - Add a row to your own pgTAP seed if you want the round trip to cover your data. The shared test seeds every table that existed when #46 shipped.
 
