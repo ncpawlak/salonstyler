@@ -11,6 +11,7 @@ import {
 import { addClientFormula, addClientNote, listClientOverrides } from '@chairside/db/clients';
 import { getInboxBridge } from '@chairside/db/inbox';
 import { getReplySettings } from '@chairside/db/replies';
+import { getSalesReport } from '@chairside/db/reports';
 import { listServiceMenu } from '@chairside/db/services';
 import { getWorkHours } from '@chairside/db/work-hours';
 
@@ -52,6 +53,7 @@ export function createSupabaseAssistantPort(
     },
 
     getMenu: () => listServiceMenu(client, salonId),
+    salesReport: (range) => getSalesReport(client, salonId, range),
 
     async listClients() {
       return (await listClients(client, salonId, undefined, 1000)).map(toClient);

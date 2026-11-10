@@ -164,6 +164,14 @@ export class DemoAssistantProvider implements LLMProvider {
       );
     if (late) return this.call('running_late', { minutes: Number(late[1]) });
 
+    if (
+      /\b(how (?:did|am|have) (?:i|we) (?:do|done|doing)|report|revenue|sales|takings)\b/i.test(t)
+    ) {
+      const when = /\b(this|last)\s+(week|month|quarter|year)\b/i.exec(t);
+      const period = when ? `${when[1]!.toLowerCase()}_${when[2]!.toLowerCase()}` : 'last_month';
+      return this.call('get_sales_report', { period });
+    }
+
     const schedule = /\b(?:schedule|book|put)\s+(.+?)\s+(?:in\s+)?(?:for|on)\s+(.+)$/i.exec(t);
     if (schedule && !/^(the|that|option)\b/i.test(schedule[1]!)) {
       return this.call('find_client', { query: schedule[1]!.replace(/'s$/i, '') });
@@ -237,6 +245,22 @@ export class DemoAssistantProvider implements LLMProvider {
     const error = result.error as { code: string; message: string } | undefined;
 
     switch (tool.name) {
+      case 'get_sales_report': {
+        if (error) return this.say(error.message);
+        const top = (result.topServices as { name: string }[] | undefined)?.[0];
+        const clients = result.clients as { new: number; returning: number };
+        const appts = result.appointments as { noShows: number; cancelled: number };
+        return this.say(
+          `${String(result.from)} to ${String(result.to)}: ${String(result.sales)} in sales ` +
+            `(${String(result.services)} services, ${String(result.retail)} retail) plus ` +
+            `${String(result.tips)} in tips over ${String(result.checkouts)} checkouts` +
+            (result.averageTicket ? `, ${String(result.averageTicket)} average ticket` : '') +
+            `. ${clients.new} new and ${clients.returning} returning clients` +
+            (top ? `; ${top.name} was your top service` : '') +
+            `. ${appts.noShows} no-shows, ${appts.cancelled} cancellations` +
+            (result.rebookRate ? `, ${String(result.rebookRate)} rebooked.` : '.'),
+        );
+      }
       case 'find_client': {
         const matches =
           (result.matches as { id: string; name: string; confidence: number }[]) ?? [];

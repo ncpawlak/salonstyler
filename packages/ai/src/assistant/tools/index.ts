@@ -5,6 +5,7 @@ import cancelDraftTool from './cancel-draft.ts';
 import findClientTool from './find-client.ts';
 import findSlotsTool from './find-slots.ts';
 import getDaySummaryTool from './get-day-summary.ts';
+import getSalesReportTool from './get-sales-report.ts';
 import listServicesTool from './list-services.ts';
 import proposeBookingTool from './propose-booking.ts';
 import runningLateTool from './running-late.ts';
@@ -16,6 +17,7 @@ export const TOOL_MODULES = [
   findClientTool,
   findSlotsTool,
   getDaySummaryTool,
+  getSalesReportTool,
   listServicesTool,
   proposeBookingTool,
   runningLateTool,
