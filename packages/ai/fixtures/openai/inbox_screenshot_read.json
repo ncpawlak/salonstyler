@@ -1,0 +1,112 @@
+{
+  "provider": "openai",
+  "scenario": "inbox_screenshot_read",
+  "model": "gpt-4.1-mini",
+  "source": "hand-authored from the provider API reference (no live call); request captured from the adapter",
+  "request": {
+    "method": "POST",
+    "url": "https://api.openai.com/v1/chat/completions",
+    "body": {
+      "model": "gpt-4.1-mini",
+      "messages": [
+        {
+          "role": "system",
+          "content": "You read screenshots of message threads between Studio K, a hair salon, and one of its clients, and transcribe them by calling read_conversation.\nToday is Tue, Dec 1 (2026-12-01), time zone America/Chicago.\nCopy the words exactly. Do not summarize, translate, or interpret what the client wants, and never suggest a time.\nThe salon is the phone owner: its messages are the outgoing (right-side, colored) bubbles. Transcribe only the client."
+        },
+        {
+          "role": "user",
+          "content": [
+            { "type": "text", "text": "Transcribe this screenshot." },
+            {
+              "type": "image_url",
+              "image_url": {
+                "url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+              }
+            }
+          ]
+        }
+      ],
+      "max_completion_tokens": 800,
+      "temperature": 0,
+      "tools": [
+        {
+          "type": "function",
+          "function": {
+            "name": "read_conversation",
+            "description": "Record what the screenshot shows. Call exactly once.",
+            "parameters": {
+              "type": "object",
+              "properties": {
+                "isConversation": {
+                  "type": "boolean",
+                  "description": "False if the image is not a message thread (a photo, a menu, a web page)."
+                },
+                "platform": {
+                  "type": "string",
+                  "enum": ["imessage", "sms", "instagram", "whatsapp", "messenger", "other"],
+                  "description": "imessage: blue/grey bubbles. sms: green bubbles. instagram: Instagram DM. whatsapp. messenger: Facebook Messenger. other."
+                },
+                "sender": {
+                  "type": ["string", "null"],
+                  "description": "The other person in the thread (the client): their display name from the header, or the @handle when no name is shown. Null if neither is shown."
+                },
+                "senderPhone": {
+                  "type": ["string", "null"],
+                  "description": "A phone number shown for the client, as written. Null if none is shown."
+                },
+                "text": {
+                  "type": "string",
+                  "description": "The client's most recent messages, word for word, oldest first, one per line. Only the client's (incoming, left-side) bubbles, never the salon's own (outgoing, right-side) ones. Empty if the client wrote nothing."
+                },
+                "sentOn": {
+                  "type": ["string", "null"],
+                  "description": "The day of the client's latest message as YYYY-MM-DD, resolving labels like \"Yesterday\" or \"Tue\" from today. Null if not shown."
+                },
+                "sentTime": {
+                  "type": ["string", "null"],
+                  "description": "The time of the client's latest message as 24-hour HH:MM. Null if not shown."
+                }
+              },
+              "required": ["isConversation", "platform", "text"]
+            }
+          }
+        }
+      ]
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "id": "chatcmpl-C2xInbox1",
+      "object": "chat.completion",
+      "created": 1764601381,
+      "model": "gpt-4.1-mini-2025-04-14",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call_Inbox1Rk2",
+                "type": "function",
+                "function": {
+                  "name": "read_conversation",
+                  "arguments": "{\"isConversation\":true,\"platform\":\"instagram\",\"sender\":\"Karina Lopez\",\"senderPhone\":null,\"text\":\"Hey! can I get color + trim fri afternoon?\",\"sentOn\":\"2026-12-01\",\"sentTime\":\"09:03\"}"
+                }
+              }
+            ],
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "tool_calls"
+        }
+      ],
+      "usage": { "prompt_tokens": 1412, "completion_tokens": 88, "total_tokens": 1500 },
+      "service_tier": "default",
+      "system_fingerprint": "fp_6f2eabb9a5"
+    }
+  }
+}

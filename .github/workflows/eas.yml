@@ -82,8 +82,10 @@ jobs:
               if (!c.updates?.url) throw new Error("EAS Update URL missing");
             '
             npx expo prebuild --platform ios --no-install --clean
-            ent=$(find ios -name '*.entitlements' | head -1)
-            plist=$(find ios -path '*/Info.plist' -not -path '*/Pods/*' | head -1)
+            # Anchor on the app target; share extension targets have their own plists.
+            app=$(basename ios/*.xcodeproj .xcodeproj)
+            ent="ios/$app/$app.entitlements"
+            plist="ios/$app/Info.plist"
             expected_aps=production; [ "$variant" = development ] && expected_aps=development
             grep -A1 'aps-environment' "$ent" | grep -q "$expected_aps"
             grep -q 'applinks:book.example.com' "$ent"
@@ -92,6 +94,7 @@ jobs:
             grep -q 'NSCameraUsageDescription' "$plist"
             grep -q 'NSPhotoLibraryUsageDescription' "$plist"
             grep -q 'u.expo.dev/00000000-0000-0000-0000-000000000000' ios/*/Supporting/Expo.plist
+            grep -rq 'group.com.chairside.app' ios/SavetoChairside*/
             echo "::endgroup::"
           done
 

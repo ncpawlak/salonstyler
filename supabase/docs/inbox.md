@@ -38,3 +38,5 @@ curl -X POST http://127.0.0.1:54321/functions/v1/inbox -H "X-Bridge-Token: csb_â
 ```
 
 Deploy: `npx supabase functions deploy inbox --no-verify-jwt`.
+
+The same function also takes signed-in **manual captures** (paste, share sheet, screenshot read by a vision model). See [Manual capture](manual-capture.md).

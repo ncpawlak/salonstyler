@@ -5,7 +5,7 @@ import { useMemo, useState } from 'react';
 import { View } from 'react-native';
 
 import { Screen } from '@/components/shell/screen';
-import { EmptyState, SkeletonRow, Text } from '@/components/ui';
+import { Button, EmptyState, SkeletonRow, Text } from '@/components/ui';
 import { errorMessage } from '@/features/appointments/api';
 import {
   type InboxItem,
@@ -126,6 +126,26 @@ export default function InboxScreen() {
             ? `${items.length} ${items.length === 1 ? 'request' : 'requests'} waiting for you`
             : 'All caught up'
       }
+      toolbar={
+        <View className="flex-row gap-2 px-4 pb-2">
+          <Button
+            label="Paste request"
+            icon="clipboard-outline"
+            variant="secondary"
+            size="sm"
+            onPress={() => router.push('/capture')}
+            testID="inbox-capture"
+          />
+          <Button
+            label="Screenshot"
+            icon="image-outline"
+            variant="secondary"
+            size="sm"
+            onPress={() => router.push('/capture')}
+            testID="inbox-capture-screenshot"
+          />
+        </View>
+      }
     >
       <BridgeHealthBanner />
       {failure ? (
@@ -168,7 +188,7 @@ export default function InboxScreen() {
         <EmptyState
           icon="file-tray-outline"
           title="Inbox zero"
-          message="Booking texts forwarded by your Shortcut land here with a time already held. Set it up in Settings → Text bridge."
+          message="Booking texts forwarded by your Shortcut land here with a time already held. Got one in Instagram or WhatsApp? Tap Paste request or Screenshot above."
           actionLabel="Set up text bridge"
           onAction={() => router.push('/settings/text-bridge')}
         />

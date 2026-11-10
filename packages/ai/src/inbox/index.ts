@@ -38,4 +38,33 @@ export {
   createSupabaseInboxPort,
   markBridgeTested,
 } from './supabase-port.ts';
+export {
+  captureInboxMessage,
+  type CaptureDeps,
+  type CaptureMessageOptions,
+  type InboxOutcome,
+} from './handler.ts';
+export {
+  CAPTURE_SOURCES,
+  handleManualCapture,
+  isManualCapture,
+  manualCaptureSchema,
+  MAX_CAPTURE_IMAGE_BASE64_CHARS,
+  type CaptureSource,
+  type ManualCaptureDeps,
+  type ManualCaptureRequest,
+  type ManualCaptureResponse,
+  type ManualCaptureResult,
+} from './manual.ts';
+export {
+  DEMO_SCREENSHOT_CONVERSATION,
+  normalizeConversation,
+  READ_CONVERSATION_TOOL,
+  readScreenshot,
+  SCREENSHOT_PLATFORMS,
+  screenshotChannel,
+  screenshotReadPrompt,
+  type ScreenshotConversation,
+  type ScreenshotPlatform,
+} from './screenshot.ts';
 export * from './shortcut.ts';
