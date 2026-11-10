@@ -25,6 +25,7 @@ Docs are split by feature so parallel PRs don't edit the same file. When you add
 - [Client self-service](docs/client-self-service.md) (#10): manage link (`functions/manage-booking`), client emails and the reminder queue.
 - [Intake & consent forms](docs/client-forms.md) (#45): form builder, the client's `/f/<token>` page, and the forms email.
 - [Waitlist](docs/waitlist.md) (#21): auto-fill cancellations (`functions/waitlist`), offers and the client's `/w/<token>` link.
+- [Marketing](docs/marketing.md) (#27): rebook nudges, review requests and campaigns (`functions/marketing`), consent and the `/u/<token>` unsubscribe link.
 - [Hosted project setup](docs/hosted-setup.md).
 - [Sign in with Apple](docs/sign-in-with-apple.md).
 

@@ -477,3 +477,7 @@ verify_jwt = false
 # gates page/start/status. Refunds verify a member JWT (or the service role) in the function.
 [functions.deposits]
 verify_jwt = false
+
+# One-click unsubscribe (token-gated) and cron pokes (shared secret); members' calls are checked in the function.
+[functions.marketing]
+verify_jwt = false
