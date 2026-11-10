@@ -27,6 +27,7 @@ import {
   type PublicBookingApi,
 } from '@/features/public-booking/api';
 import { ConciergePanel, type PickedSlot } from '@/features/public-booking/concierge-panel';
+import { WaitlistJoin } from '@/features/waitlist/join';
 
 const DAYS_SHOWN = 14;
 
@@ -307,6 +308,12 @@ function PickStep({
                   Nothing open around this day. Try another day.
                 </Text>
               ) : null}
+              <WaitlistJoin
+                api={api}
+                item={item}
+                date={date}
+                dayLabel={dayChipLabel(date, dayIndex)}
+              />
             </View>
           )}
         </>

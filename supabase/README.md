@@ -22,6 +22,7 @@ Docs are split by feature so parallel PRs don't edit the same file. When you add
 - [Push notifications](docs/push-notifications.md) (#8), including the notifier Vault secrets.
 - [Client self-service](docs/client-self-service.md) (#10): manage link (`functions/manage-booking`), client emails and the reminder queue.
 - [Intake & consent forms](docs/client-forms.md) (#45): form builder, the client's `/f/<token>` page, and the forms email.
+- [Waitlist](docs/waitlist.md) (#21): auto-fill cancellations (`functions/waitlist`), offers and the client's `/w/<token>` link.
 - [Hosted project setup](docs/hosted-setup.md).
 - [Sign in with Apple](docs/sign-in-with-apple.md).
 

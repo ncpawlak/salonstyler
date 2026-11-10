@@ -9,7 +9,8 @@ export interface NotificationData {
     | 'daily_agenda'
     | 'payout_summary'
     | 'public_booking'
-    | 'low_stock';
+    | 'low_stock'
+    | 'waitlist';
   salonId?: string;
   appointmentId?: string;
   productId?: string;
@@ -65,5 +66,6 @@ export function notificationIntent(
   }
   if (data.type === 'payout_summary') return { kind: 'open', href: '/settings/payments' };
   if (data.type === 'low_stock') return { kind: 'open', href: '/inventory/reorder' };
+  if (data.type === 'waitlist') return { kind: 'open', href: '/waitlist' };
   return { kind: 'none' };
 }
