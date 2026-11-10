@@ -191,6 +191,11 @@ insert into public.stock_movements (salon_id, product_id, reason, delta, on_hand
                                     checkout_item_id, created_by)
 select a, product1, 'sale', -1, 4.5, checkout1,
        (select id from public.checkout_items where checkout_id = checkout1 and position = 1), owner_a from ids;
+insert into public.service_recipes (salon_id, service_id, product_id, quantity)
+select a, (select id from public.services s where s.salon_id = ids.a and not s.is_combo order by position limit 1),
+       product1, 0.25 from ids;
+insert into public.stock_movements (salon_id, product_id, reason, delta, on_hand_after, appointment_id, created_by)
+select a, product1, 'use', -0.25, 4.25, appt1, owner_a from ids;
 
 insert into public.captured_requests (id, salon_id, channel, sender, client_id, message, parsed, intent,
                                       appointment_id, status, dedupe_key)

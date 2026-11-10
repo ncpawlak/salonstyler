@@ -101,6 +101,7 @@ Deno.serve(async (req) => {
           user as unknown as ChairsideClient,
           service as unknown as ChairsideClient,
           sendExportEmail,
+          Deno.env.get('PUBLIC_SUPABASE_URL'),
         ),
       },
     );

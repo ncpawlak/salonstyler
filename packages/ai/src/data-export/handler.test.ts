@@ -319,3 +319,15 @@ describe('import', () => {
     });
   });
 });
+
+describe('publicSignedUrl', () => {
+  it('moves a local kong URL onto the public API origin, keeping the token', async () => {
+    const { publicSignedUrl } = await import('./supabase-port.ts');
+    const signed =
+      'http://kong:8000/storage/v1/object/sign/data-exports/s/x.zip?token=abc&download=x.zip';
+    expect(publicSignedUrl(signed, 'http://127.0.0.1:54321')).toBe(
+      'http://127.0.0.1:54321/storage/v1/object/sign/data-exports/s/x.zip?token=abc&download=x.zip',
+    );
+    expect(publicSignedUrl(signed, undefined)).toBe(signed);
+  });
+});

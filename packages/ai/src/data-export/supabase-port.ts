@@ -5,6 +5,19 @@ import { PHOTO_BUCKET } from '@chairside/core/data-export';
 import { photoContentType } from './handler.ts';
 import type { DataExportEmail, DataExportPort } from './types.ts';
 
+/**
+ * Point a signed URL at `publicUrl`. Locally the functions runtime reaches the API as
+ * `http://kong:8000`, which a browser or an email reader can't open.
+ */
+export function publicSignedUrl(signedUrl: string, publicUrl: string | null | undefined): string {
+  if (!publicUrl) return signedUrl;
+  const signed = new URL(signedUrl);
+  const base = new URL(publicUrl);
+  signed.protocol = base.protocol;
+  signed.host = base.host;
+  return signed.toString();
+}
+
 async function bytesOf(blob: Blob | null): Promise<Uint8Array | null> {
   return blob ? new Uint8Array(await blob.arrayBuffer()) : null;
 }
@@ -17,6 +30,7 @@ export function createSupabaseDataExportPort(
   user: ChairsideClient,
   service: ChairsideClient,
   sendExportEmail: ((email: DataExportEmail) => Promise<void>) | null,
+  publicUrl?: string | null,
 ): DataExportPort {
   const exportsBucket = () => service.storage.from(DATA_EXPORT_BUCKET);
   const photos = () => service.storage.from(PHOTO_BUCKET);
@@ -59,7 +73,7 @@ export function createSupabaseDataExportPort(
     async signPhoto(path, expiresInSeconds) {
       const { data, error } = await photos().createSignedUrl(path, expiresInSeconds);
       if (error) throw error;
-      return data.signedUrl;
+      return publicSignedUrl(data.signedUrl, publicUrl);
     },
 
     async saveExport(path, bytes) {
@@ -75,7 +89,7 @@ export function createSupabaseDataExportPort(
         download: downloadName,
       });
       if (error) throw error;
-      return data.signedUrl;
+      return publicSignedUrl(data.signedUrl, publicUrl);
     },
 
     async listExports(folder) {
