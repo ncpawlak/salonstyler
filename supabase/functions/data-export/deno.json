@@ -1,0 +1,12 @@
+{
+  "imports": {
+    "@supabase/supabase-js": "npm:@supabase/supabase-js@2",
+    "zod": "npm:zod@^4.6.7",
+    "fflate": "npm:fflate@^0.8.3",
+    "@chairside/ai/": "../../../packages/ai/src/",
+    "@chairside/core/data-export": "../../../packages/core/src/data-export/index.ts",
+    "@chairside/db": "../../../packages/db/src/index.ts",
+    "@chairside/db/data-export": "../../../packages/db/src/data-export.ts",
+    "@chairside/notifications/": "../../../packages/notifications/src/"
+  }
+}

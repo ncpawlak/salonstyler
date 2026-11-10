@@ -10,6 +10,7 @@
     ".": "./src/index.ts",
     "./appointments": "./src/appointments/index.ts",
     "./clients": "./src/clients/index.ts",
+    "./data-export": "./src/data-export/index.ts",
     "./deposits": "./src/deposits/index.ts",
     "./finances": "./src/finances/index.ts",
     "./forms": "./src/forms/index.ts",
@@ -25,5 +26,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"
+  },
+  "dependencies": {
+    "fflate": "^0.8.3"
   }
 }
