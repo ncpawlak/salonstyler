@@ -238,7 +238,7 @@ function DayMode({
         />
       ) : (
         <>
-          {utilization ? <DaySummary day={utilization} now={now} /> : null}
+          {utilization ? <DaySummary day={utilization} /> : null}
           {list.length === 0 ? (
             <Text variant="footnote" tone="muted">
               Nothing booked. Long-press a time or tap New to book.

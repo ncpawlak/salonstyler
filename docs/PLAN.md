@@ -133,7 +133,7 @@ sequenceDiagram
 - DB-level guard: exclusion constraint on busy-segment time ranges so double-booking is impossible.
 
 ### Views
-- **Day:** timeline (busy = solid, processing = hatched) + **24h donut** showing booked / open / off, with % booked.
+- **Day:** timeline (busy = solid, processing = hatched) + **day donut** (whole ring = that day's working hours, fill = booked, tentative striped) with % booked and time free.
 - **Week:** a stacked bar per day.
 - **Month:** utilization heatmap with a mini ring per day.
 - Drag to move (conflict-checked), long-press to quick-book, tap a service chip to rebook.
