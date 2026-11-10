@@ -1,0 +1,105 @@
+{
+  "provider": "anthropic",
+  "scenario": "finances_receipt_read",
+  "model": "claude-haiku-4-5",
+  "source": "hand-authored from the provider API reference (no live call); request captured from the adapter",
+  "request": {
+    "method": "POST",
+    "url": "https://api.anthropic.com/v1/messages",
+    "body": {
+      "model": "claude-haiku-4-5",
+      "max_tokens": 400,
+      "system": "You read photos of receipts for a hairstylist who rents a booth, and record them by calling read_receipt.\nToday is 2026-11-10.\nCopy the total, store name and date exactly as printed. If several totals are shown, use the final amount paid.\nDo not guess numbers you cannot read, and do not give tax advice.",
+      "messages": [
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "Read this receipt."
+            },
+            {
+              "type": "image",
+              "source": {
+                "type": "base64",
+                "media_type": "image/png",
+                "data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+              }
+            }
+          ]
+        }
+      ],
+      "temperature": 0,
+      "tools": [
+        {
+          "name": "read_receipt",
+          "description": "Record what the receipt shows. Call exactly once.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "isReceipt": {
+                "type": "boolean",
+                "description": "False if the image is not a receipt or invoice."
+              },
+              "total": {
+                "type": ["number", "null"],
+                "description": "The total actually paid, including tax, as a number in the receipt currency (e.g. 48.62). Null if it cannot be read."
+              },
+              "currency": {
+                "type": ["string", "null"],
+                "description": "ISO 4217 code if the receipt shows one (USD, CAD, EUR). Null otherwise."
+              },
+              "vendor": {
+                "type": ["string", "null"],
+                "description": "The store or business name at the top of the receipt. Null if not shown."
+              },
+              "date": {
+                "type": ["string", "null"],
+                "description": "The purchase date as YYYY-MM-DD. Null if not shown."
+              },
+              "category": {
+                "type": "string",
+                "enum": ["products", "tools", "education", "booth_rent", "other"],
+                "description": "products: hair color, shampoo, styling or back-bar supplies. tools: shears, dryers, irons, brushes, capes. education: classes, courses, certifications. booth_rent: chair or booth rent. other: anything else."
+              }
+            },
+            "required": ["isReceipt", "total", "category"]
+          }
+        }
+      ]
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "id": "msg_01Receipt1Hn7",
+      "type": "message",
+      "role": "assistant",
+      "model": "claude-haiku-4-5-20251001",
+      "content": [
+        {
+          "type": "tool_use",
+          "id": "toolu_01Receipt1w2",
+          "name": "read_receipt",
+          "input": {
+            "isReceipt": true,
+            "total": 48.62,
+            "currency": "USD",
+            "vendor": "SalonCentric",
+            "date": "2026-11-02",
+            "category": "products"
+          }
+        }
+      ],
+      "stop_reason": "tool_use",
+      "stop_sequence": null,
+      "usage": {
+        "input_tokens": 1288,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "output_tokens": 52,
+        "service_tier": "standard"
+      }
+    }
+  }
+}

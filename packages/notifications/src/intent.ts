@@ -8,6 +8,7 @@ export interface NotificationData {
     | 'cancellation'
     | 'daily_agenda'
     | 'payout_summary'
+    | 'expense_due'
     | 'public_booking'
     | 'low_stock'
     | 'waitlist';
@@ -65,6 +66,7 @@ export function notificationIntent(
     return { kind: 'open', href: '/calendar' };
   }
   if (data.type === 'payout_summary') return { kind: 'open', href: '/settings/payments' };
+  if (data.type === 'expense_due') return { kind: 'open', href: '/finances' };
   if (data.type === 'low_stock') return { kind: 'open', href: '/inventory/reorder' };
   if (data.type === 'waitlist') return { kind: 'open', href: '/waitlist' };
   return { kind: 'none' };

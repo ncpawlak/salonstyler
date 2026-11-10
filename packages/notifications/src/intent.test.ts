@@ -59,6 +59,16 @@ describe('notificationIntent', () => {
     ).toEqual({ kind: 'open', href: '/settings/payments' });
   });
 
+  it('opens finances for a booth rent reminder', () => {
+    expect(
+      notificationIntent(DEFAULT_ACTION_ID, {
+        type: 'expense_due',
+        salonId: 's1',
+        date: '2026-12-01',
+      }),
+    ).toEqual({ kind: 'open', href: '/finances' });
+  });
+
   it('opens the reorder list for a low-stock alert', () => {
     expect(
       notificationIntent(DEFAULT_ACTION_ID, { type: 'low_stock', salonId: 's1', productId: 'p1' }),

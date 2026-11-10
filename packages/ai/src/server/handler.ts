@@ -1,11 +1,12 @@
 import { type ColumnMapping, guessColumnMapping } from '@chairside/core';
 import { z } from 'zod';
 
+import { DEMO_RECEIPT, type ReceiptReading, readReceipt } from '../finances/receipt.ts';
 import { AiProviderError, redactSecrets } from '../http.ts';
 import { columnMappingPrompt, columnMappingTool, readColumnMapping } from '../import/mapping.ts';
 import { type AiProvider, aiProviderSchema } from '../providers.ts';
 import { createProvider as defaultCreateProvider } from '../registry.ts';
-import type { ChatMessage, ChatResult, ToolDefinition } from '../types.ts';
+import type { ChatMessage, ChatResult, ImagePart, ToolDefinition } from '../types.ts';
 
 const MAX_IMAGE_BASE64_CHARS = 8 * 1024 * 1024;
 
@@ -77,6 +78,17 @@ export const aiRequestSchema = z.discriminatedUnion('action', [
     /** Redacted sample values per column (see `redactedColumnSamples` in @chairside/core). */
     samples: z.array(z.array(z.string().max(60)).max(5)).max(100),
   }),
+  z.object({
+    action: z.literal('read_receipt'),
+    salonId: z.uuid(),
+    image: z.object({
+      type: z.literal('image'),
+      mimeType: z.enum(['image/png', 'image/jpeg', 'image/webp']),
+      data: z.string().min(1).max(MAX_IMAGE_BASE64_CHARS),
+    }),
+    /** Salon-local `YYYY-MM-DD`; a receipt dated after it is a misread. */
+    today: z.iso.date(),
+  }),
 ]);
 export type AiRequest = z.infer<typeof aiRequestSchema>;
 
@@ -108,7 +120,8 @@ export interface AiServiceDeps {
   now?: () => number;
   /**
    * Local development only (CHAIRSIDE_AI_DEMO): `map_columns` answers with the deterministic
-   * header guess instead of calling a model. Never set in production.
+   * header guess and `read_receipt` with a fixed receipt instead of calling a model. Never set
+   * in production.
    */
   demoMapping?: boolean;
 }
@@ -124,9 +137,17 @@ export type AiMapColumnsResponse = {
   mapping: ColumnMapping;
   source: 'ai' | 'demo';
 };
+export type AiReadReceiptResponse = {
+  /** Null when the photo isn't a receipt or its total can't be read. */
+  receipt: ReceiptReading | null;
+  source: 'ai' | 'demo';
+};
 
 export type AiServiceResult =
-  | { status: 200; body: AiTestResponse | AiChatResponse | AiMapColumnsResponse }
+  | {
+      status: 200;
+      body: AiTestResponse | AiChatResponse | AiMapColumnsResponse | AiReadReceiptResponse;
+    }
   | { status: 400 | 401 | 403 | 409 | 429 | 500 | 502; body: AiErrorBody };
 
 const fail = (
@@ -196,7 +217,17 @@ export async function handleAiRequest(
     }
   }
 
+  if (request.action === 'read_receipt' && role !== 'owner') {
+    return fail(403, 'forbidden', 'Only salon owners can add expenses');
+  }
+
   const config = await deps.loadConfig(request.salonId);
+  if (request.action === 'read_receipt' && deps.demoMapping) {
+    return {
+      status: 200,
+      body: { receipt: { ...DEMO_RECEIPT, date: request.today }, source: 'demo' },
+    };
+  }
   if (request.action === 'map_columns' && deps.demoMapping) {
     return {
       status: 200,
@@ -217,6 +248,18 @@ export async function handleAiRequest(
 
   try {
     const llm = create(config.provider, { apiKey: config.apiKey, model: config.model });
+    if (request.action === 'read_receipt') {
+      const read = await readReceipt(llm, request.image as ImagePart, { today: request.today });
+      await deps.recordUsage({
+        salonId: request.salonId,
+        provider: config.provider,
+        model: read.model,
+        purpose: 'receipt',
+        inputTokens: read.usage.inputTokens,
+        outputTokens: read.usage.outputTokens,
+      });
+      return { status: 200, body: { receipt: read.receipt, source: 'ai' } };
+    }
     if (request.action === 'map_columns') {
       const result = await llm.chat(
         columnMappingPrompt(request.kind, request.headers, request.samples),

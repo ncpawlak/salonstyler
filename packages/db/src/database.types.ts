@@ -1130,6 +1130,84 @@ export type Database = {
           },
         ];
       };
+      expenses: {
+        Row: {
+          amount_cents: number;
+          category: Database['public']['Enums']['expense_category'];
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          note: string | null;
+          receipt_path: string | null;
+          recurring_expense_id: string | null;
+          salon_id: string;
+          spent_on: string;
+          stock_movement_id: string | null;
+          updated_at: string;
+          vendor: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          amount_cents: number;
+          category: Database['public']['Enums']['expense_category'];
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          note?: string | null;
+          receipt_path?: string | null;
+          recurring_expense_id?: string | null;
+          salon_id: string;
+          spent_on: string;
+          stock_movement_id?: string | null;
+          updated_at?: string;
+          vendor?: string | null;
+        };
+        Update: {
+          amount_cents?: number;
+          category?: Database['public']['Enums']['expense_category'];
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          note?: string | null;
+          receipt_path?: string | null;
+          recurring_expense_id?: string | null;
+          salon_id?: string;
+          spent_on?: string;
+          stock_movement_id?: string | null;
+          updated_at?: string;
+          vendor?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'expenses_recurring_fkey';
+            columns: ['salon_id', 'recurring_expense_id'];
+            isOneToOne: false;
+            referencedRelation: 'recurring_expenses';
+            referencedColumns: ['salon_id', 'id'];
+          },
+          {
+            foreignKeyName: 'expenses_salon_id_fkey';
+            columns: ['salon_id'];
+            isOneToOne: false;
+            referencedRelation: 'salons';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'expenses_stock_movement_id_fkey';
+            columns: ['stock_movement_id'];
+            isOneToOne: true;
+            referencedRelation: 'restock_purchases';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'expenses_stock_movement_id_fkey';
+            columns: ['stock_movement_id'];
+            isOneToOne: true;
+            referencedRelation: 'stock_movements';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       form_submissions: {
         Row: {
           answers: NonNullable<Json>;
@@ -1558,6 +1636,66 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: 'push_tokens_salon_id_fkey';
+            columns: ['salon_id'];
+            isOneToOne: false;
+            referencedRelation: 'salons';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      recurring_expenses: {
+        Row: {
+          active: boolean;
+          amount_cents: number;
+          category: Database['public']['Enums']['expense_category'];
+          created_at: string;
+          frequency: Database['public']['Enums']['expense_frequency'];
+          id: string;
+          label: string;
+          posted_through: string | null;
+          remind: boolean;
+          remind_days_before: number;
+          salon_id: string;
+          starts_on: string;
+          updated_at: string;
+          vendor: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          active?: boolean;
+          amount_cents: number;
+          category?: Database['public']['Enums']['expense_category'];
+          created_at?: string;
+          frequency?: Database['public']['Enums']['expense_frequency'];
+          id?: string;
+          label?: string;
+          posted_through?: string | null;
+          remind?: boolean;
+          remind_days_before?: number;
+          salon_id: string;
+          starts_on: string;
+          updated_at?: string;
+          vendor?: string | null;
+        };
+        Update: {
+          active?: boolean;
+          amount_cents?: number;
+          category?: Database['public']['Enums']['expense_category'];
+          created_at?: string;
+          frequency?: Database['public']['Enums']['expense_frequency'];
+          id?: string;
+          label?: string;
+          posted_through?: string | null;
+          remind?: boolean;
+          remind_days_before?: number;
+          salon_id?: string;
+          starts_on?: string;
+          updated_at?: string;
+          vendor?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'recurring_expenses_salon_id_fkey';
             columns: ['salon_id'];
             isOneToOne: false;
             referencedRelation: 'salons';
@@ -2028,6 +2166,7 @@ export type Database = {
           reply_tone_examples: string | null;
           salon_id: string;
           slot_grid_minutes: number;
+          tax_set_aside_percent: number;
           updated_at: string;
           waitlist_auto_offer: boolean;
           waitlist_enabled: boolean;
@@ -2063,6 +2202,7 @@ export type Database = {
           reply_tone_examples?: string | null;
           salon_id: string;
           slot_grid_minutes?: number;
+          tax_set_aside_percent?: number;
           updated_at?: string;
           waitlist_auto_offer?: boolean;
           waitlist_enabled?: boolean;
@@ -2097,6 +2237,7 @@ export type Database = {
           reply_tone_examples?: string | null;
           salon_id?: string;
           slot_grid_minutes?: number;
+          tax_set_aside_percent?: number;
           updated_at?: string;
           waitlist_auto_offer?: boolean;
           waitlist_enabled?: boolean;
@@ -2642,6 +2783,47 @@ export type Database = {
           },
         ];
       };
+      restock_purchases: {
+        Row: {
+          brand: string | null;
+          cost_cents: number | null;
+          created_at: string;
+          estimated_cents: number | null;
+          expense_id: string | null;
+          id: string;
+          name: string;
+          note: string | null;
+          product_id: string;
+          quantity: number;
+          salon_id: string;
+          supplier: string | null;
+          unit: string;
+        };
+        ComputedFields: never;
+        Relationships: [
+          {
+            foreignKeyName: 'stock_movements_product_fkey';
+            columns: ['salon_id', 'product_id'];
+            isOneToOne: false;
+            referencedRelation: 'products';
+            referencedColumns: ['salon_id', 'id'];
+          },
+          {
+            foreignKeyName: 'stock_movements_product_fkey';
+            columns: ['salon_id', 'product_id'];
+            isOneToOne: false;
+            referencedRelation: 'reorder_list';
+            referencedColumns: ['salon_id', 'id'];
+          },
+          {
+            foreignKeyName: 'stock_movements_salon_id_fkey';
+            columns: ['salon_id'];
+            isOneToOne: false;
+            referencedRelation: 'salons';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
     };
     Functions: {
       accept_waitlist_offer: {
@@ -2914,6 +3096,10 @@ export type Database = {
       delete_ai_provider_config: { Args: { p_salon_id: string }; Returns: undefined };
       deposit_pay_page: { Args: { p_token: string }; Returns: Json };
       dismiss_waitlist_offer: { Args: { p_offer_id: string }; Returns: undefined };
+      finance_report: {
+        Args: { p_from?: string; p_salon_id: string; p_to?: string };
+        Returns: Json;
+      };
       finish_client_emails: { Args: { p_results: Json }; Returns: number };
       finish_notifications: { Args: { p_results: Json }; Returns: number };
       get_ai_provider_secret: {
@@ -3426,6 +3612,8 @@ export type Database = {
         'confirmation' | 'reminder' | 'rescheduled' | 'cancellation' | 'forms_request';
       deposit_kind: 'none' | 'flat' | 'percent';
       deposit_status: 'pending' | 'paid' | 'refund_due' | 'refunded' | 'kept' | 'canceled';
+      expense_category: 'booth_rent' | 'products' | 'tools' | 'education' | 'other';
+      expense_frequency: 'weekly' | 'monthly';
       notification_kind:
         | 'request'
         | 'request_nudge'
@@ -3436,7 +3624,8 @@ export type Database = {
         | 'deposit_paid'
         | 'client_rescheduled'
         | 'low_stock'
-        | 'waitlist';
+        | 'waitlist'
+        | 'expense_due';
       notification_status: 'pending' | 'sending' | 'sent' | 'skipped' | 'failed';
       payment_status:
         | 'pending'
@@ -3583,6 +3772,8 @@ export const Constants = {
       ],
       deposit_kind: ['none', 'flat', 'percent'],
       deposit_status: ['pending', 'paid', 'refund_due', 'refunded', 'kept', 'canceled'],
+      expense_category: ['booth_rent', 'products', 'tools', 'education', 'other'],
+      expense_frequency: ['weekly', 'monthly'],
       notification_kind: [
         'request',
         'request_nudge',
@@ -3594,6 +3785,7 @@ export const Constants = {
         'client_rescheduled',
         'low_stock',
         'waitlist',
+        'expense_due',
       ],
       notification_status: ['pending', 'sending', 'sent', 'skipped', 'failed'],
       payment_status: [

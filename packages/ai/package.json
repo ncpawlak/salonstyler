@@ -12,6 +12,7 @@
     "./assistant": "./src/assistant/index.ts",
     "./assistant-server": "./src/server/assistant-handler.ts",
     "./inbox": "./src/inbox/index.ts",
+    "./finances": "./src/finances/index.ts",
     "./shortcut": "./src/inbox/shortcut.ts",
     "./public-booking": "./src/public-booking/index.ts",
     "./waitlist": "./src/waitlist/index.ts"
