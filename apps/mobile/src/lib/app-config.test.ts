@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs';
+
 import type { ExpoConfig } from 'expo/config';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -134,5 +136,35 @@ describe('app.config', () => {
     });
     vi.stubEnv('APP_VARIANT', 'production');
     expect(share(resolve())?.iosShareExtensionName).toBe('Save to Chairside');
+  });
+
+  it('adds the WidgetKit extension per variant, sharing the App Group with the share extension', () => {
+    const widgets = (config: ExpoConfig) =>
+      (config.plugins ?? []).find(
+        (
+          p,
+        ): p is [
+          string,
+          {
+            bundleIdentifier: string;
+            groupIdentifier: string;
+            widgets: { name: string; ios: { initialLayout: string } }[];
+          },
+        ] => Array.isArray(p) && p[0] === 'expo-widgets',
+      )?.[1];
+    vi.stubEnv('APP_VARIANT', 'preview');
+    const preview = widgets(resolve());
+    expect(preview?.bundleIdentifier).toBe('com.chairside.app.preview.widgets');
+    expect(preview?.groupIdentifier).toBe('group.com.chairside.app.preview');
+    vi.stubEnv('APP_VARIANT', 'production');
+    const prod = widgets(resolve());
+    expect(prod?.groupIdentifier).toBe('group.com.chairside.app');
+    expect(prod?.widgets.map((w) => w.name)).toEqual([
+      'ChairsideNextClient',
+      'ChairsideDayBooked',
+      'ChairsideRequests',
+    ]);
+    for (const w of prod?.widgets ?? [])
+      expect(existsSync(new URL(`../../${w.ios.initialLayout}`, import.meta.url))).toBe(true);
   });
 });

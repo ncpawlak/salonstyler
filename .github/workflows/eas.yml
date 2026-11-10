@@ -39,6 +39,7 @@ on:
       - apps/mobile/index.ts
       - apps/mobile/package.json
       - apps/mobile/assets/**
+      - apps/mobile/src/widgets/**
       - package-lock.json
       - .github/workflows/eas.yml
 
@@ -95,6 +96,14 @@ jobs:
             grep -q 'NSPhotoLibraryUsageDescription' "$plist"
             grep -q 'u.expo.dev/00000000-0000-0000-0000-000000000000' ios/*/Supporting/Expo.plist
             grep -rq 'group.com.chairside.app' ios/SavetoChairside*/
+            # WidgetKit extension (#40): widgets + Live Activity share the App Group, listed once.
+            grep -A1 'NSSupportsLiveActivities</key>' "$plist" | grep -q '<true/>'
+            grep -A1 'ExpoWidgetsAppGroupIdentifier' "$plist" | grep -q 'group.com.chairside.app'
+            grep -q 'group.com.chairside.app' ios/ExpoWidgetsTarget/ExpoWidgetsTarget.entitlements
+            for w in ChairsideNextClient ChairsideDayBooked ChairsideRequests; do
+              test -f "ios/ExpoWidgetsTarget/$w.swift"
+            done
+            [ "$(grep -c '<string>group\.' "$ent")" -eq 1 ]
             echo "::endgroup::"
           done
 
