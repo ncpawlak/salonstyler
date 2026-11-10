@@ -178,6 +178,18 @@ function PickStep({
     retry: false,
   });
 
+  // Services arrive in the owner's category order (#86); group adjacent runs.
+  const groups = useMemo(() => {
+    const out: { category: string; services: PublicService[] }[] = [];
+    for (const s of services) {
+      const category = s.category ?? 'Other';
+      const last = out[out.length - 1];
+      if (last?.category === category) last.services.push(s);
+      else out.push({ category, services: [s] });
+    }
+    return out;
+  }, [services]);
+
   if (!services.length) {
     return (
       <EmptyState
@@ -191,63 +203,70 @@ function PickStep({
   return (
     <View className="gap-2">
       <SectionHeader title="1. Choose a service" />
-      <View className="gap-2">
-        {services.map((s) => {
-          const selected = item?.serviceId === s.id;
-          return (
-            <Card key={s.id} className={selected ? 'gap-2 border-primary' : 'gap-2'}>
-              <View className="flex-row items-start justify-between gap-3">
-                <View className="flex-1 gap-0.5">
-                  <Text variant="headline">{s.name}</Text>
-                  <Text variant="footnote" tone="muted">
-                    {[
-                      duration(s.minutes),
-                      s.priceCents != null ? formatAmount(s.priceCents, currency) : null,
-                    ]
-                      .filter(Boolean)
-                      .join(' · ')}
-                  </Text>
-                  {s.description ? (
+      {groups.map((group) => (
+        <View key={group.category} className="gap-2">
+          {groups.length > 1 ? (
+            <Text variant="subhead" tone="muted" className="mt-2 font-semibold">
+              {group.category}
+            </Text>
+          ) : null}
+          {group.services.map((s) => {
+            const selected = item?.serviceId === s.id;
+            return (
+              <Card key={s.id} className={selected ? 'gap-2 border-primary' : 'gap-2'}>
+                <View className="flex-row items-start justify-between gap-3">
+                  <View className="flex-1 gap-0.5">
+                    <Text variant="headline">{s.name}</Text>
                     <Text variant="footnote" tone="muted">
-                      {s.description}
+                      {[
+                        duration(s.minutes),
+                        s.priceCents != null ? formatAmount(s.priceCents, currency) : null,
+                      ]
+                        .filter(Boolean)
+                        .join(' · ')}
                     </Text>
-                  ) : null}
-                </View>
-                <Button
-                  size="sm"
-                  variant={selected ? 'primary' : 'outline'}
-                  label={selected ? 'Selected' : 'Select'}
-                  accessibilityLabel={`Select ${s.name}`}
-                  onPress={() => setItem({ serviceId: s.id, variantId: null })}
-                />
-              </View>
-              {s.consultationRequired || s.newClientsOnly ? (
-                <View className="flex-row gap-2">
-                  {s.consultationRequired ? <Badge label="Request · stylist confirms" /> : null}
-                  {s.newClientsOnly ? <Badge label="New clients" tone="primary" /> : null}
-                </View>
-              ) : null}
-              {selected && s.variants.length ? (
-                <View className="flex-row flex-wrap gap-2">
-                  <Chip
-                    label="Standard"
-                    selected={!item?.variantId}
+                    {s.description ? (
+                      <Text variant="footnote" tone="muted">
+                        {s.description}
+                      </Text>
+                    ) : null}
+                  </View>
+                  <Button
+                    size="sm"
+                    variant={selected ? 'primary' : 'outline'}
+                    label={selected ? 'Selected' : 'Select'}
+                    accessibilityLabel={`Select ${s.name}`}
                     onPress={() => setItem({ serviceId: s.id, variantId: null })}
                   />
-                  {s.variants.map((v) => (
-                    <Chip
-                      key={v.id}
-                      label={`${v.name} · ${duration(v.minutes)}`}
-                      selected={item?.variantId === v.id}
-                      onPress={() => setItem({ serviceId: s.id, variantId: v.id })}
-                    />
-                  ))}
                 </View>
-              ) : null}
-            </Card>
-          );
-        })}
-      </View>
+                {s.consultationRequired || s.newClientsOnly ? (
+                  <View className="flex-row gap-2">
+                    {s.consultationRequired ? <Badge label="Request · stylist confirms" /> : null}
+                    {s.newClientsOnly ? <Badge label="New clients" tone="primary" /> : null}
+                  </View>
+                ) : null}
+                {selected && s.variants.length ? (
+                  <View className="flex-row flex-wrap gap-2">
+                    <Chip
+                      label="Standard"
+                      selected={!item?.variantId}
+                      onPress={() => setItem({ serviceId: s.id, variantId: null })}
+                    />
+                    {s.variants.map((v) => (
+                      <Chip
+                        key={v.id}
+                        label={`${v.name} · ${duration(v.minutes)}`}
+                        selected={item?.variantId === v.id}
+                        onPress={() => setItem({ serviceId: s.id, variantId: v.id })}
+                      />
+                    ))}
+                  </View>
+                ) : null}
+              </Card>
+            );
+          })}
+        </View>
+      ))}
 
       {item ? (
         <>
