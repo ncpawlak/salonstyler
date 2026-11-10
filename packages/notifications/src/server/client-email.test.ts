@@ -132,6 +132,15 @@ describe('renderClientEmail', () => {
     expect(cancelled.text).toContain('https://app.example/b/studio-b');
     expect(cancelled.text).not.toContain('/m/');
   });
+
+  it('links the forms page without an invite', () => {
+    const r = renderClientEmail(row({ kind: 'forms_request' }), opts);
+    expect(r.subject).toBe('Before your visit: a quick form from Studio <B>');
+    expect(r.text).toContain('Fill out your forms: https://app.example/f/');
+    expect(r.text).not.toContain('/m/');
+    expect(r.html).toContain('Studio &lt;B&gt;');
+    expect(r.ics).toBeUndefined();
+  });
 });
 
 describe('mime', () => {

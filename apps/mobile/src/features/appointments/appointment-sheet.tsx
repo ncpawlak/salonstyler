@@ -8,6 +8,7 @@ import { View } from 'react-native';
 import { Badge, Button, Sheet, Text, type BadgeTone } from '@/components/ui';
 import { useAppointmentDeposit } from '@/features/deposits/api';
 import { DepositCancel, DepositSummary } from '@/features/deposits/deposit-section';
+import { AppointmentForms } from '@/features/forms/appointment-forms';
 import { haptics } from '@/lib/haptics';
 
 import { formatPrice } from '../services/data';
@@ -151,6 +152,15 @@ function AppointmentDetails({
       {deposit ? (
         <DepositSummary deposit={deposit} clientPhone={appointment.client?.phone ?? null} />
       ) : null}
+
+      <AppointmentForms
+        appointmentId={appointment.id}
+        manageToken={appointment.manage_token}
+        client={appointment.client}
+        startsAt={appointment.starts_at}
+        timeZone={tz}
+        active={active}
+      />
 
       {active ? (
         <View className="gap-2">

@@ -1130,6 +1130,127 @@ export type Database = {
           },
         ];
       };
+      form_submissions: {
+        Row: {
+          answers: NonNullable<Json>;
+          appointment_id: string | null;
+          client_id: string;
+          fields: NonNullable<Json>;
+          id: string;
+          salon_id: string;
+          submitted_at: string;
+          template_id: string | null;
+          template_name: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          answers: NonNullable<Json>;
+          appointment_id?: string | null;
+          client_id: string;
+          fields: NonNullable<Json>;
+          id?: string;
+          salon_id: string;
+          submitted_at?: string;
+          template_id?: string | null;
+          template_name: string;
+        };
+        Update: {
+          answers?: NonNullable<Json>;
+          appointment_id?: string | null;
+          client_id?: string;
+          fields?: NonNullable<Json>;
+          id?: string;
+          salon_id?: string;
+          submitted_at?: string;
+          template_id?: string | null;
+          template_name?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'form_submissions_appointment_id_fkey';
+            columns: ['appointment_id'];
+            isOneToOne: false;
+            referencedRelation: 'appointments';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'form_submissions_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'client_summaries';
+            referencedColumns: ['client_id'];
+          },
+          {
+            foreignKeyName: 'form_submissions_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'clients';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'form_submissions_salon_id_fkey';
+            columns: ['salon_id'];
+            isOneToOne: false;
+            referencedRelation: 'salons';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'form_submissions_template_id_fkey';
+            columns: ['template_id'];
+            isOneToOne: false;
+            referencedRelation: 'form_templates';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      form_templates: {
+        Row: {
+          ask_new_clients: boolean;
+          created_at: string;
+          description: string | null;
+          fields: NonNullable<Json>;
+          id: string;
+          name: string;
+          salon_id: string;
+          starter_key: string | null;
+          updated_at: string;
+          valid_days: number | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          ask_new_clients?: boolean;
+          created_at?: string;
+          description?: string | null;
+          fields: NonNullable<Json>;
+          id?: string;
+          name: string;
+          salon_id: string;
+          starter_key?: string | null;
+          updated_at?: string;
+          valid_days?: number | null;
+        };
+        Update: {
+          ask_new_clients?: boolean;
+          created_at?: string;
+          description?: string | null;
+          fields?: NonNullable<Json>;
+          id?: string;
+          name?: string;
+          salon_id?: string;
+          starter_key?: string | null;
+          updated_at?: string;
+          valid_days?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'form_templates_salon_id_fkey';
+            columns: ['salon_id'];
+            isOneToOne: false;
+            referencedRelation: 'salons';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       inbox_bridges: {
         Row: {
           auto_reply: boolean;
@@ -1527,6 +1648,43 @@ export type Database = {
             columns: ['salon_id', 'service_id'];
             isOneToOne: false;
             referencedRelation: 'services';
+            referencedColumns: ['salon_id', 'id'];
+          },
+        ];
+      };
+      service_form_requirements: {
+        Row: {
+          created_at: string;
+          salon_id: string;
+          service_id: string;
+          template_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          salon_id: string;
+          service_id: string;
+          template_id: string;
+        };
+        Update: {
+          created_at?: string;
+          salon_id?: string;
+          service_id?: string;
+          template_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'service_form_requirements_salon_id_service_id_fkey';
+            columns: ['salon_id', 'service_id'];
+            isOneToOne: false;
+            referencedRelation: 'services';
+            referencedColumns: ['salon_id', 'id'];
+          },
+          {
+            foreignKeyName: 'service_form_requirements_salon_id_template_id_fkey';
+            columns: ['salon_id', 'template_id'];
+            isOneToOne: false;
+            referencedRelation: 'form_templates';
             referencedColumns: ['salon_id', 'id'];
           },
         ];
@@ -2013,6 +2171,11 @@ export type Database = {
           isSetofReturn: true;
         };
       };
+      appointment_forms: { Args: { p_appointment_id: string }; Returns: Json };
+      appointments_missing_forms: {
+        Args: { p_from: string; p_salon_id: string; p_to: string };
+        Returns: Json;
+      };
       book_appointment: {
         Args: {
           p_client_id: string;
@@ -2182,6 +2345,7 @@ export type Database = {
           timezone: string;
         }[];
       };
+      install_starter_forms: { Args: { p_salon_id: string }; Returns: number };
       is_salon_slug_available: { Args: { p_slug: string }; Returns: boolean };
       manage_booking: { Args: { p_token: string }; Returns: Json };
       mark_deposit_paid: {
@@ -2284,6 +2448,7 @@ export type Database = {
         };
       };
       payout_summary: { Args: { p_day?: string; p_salon_id: string }; Returns: Json };
+      public_appointment_forms: { Args: { p_token: string }; Returns: Json };
       public_booking_page: { Args: { p_slug: string }; Returns: Json };
       public_client_bookings: { Args: { p_salon_id: string; p_user_id: string }; Returns: Json };
       rebook_from_checkout: {
@@ -2583,6 +2748,10 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      submit_public_form: {
+        Args: { p_answers: Json; p_template_id: string; p_token: string };
+        Returns: Json;
+      };
       update_checkout: {
         Args: { p_checkout_id: string; p_items: Json; p_tip_cents?: number };
         Returns: {
@@ -2628,7 +2797,8 @@ export type Database = {
       checkout_item_kind: 'service' | 'addon' | 'retail' | 'custom';
       checkout_method: 'card' | 'cash' | 'other';
       checkout_status: 'open' | 'paid' | 'canceled';
-      client_email_kind: 'confirmation' | 'reminder' | 'rescheduled' | 'cancellation';
+      client_email_kind:
+        'confirmation' | 'reminder' | 'rescheduled' | 'cancellation' | 'forms_request';
       deposit_kind: 'none' | 'flat' | 'percent';
       deposit_status: 'pending' | 'paid' | 'refund_due' | 'refunded' | 'kept' | 'canceled';
       notification_kind:
@@ -2774,7 +2944,13 @@ export const Constants = {
       checkout_item_kind: ['service', 'addon', 'retail', 'custom'],
       checkout_method: ['card', 'cash', 'other'],
       checkout_status: ['open', 'paid', 'canceled'],
-      client_email_kind: ['confirmation', 'reminder', 'rescheduled', 'cancellation'],
+      client_email_kind: [
+        'confirmation',
+        'reminder',
+        'rescheduled',
+        'cancellation',
+        'forms_request',
+      ],
       deposit_kind: ['none', 'flat', 'percent'],
       deposit_status: ['pending', 'paid', 'refund_due', 'refunded', 'kept', 'canceled'],
       notification_kind: [

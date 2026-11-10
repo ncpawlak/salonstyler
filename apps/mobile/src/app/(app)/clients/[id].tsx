@@ -30,6 +30,7 @@ import {
   PhotosSection,
   VisitsSection,
 } from '@/features/clients/sections';
+import { ClientFormsSection } from '@/features/forms/client-forms-section';
 import { formatPrice, useServiceMenu } from '@/features/services/data';
 import { useCurrentSalon } from '@/providers/session-provider';
 import { useTheme } from '@/theme/theme-provider';
@@ -164,6 +165,7 @@ export default function ClientProfileScreen() {
           visits={visits.data}
         />
         <FormulasSection clientId={c.id} />
+        <ClientFormsSection clientId={c.id} timeZone={tz} />
         <NotesSection clientId={c.id} timeZone={tz} />
         <PhotosSection clientId={c.id} />
         <VisitsSection visits={visits.data} timeZone={tz} />

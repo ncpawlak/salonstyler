@@ -9,6 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Badge, Button, Card, Chip, EmptyState, Icon, SkeletonRow, Text } from '@/components/ui';
 import { formatDay, formatTime } from '@/features/appointments/format';
 import { manageBookingApi } from '@/features/client-self-service/api';
+import { FormsBanner } from '@/features/forms/forms-banner';
 
 const shiftDate = (date: string, days: number) =>
   formatLocalDate(addDays(parseLocalDate(date), days));
@@ -132,6 +133,8 @@ function ManageView({
           </Text>
         </View>
       </Card>
+
+      {booking.status !== 'cancelled' ? <FormsBanner token={token} /> : null}
 
       {notice ? (
         <Text

@@ -37,6 +37,7 @@ export function AskChairsideButton() {
     first === 'checkout' ||
     first === 'receipt' ||
     first === 'm' ||
+    first === 'f' ||
     first === 'pay' ||
     first === 'b'
   ) {

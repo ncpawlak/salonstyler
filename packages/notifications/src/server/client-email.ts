@@ -18,7 +18,8 @@ export { buildIcs } from './ics.ts';
 export { buildMime, EmailSendError, sendSmtp } from './smtp.ts';
 export type { EmailMessage, SmtpConfig, SmtpConn, SmtpConnector } from './smtp.ts';
 
-export type ClientEmailKind = 'confirmation' | 'reminder' | 'rescheduled' | 'cancellation';
+export type ClientEmailKind =
+  'confirmation' | 'reminder' | 'rescheduled' | 'cancellation' | 'forms_request';
 
 /** One row of public.claim_client_emails(). */
 export interface ClientEmailRow {
@@ -60,6 +61,11 @@ export interface RenderOptions {
 
 export function manageUrl(appUrl: string, token: string): string {
   return `${appUrl.replace(/\/+$/, '')}/m/${encodeURIComponent(token)}`;
+}
+
+/** The client's intake & consent forms for this appointment (#45). */
+export function formsUrl(appUrl: string, token: string): string {
+  return `${appUrl.replace(/\/+$/, '')}/f/${encodeURIComponent(token)}`;
 }
 
 export function bookingUrl(appUrl: string, slug: string): string {
@@ -140,9 +146,15 @@ export function renderClientEmail(row: ClientEmailRow, options: RenderOptions): 
       action = { label: 'Book another time', url: bookingUrl(options.appUrl, row.salon.slug) };
       note = null;
       break;
+    case 'forms_request':
+      subject = `Before your visit: a quick form from ${salon}`;
+      lead = `Please fill out and sign ${salon}'s form before your appointment. It takes a couple of minutes on your phone.`;
+      action = { label: 'Fill out your forms', url: formsUrl(options.appUrl, row.manageToken) };
+      note = null;
+      break;
   }
 
-  if (row.kind !== 'reminder') {
+  if (row.kind !== 'reminder' && row.kind !== 'forms_request') {
     const method = row.kind === 'cancellation' ? 'CANCEL' : 'REQUEST';
     ics = {
       method,
