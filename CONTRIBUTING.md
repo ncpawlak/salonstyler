@@ -7,7 +7,7 @@ Features land as separate PRs, often in parallel. The repo is laid out so a new 
 | You're adding | Do this | Don't |
 |---|---|---|
 | A migration | New file in `supabase/migrations/` with a fresh timestamp, plus a new pgTAP file in `supabase/tests/database/`. Then `npm run gen:types --workspace @chairside/db` and commit `database.types.ts`. | Edit an existing migration. |
-| Database queries | New module `packages/db/src/<feature>.ts`, imported as `@chairside/db/<feature>`. If an Edge Function uses it, add one line to that function's `deno.json`. | Add exports to `packages/db/src/index.ts` (client and shared types only). |
+| Database queries | New module `packages/db/src/<feature>.ts`, imported as `@chairside/db/<feature>`. If any Edge Function reaches it (even transitively, e.g. via `packages/ai`), add one line to that function's `deno.json`; `npm run check:edge-imports -- --fix` does this for you and CI fails on gaps. | Add exports to `packages/db/src/index.ts` (client and shared types only). |
 | A signed-in screen | New file under `apps/mobile/src/app/(app)/`. The URL is the path without `(app)`. | Edit the root `_layout.tsx`. Only touch `(app)/_layout.tsx` if the screen needs options such as `presentation: 'modal'`. |
 | A public screen | New file at the top level of `apps/mobile/src/app/` (like `b/`, `receipt/`). | Put it in `(app)/`, which requires sign-in. |
 | A Settings row | New file in `apps/mobile/src/features/settings/rows/` exporting `defineSettingsRow({ section, order, ... })`. Pick an unused `order` (they're spaced by 10). | Edit the Settings screen. |
