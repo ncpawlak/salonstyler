@@ -6,7 +6,7 @@ import { useCurrentSalon } from '@/providers/session-provider';
 
 export { resolveMenuCombo } from './menu';
 
-const menuKey = (salonId: string) => ['service-menu', salonId] as const;
+export const menuKey = (salonId: string) => ['service-menu', salonId] as const;
 
 /** The current salon's menu (services, combos, add-ons). New salons start with the starter menu. */
 export function useServiceMenu() {
