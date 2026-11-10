@@ -126,7 +126,7 @@ Deno.serve(async (req) => {
           to: name ? `${name} <${message.to}>` : message.to,
           ...rendered,
         });
-        return { providerId: id ?? null };
+        return { providerId: id ?? undefined };
       },
     });
   }
