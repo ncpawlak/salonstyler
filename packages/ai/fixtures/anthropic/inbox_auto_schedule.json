@@ -1,0 +1,96 @@
+{
+  "provider": "anthropic",
+  "scenario": "inbox_auto_schedule",
+  "model": "claude-haiku-4-5",
+  "source": "hand-authored from the provider API reference (no live call); request captured from the adapter",
+  "request": {
+    "method": "POST",
+    "url": "https://api.anthropic.com/v1/messages",
+    "body": {
+      "model": "claude-haiku-4-5",
+      "max_tokens": 200,
+      "system": "You read a client's text to Studio K, a hair salon, and record when they can come in by calling submit_window.\nToday is Tue, Dec 1 (2026-12-01), time zone America/Chicago.\nResolve relative days (\"tomorrow\", \"next week\") from today.\nThey are moving their appointment on Thu, Dec 3 · 11:00 AM.\nYou only interpret the message. Never suggest or choose a time; the scheduling engine does that.",
+      "messages": [
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "any chance we can move my appointment to next week? Mornings are best"
+            }
+          ]
+        }
+      ],
+      "temperature": 0,
+      "tools": [
+        {
+          "name": "submit_window",
+          "description": "Record when the client can come in. Call exactly once.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "dateFrom": {
+                "type": ["string", "null"],
+                "description": "First day that works, YYYY-MM-DD. \"next week\" is next Monday; a single day is both dateFrom and dateTo. Null if they give no days."
+              },
+              "dateTo": {
+                "type": ["string", "null"],
+                "description": "Last day that works, YYYY-MM-DD (inclusive). \"next week\" ends on Sunday."
+              },
+              "weekdays": {
+                "type": "array",
+                "description": "Days of the week they can do, 0 = Sunday … 6 = Saturday (\"mondays\" = [1], \"weekends\" = [0, 6]). Empty if any day.",
+                "items": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 6
+                }
+              },
+              "timeOfDay": {
+                "type": ["string", "null"],
+                "enum": ["morning", "afternoon", "evening", null]
+              },
+              "time": {
+                "type": ["string", "null"],
+                "description": "A clock time they name, as 24-hour HH:MM (\"2pm\" is \"14:00\"), or null."
+              }
+            },
+            "required": ["dateFrom", "dateTo", "weekdays", "timeOfDay", "time"]
+          }
+        }
+      ]
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "id": "msg_01AutoSched4",
+      "type": "message",
+      "role": "assistant",
+      "model": "claude-haiku-4-5-20251001",
+      "content": [
+        {
+          "type": "tool_use",
+          "id": "toolu_01AutoSched4",
+          "name": "submit_window",
+          "input": {
+            "dateFrom": "2026-12-07",
+            "dateTo": "2026-12-13",
+            "weekdays": [],
+            "timeOfDay": "morning",
+            "time": null
+          }
+        }
+      ],
+      "stop_reason": "tool_use",
+      "stop_sequence": null,
+      "usage": {
+        "input_tokens": 512,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "output_tokens": 58,
+        "service_tier": "standard"
+      }
+    }
+  }
+}

@@ -1,4 +1,5 @@
 import { addDays, parseLocalDate, toSalonDate, zonedToUtc } from '@chairside/core';
+import { defaultStart } from '@chairside/core/scheduling';
 import { getAppointment, type AppointmentWithDetails } from '@chairside/db/appointments';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
@@ -54,6 +55,7 @@ export default function TodayScreen() {
   const workHours = useWorkHours(salon.id);
   const hours = workHours.data?.hours;
   const grid = workHours.data?.rules.slotGridMinutes ?? 15;
+  const notice = workHours.data?.rules.minNoticeMinutes ?? 0;
   const tz = hours?.timeZone ?? salon.timezone;
   const now = useNow(15_000);
   const today = toSalonDate(now, tz);
@@ -105,10 +107,9 @@ export default function TodayScreen() {
         .then((appt) => appt && setSelected(appt))
         .catch(() => {});
     } else if (params.bookClient) {
-      const gridMs = grid * 60_000;
       const target: BookingTarget = {
         kind: 'new',
-        start: Math.ceil(Date.now() / gridMs) * gridMs,
+        start: defaultStart({ hours, now: Date.now(), leadTimeMinutes: notice, gridMinutes: grid }),
         client: {
           id: params.bookClient,
           name: params.bookClientName ?? '',
@@ -126,6 +127,7 @@ export default function TodayScreen() {
   }, [
     hours,
     grid,
+    notice,
     params.appointment,
     params.bookClient,
     params.bookClientName,
@@ -133,8 +135,12 @@ export default function TodayScreen() {
   ]);
 
   const book = () => {
+    // The next open slot after minimum notice (today, or the next working day).
     const gridMs = grid * 60_000;
-    setBooking({ kind: 'new', start: Math.ceil(Date.now() / gridMs) * gridMs });
+    const start = hours
+      ? defaultStart({ hours, now: Date.now(), leadTimeMinutes: notice, gridMinutes: grid })
+      : Math.ceil(Date.now() / gridMs) * gridMs;
+    setBooking({ kind: 'new', start });
   };
 
   const decide = (appt: AppointmentWithDetails, decision: RequestDecision) => {

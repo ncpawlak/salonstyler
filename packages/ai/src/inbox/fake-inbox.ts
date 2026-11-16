@@ -1,6 +1,7 @@
 /** Test double for the inbox port: an in-memory salon plus captured requests, offers and replies. */
 import { createFakePort } from '../assistant/fake-salon.ts';
-import type { CaptureInput, InboxPort, QueuedReply } from './handler.ts';
+import type { AutoSchedulePort, StoredCapturedRequest } from './auto-schedule.ts';
+import type { CaptureInput, QueuedReply } from './handler.ts';
 import { phonesMatch } from './text.ts';
 
 export function fakeInboxPort() {
@@ -8,14 +9,24 @@ export function fakeInboxPort() {
   const captured: (CaptureInput & { id: string; appointmentId: string | null })[] = [];
   const offers: { phone: string; requestId: string; appointmentId: string; sentAt: string }[] = [];
   const replies: (QueuedReply & { status: string; body?: string; source?: string })[] = [];
-  const inbox: InboxPort & {
+  // Requests as stored, for Auto-Schedule tests.
+  const stored: StoredCapturedRequest[] = [];
+  const rebookIntervals = new Map<string, number | null>();
+  const inbox: AutoSchedulePort & {
     captured: typeof captured;
+    stored: typeof stored;
+    rebookIntervals: typeof rebookIntervals;
     base: typeof port;
     offers: typeof offers;
     replies: typeof replies;
   } = {
     base: port,
     captured,
+    stored,
+    rebookIntervals,
+    clientOverrides: port.clientOverrides,
+    serviceRebookIntervals: async () => rebookIntervals,
+    getCapturedRequest: async (id) => stored.find((r) => r.id === id) ?? null,
     offers,
     replies,
     getSchedule: port.getSchedule,
