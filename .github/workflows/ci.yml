@@ -24,6 +24,26 @@ jobs:
       - run: npm run lint
       - run: npm run format:check
       - run: npm test
+      - run: npm run check:edge-imports
+
+  edge-functions:
+    name: Edge Functions (deno check)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: deno check every function entrypoint
+        run: |
+          status=0
+          for dir in supabase/functions/*/; do
+            [ -f "$dir/index.ts" ] || continue
+            echo "::group::$dir"
+            (cd "$dir" && deno check --quiet index.ts) || { echo "::error file=${dir}index.ts::deno check failed"; status=1; }
+            echo "::endgroup::"
+          done
+          exit $status
 
   database:
     name: Database tests and generated types

@@ -8,7 +8,7 @@
 // The 64-hex token is the only credential and unlocks exactly one appointment. Every action is
 // rate limited per IP, and changes per token too. Responses never include other clients or
 // internal ids.
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 import { handleManageBookingRequest } from '@chairside/ai/manage-booking/handler.ts';
 import { createSupabaseManageBookingPort } from '@chairside/ai/manage-booking/supabase-port.ts';
@@ -30,7 +30,7 @@ function clientIp(req: Request): string {
  * shown to the client: the salon still sees "Refund due" and can refund from the appointment.
  */
 async function refundDepositIfDue(
-  serviceClient: ReturnType<typeof createClient>,
+  serviceClient: SupabaseClient,
   supabaseUrl: string,
   serviceKey: string,
   token: string,

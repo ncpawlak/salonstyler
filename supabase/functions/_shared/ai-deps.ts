@@ -1,6 +1,6 @@
 // Shared wiring for the AI Edge Functions: the caller's user-scoped client (RLS), the service
 // client (Vault key + usage metering), and the dependencies the AI handlers need.
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 import type { AiServiceDeps } from '@chairside/ai/server/handler.ts';
 
@@ -22,7 +22,7 @@ export const error = (status: number, code: string, message: string) =>
 
 export interface AiRequestContext {
   /** Carries the caller's JWT: every query is subject to RLS. */
-  userClient: ReturnType<typeof createClient>;
+  userClient: SupabaseClient;
   userId: string;
   deps: AiServiceDeps;
 }
@@ -79,7 +79,7 @@ export async function aiRequestContext(req: Request): Promise<AiRequestContext |
  * with no signed-in user (the inbox bridge).
  */
 export function serviceAiDeps(
-  serviceClient: ReturnType<typeof createClient>,
+  serviceClient: SupabaseClient,
   userId: string | null,
 ): Pick<AiServiceDeps, 'loadConfig' | 'tokensUsedThisMonth' | 'recordUsage'> {
   return {

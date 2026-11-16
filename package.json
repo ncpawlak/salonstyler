@@ -12,7 +12,8 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "npm run test --workspaces --if-present"
+    "test": "npm run test --workspaces --if-present",
+    "check:edge-imports": "node scripts/check-edge-import-maps.mjs"
   },
   "overrides": {
     "react-native-gesture-handler": "~3.3.0"

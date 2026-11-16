@@ -4,11 +4,14 @@
     "zod": "npm:zod@^4.6.7",
     "@chairside/ai/": "../../../packages/ai/src/",
     "@chairside/core": "../../../packages/core/src/index.ts",
+    "@chairside/core/reports": "../../../packages/core/src/reports/index.ts",
     "@chairside/db": "../../../packages/db/src/index.ts",
     "@chairside/db/appointments": "../../../packages/db/src/appointments.ts",
     "@chairside/db/clients": "../../../packages/db/src/clients.ts",
     "@chairside/db/inbox": "../../../packages/db/src/inbox.ts",
+    "@chairside/db/inventory": "../../../packages/db/src/inventory.ts",
     "@chairside/db/replies": "../../../packages/db/src/replies.ts",
+    "@chairside/db/reports": "../../../packages/db/src/reports.ts",
     "@chairside/db/services": "../../../packages/db/src/services.ts",
     "@chairside/db/work-hours": "../../../packages/db/src/work-hours.ts"
   }
