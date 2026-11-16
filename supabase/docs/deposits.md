@@ -19,7 +19,7 @@ All of these must be true. Otherwise booking works exactly as before.
 public page /b/<slug> ── book_public_appointment ──▶ appointment `held` 45 min + deposit `pending`
 text request ── stylist approves ──▶ appointment `held` (settings.hold_expiry_hours) + deposit `pending`
 client pays at /pay/<token> (Stripe Checkout, card saved)
-  ──▶ mark_deposit_paid (deposits fn `status`, or stripe-webhook checkout.session.completed)
+  ──▶ mark_deposit_paid (deposits fn `status`, or stripe-webhook payment_intent.succeeded with metadata.purpose = deposit)
   ──▶ deposit `paid`, appointment → `confirmed` (or `requested` when the salon reviews bookings)
 checkout ──▶ the deposit's payments row (appointment_id) is credited against the bill
 ```
@@ -81,8 +81,8 @@ The `manage-booking` function then asks `deposits` to refund a `refund_due` depo
 Environment:
 
 - `STRIPE_SECRET_KEY`: without it the pay page says the salon can't take card payments online.
-- `PUBLIC_WEB_URL` (optional): when set, Checkout may only return to this origin.
-- The `stripe-webhook` function records `checkout.session.completed` for deposits. Subscribe the Connect webhook to that event.
+- `PUBLIC_WEB_URL` (optional): when set, Checkout may only return to this origin. `npm run hosted:secrets` sets it to `PUBLIC_APP_URL` by default.
+- The `stripe-webhook` function marks a deposit paid from `payment_intent.succeeded` when the PaymentIntent has `metadata.purpose = deposit`. The Checkout runs on the salon's connected account, so this arrives through the **Connected accounts** webhook destination ([payments.md](payments.md) step 9). No extra event is needed.
 
 ## Testing with Stripe test mode
 
