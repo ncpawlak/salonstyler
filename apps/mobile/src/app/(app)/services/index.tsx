@@ -13,6 +13,7 @@ import {
   SkeletonRow,
   Text,
 } from '@/components/ui';
+import { menuCategories } from '@/features/services/category-utils';
 import { COLOR_HEX } from '@/features/services/colors';
 import { formatPrice, resolveMenuCombo, useServiceMenu } from '@/features/services/data';
 import { SegmentTimeline } from '@/features/services/timeline';
@@ -20,7 +21,9 @@ import { SegmentTimeline } from '@/features/services/timeline';
 export default function ServicesScreen() {
   const { data: menu, error, isPending, canEdit, refetch } = useServiceMenu();
   const services = menu?.services.filter((s) => !s.archivedAt) ?? [];
-  const categories = [...new Set(services.map((s) => s.category))];
+  const categories = menu
+    ? menuCategories(menu).filter((c) => services.some((s) => s.category === c))
+    : [];
   const combos = menu?.combos.filter((c) => !c.archivedAt) ?? [];
   const addons = menu?.addons.filter((a) => !a.archivedAt) ?? [];
 
@@ -29,13 +32,23 @@ export default function ServicesScreen() {
       title="Services"
       right={
         canEdit ? (
-          <Button
-            size="sm"
-            icon="add"
-            label="New"
-            accessibilityLabel="New service"
-            onPress={() => router.push('/services/new')}
-          />
+          <View className="flex-row gap-2">
+            <Button
+              size="sm"
+              variant="secondary"
+              icon="folder-outline"
+              label="Categories"
+              accessibilityLabel="Edit categories"
+              onPress={() => router.push('/services/categories')}
+            />
+            <Button
+              size="sm"
+              icon="add"
+              label="New"
+              accessibilityLabel="New service"
+              onPress={() => router.push('/services/new')}
+            />
+          </View>
         ) : null
       }
     >

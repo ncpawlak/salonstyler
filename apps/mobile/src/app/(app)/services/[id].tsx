@@ -2,14 +2,13 @@ import {
   HAIR_LENGTH_VARIANTS,
   resolveService,
   SERVICE_COLOR_TAGS,
-  STARTER_CATEGORIES,
   formatDuration,
   type ServiceDefinition,
   type ServiceSegment,
 } from '@chairside/core';
-import type { MenuService } from '@chairside/db/services';
+import type { MenuService, ServiceMenu } from '@chairside/db/services';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, Switch, View } from 'react-native';
 
 import { DetailScreen } from '@/components/shell/screen';
@@ -27,7 +26,10 @@ import {
 } from '@/components/ui';
 import { RebookIntervalField } from '@/features/rebook/interval-field';
 import { COLOR_HEX } from '@/features/services/colors';
+import { canonicalCategory, menuCategories } from '@/features/services/category-utils';
 import { useSaveService, useServiceMenu } from '@/features/services/data';
+import { segmentLabels } from '@/features/services/labels';
+import { SegmentLabelField } from '@/features/services/segment-label-field';
 import { SegmentTimeline } from '@/features/services/timeline';
 import { useTheme } from '@/theme/theme-provider';
 
@@ -149,12 +151,43 @@ export default function ServiceEditorScreen() {
       </DetailScreen>
     );
   }
-  return <ServiceEditor key={id} existing={existing} canEdit={canEdit} />;
+  return <ServiceEditor key={id} existing={existing} menu={menu} canEdit={canEdit} />;
 }
 
-function ServiceEditor({ existing, canEdit }: { existing?: MenuService; canEdit: boolean }) {
+function ServiceEditor({
+  existing,
+  menu,
+  canEdit,
+}: {
+  existing?: MenuService;
+  menu: ServiceMenu;
+  canEdit: boolean;
+}) {
   const save = useSaveService();
-  const [draft, setDraft] = useState<ServiceDefinition>(() => existing ?? BLANK);
+  const categories = useMemo(() => menuCategories(menu), [menu]);
+  const labels = useMemo(() => segmentLabels(menu), [menu]);
+  const [draft, setDraft] = useState<ServiceDefinition>(
+    () => existing ?? { ...BLANK, category: categories[0] ?? BLANK.category },
+  );
+  const [newCategory, setNewCategory] = useState<string | null>(null);
+
+  // A rename on the categories screen moves this service too; follow it.
+  const savedCategory = existing?.category;
+  const lastSavedCategory = useRef(savedCategory);
+  useEffect(() => {
+    const before = lastSavedCategory.current;
+    lastSavedCategory.current = savedCategory;
+    if (savedCategory && before !== savedCategory) {
+      setDraft((d) => (d.category === before ? { ...d, category: savedCategory } : d));
+    }
+  }, [savedCategory]);
+
+  const addCategory = () => {
+    const name = canonicalCategory(categories, newCategory ?? '');
+    if (!name) return;
+    set({ category: name });
+    setNewCategory(null);
+  };
   const [priceText, setPriceText] = useState(
     draft.priceCents == null ? '' : String(draft.priceCents / 100),
   );
@@ -259,10 +292,10 @@ function ServiceEditor({ existing, canEdit }: { existing?: MenuService; canEdit:
                 />
               ) : null}
             </View>
-            <Input
+            <SegmentLabelField
               value={seg.label ?? ''}
-              onChangeText={(label) => setSegment(i, { label: label || undefined })}
-              placeholder="Label (e.g. Apply)"
+              onChange={(label) => setSegment(i, { label: label || undefined })}
+              labels={labels}
               accessibilityLabel={`Segment ${i + 1} label`}
               editable={canEdit}
             />
@@ -300,17 +333,51 @@ function ServiceEditor({ existing, canEdit }: { existing?: MenuService; canEdit:
         </View>
       </Card>
 
-      <SectionHeader title="Category" />
+      <SectionHeader
+        title="Category"
+        action={
+          canEdit ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              label="Edit categories"
+              onPress={() => router.push('/services/categories')}
+            />
+          ) : undefined
+        }
+      />
       <View className="flex-row flex-wrap gap-2">
-        {STARTER_CATEGORIES.map((c) => (
-          <Chip
-            key={c}
-            label={c}
-            selected={draft.category === c}
-            onPress={canEdit ? () => set({ category: c }) : undefined}
-          />
-        ))}
+        {(categories.includes(draft.category) ? categories : [...categories, draft.category]).map(
+          (c) => (
+            <Chip
+              key={c}
+              label={c}
+              selected={draft.category === c}
+              onPress={canEdit ? () => set({ category: c }) : undefined}
+            />
+          ),
+        )}
+        {canEdit && newCategory === null ? (
+          <Chip label="New category" icon="add" onPress={() => setNewCategory('')} />
+        ) : null}
       </View>
+      {newCategory !== null ? (
+        <View className="mt-2 flex-row items-end gap-2">
+          <Input
+            className="flex-1"
+            value={newCategory}
+            onChangeText={setNewCategory}
+            placeholder="e.g. Bridal"
+            accessibilityLabel="New category name"
+            maxLength={40}
+            autoFocus
+            returnKeyType="done"
+            onSubmitEditing={() => addCategory()}
+          />
+          <Button label="Add" disabled={!newCategory.trim()} onPress={() => addCategory()} />
+          <Button variant="ghost" label="Cancel" onPress={() => setNewCategory(null)} />
+        </View>
+      ) : null}
 
       <SectionHeader title="Color" />
       <View className="flex-row flex-wrap gap-3">

@@ -7,6 +7,7 @@ import type {
 } from '@chairside/core';
 
 import type { ChairsideClient } from './index.ts';
+import { listServiceCategories, orderCategories } from './service-categories.ts';
 
 /** A saved (non-combo) service. */
 export interface MenuService extends ServiceDefinition {
@@ -41,6 +42,11 @@ export interface ServiceMenu {
   services: MenuService[];
   combos: MenuCombo[];
   addons: MenuAddon[];
+  /**
+   * Category names in the salon's display order (saved order, then any other used category).
+   * Filled by listServiceMenu; absent on hand-built menus.
+   */
+  categories?: string[];
 }
 
 const byPosition = <T extends { position: number }>(a: T, b: T) => a.position - b.position;
@@ -61,7 +67,7 @@ export async function listServiceMenu(
   client: ChairsideClient,
   salonId: string,
 ): Promise<ServiceMenu> {
-  const [services, addons] = await Promise.all([
+  const [services, addons, categories] = await Promise.all([
     client
       .from('services')
       .select(
@@ -79,6 +85,7 @@ export async function listServiceMenu(
       )
       .eq('salon_id', salonId)
       .order('position'),
+    listServiceCategories(client, salonId),
   ]);
   if (services.error) throw services.error;
   if (addons.error) throw addons.error;
@@ -126,6 +133,10 @@ export async function listServiceMenu(
     archivedAt: a.archived_at,
     segments: toSegments(a.segments),
   }));
+  menu.categories = orderCategories(
+    categories,
+    services.data.map((s) => s.category),
+  );
   return menu;
 }
 

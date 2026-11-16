@@ -77,7 +77,16 @@ export function publicMenu(menu: ServiceMenu): PublicService[] {
       return [];
     }
   });
-  return [...services, ...combos];
+  // The owner's category order (#86); stable within a category so menu positions still apply.
+  const order = menu.categories ?? [];
+  const rank = (c: string | null) => {
+    const i = c == null ? -1 : order.indexOf(c);
+    return i === -1 ? order.length : i;
+  };
+  return [...services, ...combos]
+    .map((s, i) => ({ s, i }))
+    .sort((a, b) => rank(a.s.category) - rank(b.s.category) || a.i - b.i)
+    .map(({ s }) => s);
 }
 
 /**

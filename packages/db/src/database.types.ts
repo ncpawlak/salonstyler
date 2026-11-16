@@ -1993,6 +1993,42 @@ export type Database = {
           },
         ];
       };
+      service_categories: {
+        Row: {
+          created_at: string;
+          id: string;
+          name: string;
+          position: number;
+          salon_id: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          id?: string;
+          name: string;
+          position?: number;
+          salon_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          name?: string;
+          position?: number;
+          salon_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'service_categories_salon_id_fkey';
+            columns: ['salon_id'];
+            isOneToOne: false;
+            referencedRelation: 'salons';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       service_combo_items: {
         Row: {
           combo_id: string;
@@ -3032,6 +3068,7 @@ export type Database = {
         Args: { p_offer_id: string; p_segments?: Json; p_token: string };
         Returns: Json;
       };
+      add_service_category: { Args: { p_name: string; p_salon_id: string }; Returns: undefined };
       add_waitlist_entry: {
         Args: {
           p_client_id: string;
@@ -3335,6 +3372,10 @@ export type Database = {
         };
       };
       delete_ai_provider_config: { Args: { p_salon_id: string }; Returns: undefined };
+      delete_service_category: {
+        Args: { p_move_to?: string; p_name: string; p_salon_id: string };
+        Returns: undefined;
+      };
       deposit_pay_page: { Args: { p_token: string }; Returns: Json };
       dismiss_marketing_message: {
         Args: { p_message_id: string };
@@ -3613,6 +3654,14 @@ export type Database = {
       };
       reminder_queue: { Args: { p_day?: string; p_salon_id: string }; Returns: Json };
       remove_waitlist_entry: { Args: { p_entry_id: string }; Returns: undefined };
+      rename_service_category: {
+        Args: { p_from: string; p_salon_id: string; p_to: string };
+        Returns: undefined;
+      };
+      reorder_service_categories: {
+        Args: { p_names: string[]; p_salon_id: string };
+        Returns: undefined;
+      };
       reschedule_appointment: {
         Args: {
           p_appointment_id: string;

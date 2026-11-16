@@ -149,6 +149,13 @@ describe('publicMenu', () => {
     };
     expect(publicMenu(archived).map((s) => s.id)).toEqual([COLOR]);
   });
+
+  it("follows the owner's category order", () => {
+    expect(publicMenu({ ...menu, categories: ['Color', 'Cuts'] }).map((s) => s.name)).toEqual([
+      'All-over Color',
+      "Women's Haircut",
+    ]);
+  });
 });
 
 describe('publicSlots', () => {
