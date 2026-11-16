@@ -24,6 +24,7 @@ import {
   Text,
 } from '@/components/ui';
 import { assistantApi } from '@/features/assistant/api';
+import { latestDrafts, slotStates } from '@/features/assistant/slot-state';
 import { StockDraftCardView } from '@/features/inventory/stock-draft-card';
 import { haptics } from '@/lib/haptics';
 import { supabase } from '@/lib/supabase';
@@ -148,6 +149,7 @@ export default function AssistantScreen() {
         text: `Held ${draft.label} for ${draft.client.name}. Confirm to book it.`,
         cards: [draft],
       });
+      await queryClient.invalidateQueries();
     });
 
   const confirm = (card: DraftCard) =>
@@ -168,6 +170,7 @@ export default function AssistantScreen() {
         text: 'Okay, I released that hold. Pick another time above, or tell me what works.',
         cards: [],
       });
+      await queryClient.invalidateQueries();
     });
 
   const addClient = (name: string) =>
@@ -177,6 +180,8 @@ export default function AssistantScreen() {
       append({ id: id(), role: 'assistant', text: `Added ${client.name} as a client.`, cards: [] });
       if (lastUserText) submit(lastUserText);
     });
+
+  const drafts = latestDrafts(entries.flatMap((e) => (e.role === 'assistant' ? e.cards : [])));
 
   const showSetup = notConfigured || (status.data && !status.data.configured);
 
@@ -248,6 +253,7 @@ export default function AssistantScreen() {
                   key={entry.id}
                   entry={entry}
                   busyCard={busyCard}
+                  drafts={drafts}
                   addedClients={addedClients}
                   onPickSlot={pickSlot}
                   onConfirm={confirm}
@@ -301,6 +307,7 @@ const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 function EntryView({
   entry,
   busyCard,
+  drafts,
   addedClients,
   onPickSlot,
   onConfirm,
@@ -311,6 +318,7 @@ function EntryView({
 }: {
   entry: Entry;
   busyCard: string | null;
+  drafts: DraftCard[];
   addedClients: string[];
   onPickSlot: (card: SlotsCard, slot: SlotOption) => void;
   onConfirm: (card: DraftCard) => void;
@@ -355,7 +363,15 @@ function EntryView({
       {entry.cards.map((card, i) => {
         switch (card.type) {
           case 'slots':
-            return <SlotsCardView key={i} card={card} busy={busyCard} onPick={onPickSlot} />;
+            return (
+              <SlotsCardView
+                key={i}
+                card={card}
+                drafts={drafts}
+                busy={busyCard}
+                onPick={onPickSlot}
+              />
+            );
           case 'draft':
             return (
               <DraftCardView
@@ -447,16 +463,21 @@ function RunningLateCardView({ card }: { card: RunningLateCard }) {
   );
 }
 
+const SLOT_BADGE = { held: 'Held', booked: 'Booked' } as const;
+
 function SlotsCardView({
   card,
+  drafts,
   busy,
   onPick,
 }: {
   card: SlotsCard;
+  drafts: DraftCard[];
   busy: string | null;
   onPick: (card: SlotsCard, slot: SlotOption) => void;
 }) {
   const days = card.days.filter((d) => d.slots.length > 0 || d.date === card.requestedDate);
+  const states = slotStates(card, drafts);
   return (
     <Card className="gap-3">
       <View className="gap-0.5">
@@ -475,14 +496,32 @@ function SlotsCardView({
           </View>
           {day.slots.length ? (
             <View className="flex-row flex-wrap gap-2">
-              {day.slots.map((slot) => (
-                <Chip
-                  key={slot.start}
-                  label={busy === slot.start ? 'Holding…' : slot.time}
-                  icon={slot.requiresApproval ? 'alert-circle-outline' : undefined}
-                  onPress={card.client && !busy ? () => onPick(card, slot) : undefined}
-                />
-              ))}
+              {day.slots.map((slot) => {
+                const state = states.get(slot.start) ?? 'open';
+                if (state === 'held' || state === 'booked') {
+                  return (
+                    <Chip
+                      key={slot.start}
+                      label={`${slot.time} · ${SLOT_BADGE[state]}`}
+                      icon={state === 'booked' ? 'checkmark' : 'time-outline'}
+                      selected
+                    />
+                  );
+                }
+                return (
+                  <Chip
+                    key={slot.start}
+                    label={busy === slot.start ? 'Holding…' : slot.time}
+                    icon={slot.requiresApproval ? 'alert-circle-outline' : undefined}
+                    className={state === 'taken' ? 'opacity-40' : undefined}
+                    onPress={
+                      card.client && !busy && state === 'open'
+                        ? () => onPick(card, slot)
+                        : undefined
+                    }
+                  />
+                );
+              })}
             </View>
           ) : (
             <Text variant="footnote" tone="muted">
