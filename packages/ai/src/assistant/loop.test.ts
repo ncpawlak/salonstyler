@@ -176,6 +176,8 @@ describe('DemoAssistantProvider', () => {
     expect(parseDemoDate('12/18', '2026-12-01')).toBe('2026-12-18');
     expect(parseDemoDate('tomorrow', '2026-12-01')).toBe('2026-12-02');
     expect(parseDemoDate("what's on friday", '2026-12-01')).toBe('2026-12-04');
+    expect(parseDemoDate('on the 18th', '2026-12-01')).toBe('2026-12-18');
+    expect(parseDemoDate('the 3rd', '2026-12-10')).toBe('2027-01-03');
     expect(parseDemoDate('hello', '2026-12-01')).toBeNull();
   });
 

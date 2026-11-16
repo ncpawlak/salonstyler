@@ -186,6 +186,21 @@ describe('find_slots', () => {
     expect((out.card as SlotsCard).days.every((d) => Math.abs(d.dayOffset) <= 3)).toBe(true);
   });
 
+  it('says a past date has passed and a full today has no openings left, not "fully booked"', async () => {
+    const past = await runTool(ctx, 'find_slots', { clientId: KARINA, date: '2026-11-27' });
+    expect(past.result).toMatchObject({ requestedNote: 'Fri, Nov 27 has already passed.' });
+
+    port.appointments.push(
+      appointment(MARIA, [
+        { kind: 'busy', start: '2026-12-01T15:00:00Z', end: '2026-12-01T23:00:00Z' },
+      ]),
+    );
+    const today = await runTool(ctx, 'find_slots', { clientId: KARINA, date: '2026-12-01' });
+    expect(today.result).toMatchObject({
+      requestedNote: 'No openings left today for this service.',
+    });
+  });
+
   it('rejects malformed arguments without throwing', async () => {
     const out = await runTool(ctx, 'find_slots', { date: 'December 18' });
     expect(out.ok).toBe(false);

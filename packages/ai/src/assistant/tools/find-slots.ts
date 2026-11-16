@@ -1,4 +1,10 @@
-import { findSlots, getWorkingBlocks, type SlotCandidate, type TimeOfDay } from '@chairside/core';
+import {
+  findSlots,
+  getWorkingBlocks,
+  toSalonDate,
+  type SlotCandidate,
+  type TimeOfDay,
+} from '@chairside/core';
 import { z } from 'zod';
 
 import {
@@ -151,10 +157,15 @@ export default defineTool({
     let requestedNote: string | undefined;
     if (requested.slots.length === 0) {
       const blocks = getWorkingBlocks(schedule.hours, args.date);
+      const today = toSalonDate(ctx.now(), timeZone);
       requestedNote =
-        blocks.status === 'closed'
-          ? `Closed on ${requested.label}.`
-          : `${requested.label} is fully booked for this service.`;
+        args.date < today
+          ? `${requested.label} has already passed.`
+          : blocks.status === 'closed'
+            ? `Closed on ${requested.label}.`
+            : args.date === today
+              ? `No openings left today for this service.`
+              : `${requested.label} is fully booked for this service.`;
     }
 
     return {
