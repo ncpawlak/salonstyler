@@ -1,12 +1,12 @@
 import type { DayUtilization, UtilizationState } from '@chairside/core';
 import { useId } from 'react';
 import { View } from 'react-native';
-import Svg, { Circle, Defs, G, Line, Path, Pattern, Rect } from 'react-native-svg';
+import Svg, { Circle, Defs, G, Path, Pattern, Rect } from 'react-native-svg';
 
 import { Text } from '@/components/ui';
-import { useTheme } from '@/theme/theme-provider';
 
-import { formatMinutes, stateLabel, useUtilizationPalette } from './palette';
+import { useUtilizationPalette } from './palette';
+import { dayRingFill, ringAccessibilityLabel } from './ring-fill';
 
 const TAU = Math.PI * 2;
 
@@ -48,61 +48,36 @@ export type DayRingProps = {
   size?: number;
   strokeWidth?: number;
   showLabel?: boolean;
-  /** Draws a marker at this instant when it falls on the day. */
-  now?: number;
-  /** Hour ticks at 12a / 6a / 12p / 6p. Defaults on for large rings. */
-  ticks?: boolean;
 };
 
 /**
- * 24-hour ring: the day runs clockwise from midnight at the top, so where the color sits tells
- * him *when* he's booked or free. Booked = accent, open = green, tentative = striped amber,
- * off = gray. The center shows % booked of bookable time.
+ * Progress donut: the whole ring is that day's working hours (open + tentative + booked), and the
+ * fill is how much of it is booked, starting at 12 o'clock. Booked = accent, free tentative =
+ * striped amber, free open = soft green track. A day with no hours is a gray ring reading "Off".
+ * *When* he's busy lives in the timeline strip next to it, not in the ring.
  */
-export function DayRing({
-  day,
-  size = 64,
-  strokeWidth,
-  showLabel = true,
-  now,
-  ticks = size >= 120,
-}: DayRingProps) {
-  const { colors } = useTheme();
+export function DayRing({ day, size = 64, strokeWidth, showLabel = true }: DayRingProps) {
   const palette = useUtilizationPalette();
   const stripeId = useStripeId();
   const stroke = strokeWidth ?? Math.max(4, size / 8);
   const c = size / 2;
   const r = (size - stroke) / 2;
-  const span = day.end - day.start;
-  const frac = (ms: number) => (ms - day.start) / span;
-  const pct = Math.round(day.utilization * 100);
-  const closed = day.capacityMinutes === 0;
-
-  const arcs = day.runs.filter((run) => run.state !== 'closed');
-  const nowFrac = now !== undefined && now >= day.start && now < day.end ? frac(now) : null;
-
-  const summary = closed
-    ? 'Closed'
-    : `${pct}% booked. ${(['booked', 'open', 'tentative'] as const)
-        .map((s) => `${stateLabel[s]} ${formatMinutes(minutesOf(day, s))}`)
-        .join(', ')}`;
+  const fill = dayRingFill(day);
+  const large = size >= 96;
 
   return (
     <View
       accessible
       accessibilityRole="image"
-      accessibilityLabel={summary}
+      accessibilityLabel={ringAccessibilityLabel(fill)}
       style={{ width: size, height: size }}
       className="items-center justify-center"
     >
       <Svg width={size} height={size} style={{ position: 'absolute' }}>
         <StripeDefs id={stripeId} color={palette.tentativeStripe} size={Math.max(4, stroke / 2)} />
         <Circle cx={c} cy={c} r={r} stroke={palette.closed} strokeWidth={stroke} fill="none" />
-        {arcs.map((run) => {
-          const from = frac(run.start);
-          const to = frac(run.end);
-          const full = to - from >= 0.9999;
-          const color = palette[run.state];
+        {fill.slices.map((slice) => {
+          const full = slice.to - slice.from >= 0.9999;
           const shape = (paint: string, key: string) =>
             full ? (
               <Circle
@@ -117,60 +92,32 @@ export function DayRing({
             ) : (
               <Path
                 key={key}
-                d={arcPath(c, r, from, to)}
+                d={arcPath(c, r, slice.from, slice.to)}
                 stroke={paint}
                 strokeWidth={stroke}
                 fill="none"
               />
             );
           return (
-            <G key={run.start}>
-              {shape(color, 'fill')}
-              {run.state === 'tentative' ? shape(`url(#${stripeId})`, 'stripe') : null}
+            <G key={slice.state}>
+              {shape(palette[slice.state], 'fill')}
+              {slice.state === 'tentative' ? shape(`url(#${stripeId})`, 'stripe') : null}
             </G>
           );
         })}
-        {ticks
-          ? [0, 0.25, 0.5, 0.75].map((f) => {
-              const a = point(c, r - stroke / 2 - 2, f);
-              const b = point(c, r - stroke / 2 - 7, f);
-              return (
-                <Line
-                  key={f}
-                  x1={a.x}
-                  y1={a.y}
-                  x2={b.x}
-                  y2={b.y}
-                  stroke={colors['subtle-foreground']}
-                  strokeWidth={1.5}
-                  strokeLinecap="round"
-                />
-              );
-            })
-          : null}
-        {nowFrac !== null ? (
-          <Circle
-            cx={point(c, r, nowFrac).x}
-            cy={point(c, r, nowFrac).y}
-            r={Math.max(2.5, stroke / 2.6)}
-            fill={colors.destructive}
-            stroke={colors.card}
-            strokeWidth={1.5}
-          />
-        ) : null}
       </Svg>
       {showLabel ? (
         <View className="items-center">
           <Text
             numeric
             className="font-bold"
-            tone={closed ? 'subtle' : 'default'}
-            style={{ fontSize: closed ? size * 0.16 : size * 0.24 }}
+            tone={fill.closed ? 'subtle' : 'default'}
+            style={{ fontSize: fill.closed ? size * 0.2 : size * (large ? 0.22 : 0.26) }}
             maxFontSizeMultiplier={1}
           >
-            {closed ? 'Off' : `${pct}%`}
+            {fill.closed ? 'Off' : `${fill.percent}%`}
           </Text>
-          {size >= 96 && !closed ? (
+          {large && !fill.closed ? (
             <Text variant="caption" tone="muted" maxFontSizeMultiplier={1}>
               booked
             </Text>
@@ -180,7 +127,6 @@ export function DayRing({
     </View>
   );
 }
-
 export function minutesOf(day: DayUtilization, state: UtilizationState): number {
   switch (state) {
     case 'booked':

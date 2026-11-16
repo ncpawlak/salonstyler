@@ -15,6 +15,7 @@ import { cn } from '@/lib/cn';
 import { DayRing, LegendSwatch } from './day-ring';
 import { DayStrip, hourTicks, hourWindow } from './day-strip';
 import { formatDate, formatMinutes, stateLabel } from './palette';
+import { bookedLabel, bookedPercent, dayRingFill, freeLabel } from './ring-fill';
 import { useRangeUtilization } from './use-calendar-data';
 
 /** Sunday-start week containing `date`. */
@@ -145,7 +146,7 @@ export function WeekView({
 }
 
 function WeekSummary({ summary }: { summary: UtilizationSummary }) {
-  const pct = Math.round(summary.utilization * 100);
+  const pct = bookedPercent(summary.bookedMinutes, summary.capacityMinutes);
   return (
     <Card className="flex-row items-center gap-4">
       <View className="items-center">
@@ -196,20 +197,21 @@ function WeekRow({
   timeZone: string;
   onPress: () => void;
 }) {
-  const closed = day.capacityMinutes === 0;
-  const free = day.openMinutes + day.tentativeMinutes;
+  const fill = dayRingFill(day);
+  const { closed } = fill;
   const label = formatDate(day.date, { weekday: 'long', month: 'long', day: 'numeric' });
   const detail = closed
     ? 'Off'
     : [
+        bookedLabel(fill),
+        freeLabel(fill),
         `${day.appointmentCount} ${day.appointmentCount === 1 ? 'appt' : 'appts'}`,
-        free > 0 ? `${formatMinutes(free)} free` : 'Fully booked',
       ].join(' · ');
 
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${label}, ${closed ? 'off' : `${Math.round(day.utilization * 100)}% booked, ${detail}`}`}
+      accessibilityLabel={`${label}, ${closed ? 'off' : detail}`}
       accessibilityHint="Opens the day"
       onPress={onPress}
       className={cn(
@@ -226,12 +228,16 @@ function WeekRow({
         </Text>
       </View>
       <View className="flex-1 gap-1.5">
-        <DayStrip day={day} window={window} timeZone={timeZone} />
-        <Text variant="footnote" tone={closed ? 'subtle' : free === 0 ? 'warning' : 'muted'}>
+        <DayStrip day={day} window={window} timeZone={timeZone} now={isToday ? now : undefined} />
+        <Text
+          variant="footnote"
+          numeric
+          tone={closed ? 'subtle' : fill.freeMinutes === 0 ? 'warning' : 'muted'}
+        >
           {detail}
         </Text>
       </View>
-      <DayRing day={day} size={RING} now={isToday ? now : undefined} />
+      <DayRing day={day} size={RING} />
     </Pressable>
   );
 }

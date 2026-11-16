@@ -12,6 +12,7 @@ import { cn } from '@/lib/cn';
 
 import { DayRing } from './day-ring';
 import { formatDate, formatMinutes, useUtilizationPalette } from './palette';
+import { bookedLabel, bookedPercent, dayRingFill, freeLabel } from './ring-fill';
 import { useRangeUtilization } from './use-calendar-data';
 import { Legend } from './week-view';
 
@@ -96,7 +97,10 @@ export function MonthView({
       ) : (
         <>
           <Card className="flex-row items-center justify-between">
-            <Stat value={`${Math.round(summary.utilization * 100)}%`} label="booked" />
+            <Stat
+              value={`${bookedPercent(summary.bookedMinutes, summary.capacityMinutes)}%`}
+              label="booked"
+            />
             <Stat value={String(summary.appointmentCount)} label="appointments" />
             <Stat value={formatMinutes(summary.openMinutes)} label="open" />
           </Card>
@@ -152,7 +156,7 @@ function MonthGrid({
             if (!d) return <View key={i} className="m-0.5 flex-1" />;
             const level = utilizationLevel(d);
             const isToday = d.date === today;
-            const pct = Math.round(d.utilization * 100);
+            const fill = dayRingFill(d);
             return (
               <Pressable
                 key={d.date}
@@ -160,7 +164,7 @@ function MonthGrid({
                 accessibilityLabel={`${formatDate(d.date, { weekday: 'long', month: 'long', day: 'numeric' })}, ${
                   level === null
                     ? 'off'
-                    : `${pct}% booked, ${d.appointmentCount} appointments, ${formatMinutes(d.openMinutes + d.tentativeMinutes)} free`
+                    : `${bookedLabel(fill)}, ${freeLabel(fill)}, ${d.appointmentCount} ${d.appointmentCount === 1 ? 'appointment' : 'appointments'}`
                 }`}
                 accessibilityHint="Opens the day"
                 onPress={() => {
