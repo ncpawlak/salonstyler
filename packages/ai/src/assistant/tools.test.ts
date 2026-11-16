@@ -1,7 +1,18 @@
 import { findSlots, toSalonDate } from '@chairside/core';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { createFakePort, CUT, COLOR, type FakePort, KARINA, MENU, NOW, TZ } from './fake-salon.ts';
+import {
+  appointment,
+  createFakePort,
+  CUT,
+  COLOR,
+  type FakePort,
+  KARINA,
+  MARIA,
+  MENU,
+  NOW,
+  TZ,
+} from './fake-salon.ts';
 import { resolveItems } from './menu.ts';
 import { cancelDraft, confirmDraft, proposeBooking, runTool, type ToolContext } from './tools.ts';
 import type { DraftCard, SlotsCard } from './types.ts';
@@ -114,6 +125,80 @@ describe('find_slots', () => {
     for (const day of card.days) {
       for (const s of day.slots) expect(s.time).toMatch(/PM$/);
     }
+  });
+
+  it('widens forward to the next days with openings when few are open nearby', async () => {
+    // Only Dec 18 is searched; color fits there just once (12:30), so later days are added.
+    const out = await runTool(ctx, 'find_slots', {
+      clientId: KARINA,
+      date: '2026-12-18',
+      radiusDays: 0,
+    });
+    const card = out.card as SlotsCard;
+    expect(card.days.map((d) => [d.date, d.dayOffset])).toEqual([
+      ['2026-12-18', 0],
+      ['2026-12-19', 1],
+    ]);
+    expect(card.days[0]!.slots.map((s) => s.time)).toEqual(['12:30 PM']);
+    expect(card.days[1]!.slots).toHaveLength(3);
+    expect(out.result).toMatchObject({ widened: true, requestedDate: '2026-12-18' });
+  });
+
+  it('skips closed and full days when widening, up to three weeks out', async () => {
+    // Sun Dec 20 is closed and Mon is closed; fill Tue Dec 22–Wed Dec 30 too.
+    for (let day = 22; day <= 30; day++) {
+      port.appointments.push(
+        appointment(MARIA, [
+          { kind: 'busy', start: `2026-12-${day}T15:00:00Z`, end: `2026-12-${day}T23:00:00Z` },
+        ]),
+      );
+    }
+    const card = await slotsFor({
+      clientId: KARINA,
+      date: '2026-12-20',
+      services: [{ serviceId: CUT }],
+      radiusDays: 0,
+    });
+    expect(card.days.map((d) => d.date)).toEqual(['2026-12-20', '2026-12-31']);
+    expect(card.days[0]!.slots).toEqual([]);
+
+    // Nothing within 21 days: only the requested day comes back.
+    for (let day = 31; day <= 41; day++) {
+      const date = new Date(Date.UTC(2026, 11, day)).toISOString().slice(0, 10);
+      port.appointments.push(
+        appointment(MARIA, [
+          { kind: 'busy', start: `${date}T15:00:00Z`, end: `${date}T23:00:00Z` },
+        ]),
+      );
+    }
+    const empty = await slotsFor({
+      clientId: KARINA,
+      date: '2026-12-20',
+      services: [{ serviceId: CUT }],
+      radiusDays: 0,
+    });
+    expect(empty.days.map((d) => d.date)).toEqual(['2026-12-20']);
+  });
+
+  it('does not widen when the nearby window already has enough openings', async () => {
+    const out = await runTool(ctx, 'find_slots', { clientId: KARINA, date: '2026-12-18' });
+    expect((out.result as { widened?: boolean }).widened).toBeUndefined();
+    expect((out.card as SlotsCard).days.every((d) => Math.abs(d.dayOffset) <= 3)).toBe(true);
+  });
+
+  it('says a past date has passed and a full today has no openings left, not "fully booked"', async () => {
+    const past = await runTool(ctx, 'find_slots', { clientId: KARINA, date: '2026-11-27' });
+    expect(past.result).toMatchObject({ requestedNote: 'Fri, Nov 27 has already passed.' });
+
+    port.appointments.push(
+      appointment(MARIA, [
+        { kind: 'busy', start: '2026-12-01T15:00:00Z', end: '2026-12-01T23:00:00Z' },
+      ]),
+    );
+    const today = await runTool(ctx, 'find_slots', { clientId: KARINA, date: '2026-12-01' });
+    expect(today.result).toMatchObject({
+      requestedNote: 'No openings left today for this service.',
+    });
   });
 
   it('rejects malformed arguments without throwing', async () => {

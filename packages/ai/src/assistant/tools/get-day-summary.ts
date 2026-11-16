@@ -6,7 +6,8 @@ import { DAY, defineTool, formatDayLabel, formatTime, localDate } from '../tool-
 export default defineTool({
   name: 'get_day_summary',
   order: 40,
-  description: 'Work hours and appointments for one local date (YYYY-MM-DD).',
+  description:
+    'Work hours and appointments for one local date (YYYY-MM-DD), for "what’s on Friday?". Not for open times: gaps between appointments are not bookable openings; use find_slots for availability.',
   parameters: {
     type: 'object',
     properties: { date: { type: 'string' } },

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { ChatMessage, ChatResult, LLMProvider, ToolCall } from '../types.ts';
 import { DemoAssistantProvider, parseDemoDate } from './demo-provider.ts';
-import { createFakePort, KARINA, NOW } from './fake-salon.ts';
+import { appointment, createFakePort, KARINA, MARIA, NOW } from './fake-salon.ts';
 import { runAssistantTurn } from './loop.ts';
 import type { DraftCard, SlotsCard } from './types.ts';
 
@@ -176,7 +176,82 @@ describe('DemoAssistantProvider', () => {
     expect(parseDemoDate('12/18', '2026-12-01')).toBe('2026-12-18');
     expect(parseDemoDate('tomorrow', '2026-12-01')).toBe('2026-12-02');
     expect(parseDemoDate("what's on friday", '2026-12-01')).toBe('2026-12-04');
+    expect(parseDemoDate('on the 18th', '2026-12-01')).toBe('2026-12-18');
+    expect(parseDemoDate('the 3rd', '2026-12-10')).toBe('2027-01-03');
     expect(parseDemoDate('hello', '2026-12-01')).toBeNull();
+  });
+
+  it('parses relative offsets and follow-ups', () => {
+    const today = '2026-11-16';
+    expect(parseDemoDate('schedule dana for a 6 week followup', today)).toBe('2026-12-28');
+    expect(parseDemoDate('6-week follow-up', today)).toBe('2026-12-28');
+    expect(parseDemoDate('two weeks out', today)).toBe('2026-11-30');
+    expect(parseDemoDate('in 6 weeks', today)).toBe('2026-12-28');
+    expect(parseDemoDate('in 3 days', today)).toBe('2026-11-19');
+    expect(parseDemoDate('in a month', today)).toBe('2026-12-16');
+    expect(parseDemoDate('in 6 months', today)).toBe('2027-05-16');
+    expect(parseDemoDate('next week', today)).toBe('2026-11-23');
+    expect(parseDemoDate('next month', today)).toBe('2026-12-16');
+    expect(parseDemoDate('next month', '2027-01-31')).toBe('2027-02-28');
+    expect(parseDemoDate('next friday', today)).toBe('2026-11-20');
+  });
+
+  it('routes "schedule <name> for a 6 week followup" and "book <name> in 3 weeks"', async () => {
+    for (const [text, date] of [
+      ['schedule karina for a 6 week followup', '2027-01-12'],
+      ['book karina lopez in 3 weeks', '2026-12-22'],
+    ] as const) {
+      const { tools } = setup();
+      const turn = await runAssistantTurn({
+        llm: new DemoAssistantProvider(),
+        tools,
+        prompt,
+        history: [],
+        text,
+      });
+      expect(turn.toolCalls.map((c) => c.name)).toEqual(['find_client', 'find_slots']);
+      expect((turn.cards[0] as SlotsCard).requestedDate).toBe(date);
+    }
+  });
+
+  it('only mentions other days when the card has them, with correct grammar', async () => {
+    const { port, tools } = setup();
+    // Karina's color fits only at 12:30 on Fri Dec 18; fill Dec 15–17 and 19, and every day
+    // after, so no other day has openings.
+    for (let day = 15; day <= 31; day++) {
+      if (day === 18) continue;
+      port.appointments.push(
+        appointment(MARIA, [
+          {
+            kind: 'busy',
+            start: `2026-12-${day}T15:00:00Z`,
+            end: `2026-12-${day}T23:00:00Z`,
+          },
+        ]),
+      );
+    }
+    for (let day = 1; day <= 8; day++) {
+      port.appointments.push(
+        appointment(MARIA, [
+          {
+            kind: 'busy',
+            start: `2027-01-0${day}T15:00:00Z`,
+            end: `2027-01-0${day}T23:00:00Z`,
+          },
+        ]),
+      );
+    }
+    const turn = await runAssistantTurn({
+      llm: new DemoAssistantProvider(),
+      tools,
+      prompt,
+      history: [],
+      text: 'schedule karina for december 18th',
+    });
+    expect((turn.cards[0] as SlotsCard).days.map((d) => d.date)).toEqual(['2026-12-18']);
+    expect(turn.reply).toBe(
+      "Karina's All-over Color on Fri, Dec 18: 12:30 PM is open. Tap a time to hold it.",
+    );
   });
 
   it('drives the full schedule → hold → change flow through the real tools', async () => {
@@ -191,8 +266,10 @@ describe('DemoAssistantProvider', () => {
       text: 'schedule karina for december 18th',
     });
     expect(first.toolCalls.map((c) => c.name)).toEqual(['find_client', 'find_slots']);
-    expect(first.reply).toContain('Fri, Dec 18 for Karina');
-    expect(first.reply).toContain('12:30 PM');
+    expect(first.reply).toBe(
+      "Karina's All-over Color on Fri, Dec 18: 12:30 PM is open. Also open: Thu, Dec 17, Sat, Dec 19 and Wed, Dec 16. Tap a time to hold it.",
+    );
+    expect(first.reply).not.toMatch(/\(.*\(/);
     expect(first.cards[0]!.type).toBe('slots');
 
     const second = await runAssistantTurn({
