@@ -481,3 +481,15 @@ verify_jwt = false
 # One-click unsubscribe (token-gated) and cron pokes (shared secret); members' calls are checked in the function.
 [functions.marketing]
 verify_jwt = false
+
+# Owner data export / restore: requires the owner's JWT.
+[functions.data-export]
+verify_jwt = true
+
+# Service-menu import (Vagaro link, text, screenshot): requires a signed-in user's JWT.
+[functions.import-services]
+verify_jwt = true
+
+# Every directory in supabase/functions needs a [functions.<name>] entry above: `npm run hosted:deploy`
+# deploys exactly these, with --no-verify-jwt where verify_jwt = false, and `npm run check:hosted` fails
+# CI when a function is missing.

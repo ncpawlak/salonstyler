@@ -18,14 +18,7 @@ Flow:
 - The `notifier` Edge Function claims due rows (`claim_notifications`, which skips rows in quiet hours), sends them through the Expo Push API in batches of 100, and records results (`finish_notifications`). `DeviceNotRegistered` tokens are deleted. Failed sends retry with backoff, up to 5 attempts.
 - iOS categories: `appointmentRequest` (Approve / Other time / Decline) and `requestNudge` (Respond / Ignore). Approve, Decline and Ignore run in the background via `set_appointment_status`; Other time and Respond open `/requests/<id>`.
 
-Setup (hosted):
-
-```bash
-npx supabase functions deploy notifier --no-verify-jwt
-npx supabase secrets set NOTIFIER_SECRET=<random> EXPO_ACCESS_TOKEN=<optional, Expo "enhanced security" token>
-```
-
-Then in the SQL editor, so pg_cron can reach the function:
+Setup (hosted): `npm run hosted:deploy` deploys `notifier` (no JWT check), `npm run hosted:secrets` sets `NOTIFIER_SECRET` (and the optional `EXPO_ACCESS_TOKEN`, Expo "enhanced security" token) from `.env.hosted`, and `npm run hosted:vault -- --apply` stores the two Vault secrets pg_cron reads ([pilot-cutover.md](../../docs/pilot-cutover.md#3-hosted-supabase)). By hand, the Vault part is:
 
 ```sql
 select vault.create_secret('https://<ref>.supabase.co/functions/v1/notifier', 'notifier_url');
@@ -38,7 +31,7 @@ Without those secrets, rows still queue (and nudges/expiry still run) but nothin
 
 Real pushes need a physical device and an EAS build (Expo Go on SDK 53+ has no remote push).
 
-1. `npx eas init` in `apps/mobile` and copy the printed `extra.eas.projectId` into `app.json` ([docs/pilot-cutover.md](../../docs/pilot-cutover.md#2-link-the-eas-project-one-time-manual)), then `npx eas build --profile development --platform ios` and install it on an iPhone. Configure push credentials when EAS prompts (APNs key).
+1. `npx eas init` in `apps/mobile` and copy the printed `extra.eas.projectId` into `app.json` ([docs/pilot-cutover.md](../../docs/pilot-cutover.md#1-bundle-id-and-eas-project-one-time)), then `npx eas build --profile development --platform ios` and install it on an iPhone. Configure push credentials when EAS prompts (APNs key).
 2. Point the build at a Supabase project with the notifier set up as above. Sign in. Allow notifications; Settings → Notifications should show **This device: On**, and a `push_tokens` row should exist.
 3. **Lock-screen approve:** lock the phone and create a request as a client (e.g. `book_appointment` as a non-member, or a booking in Tentative hours). Within about a minute a "New request from <client>" push arrives. Long-press it and tap **Approve** from the lock screen (Face ID confirms it; the app stays closed). The appointment becomes `confirmed` and shows as confirmed in Calendar. Repeat with **Decline** (cancelled, reason `declined`) and **Other time** (opens the request screen to move and approve).
 4. **Nudge:** set "Remind me after" to 1h, create a request and don't respond. After 1h a "You haven't responded to <client>'s request" push arrives with **Respond** / **Ignore**. **Ignore** releases the hold (cancelled, reason `ignored`). To test faster, backdate it: `update appointments set requested_at = now() - interval '2 hours' where id = '<id>';`.

@@ -37,3 +37,6 @@ yarn-error.*
 # local env files
 .env
 .env*.local
+# hosted go-live secrets (scripts/hosted); the template is committed
+.env.hosted*
+!.env.hosted.example

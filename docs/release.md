@@ -58,8 +58,8 @@ GitHub needs a single repository secret, **`EXPO_TOKEN`** (expo.dev → Account 
 
 1. **JS-only change** (screens, copy, logic, most bug fixes): merge to `main`, then publish an OTA update (below). The stylist gets it the next time the app launches from cold (it downloads in the background and applies on the following launch; `checkAutomatically: ON_LOAD`, `fallbackToCacheTimeout: 0`, so launch is never blocked).
 2. **Native change** (new native dependency, plugin, permission, entitlement, push/associated-domain change, SDK upgrade, icon/splash): bump `version`, merge, then tag `v<version>` and push the tag. The workflow builds production and auto-submits to TestFlight. Install it from the TestFlight app (it takes ~10–30 min for Apple to process).
-3. **Database migration**: apply it to the hosted project (`npx supabase db push`) **before** shipping app code that needs it. Migrations must stay backward compatible with the app version currently on the phone (add columns/RPCs; don't drop or rename until the old app is gone).
-4. **Edge Function change**: `npx supabase functions deploy <name>` (flags in [pilot-cutover.md](pilot-cutover.md#3-hosted-supabase-checklist-manual)). Functions should accept requests from the previous app version.
+3. **Database migration**: apply it to the hosted project (`npm run hosted:deploy -- --skip-functions`, dry run first with `--dry-run`) **before** shipping app code that needs it. Migrations must stay backward compatible with the app version currently on the phone (add columns/RPCs; don't drop or rename until the old app is gone).
+4. **Edge Function change**: `npm run hosted:deploy -- --skip-db --only <name>` (deploys with the `verify_jwt` setting from `supabase/config.toml`; see [pilot-cutover.md](pilot-cutover.md#3-hosted-supabase)). A new function needs a `[functions.<name>]` entry there, and new secrets go in `scripts/hosted/manifest.mjs` and `.env.hosted.example` (CI's `npm run check:hosted` enforces both). Functions should accept requests from the previous app version.
 
 Order for a release that touches everything: migration → functions → OTA update or build.
 

@@ -13,7 +13,13 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "npm run test --workspaces --if-present",
-    "check:edge-imports": "node scripts/check-edge-import-maps.mjs"
+    "check:edge-imports": "node scripts/check-edge-import-maps.mjs",
+    "check:hosted": "node scripts/hosted/check.mjs",
+    "hosted:secrets": "node scripts/hosted/secrets.mjs",
+    "hosted:deploy": "node scripts/hosted/deploy.mjs",
+    "hosted:vault": "node scripts/hosted/vault.mjs",
+    "hosted:auth": "node scripts/hosted/auth.mjs",
+    "hosted:verify": "node scripts/hosted/verify.mjs"
   },
   "overrides": {
     "react-native-gesture-handler": "~3.3.0"

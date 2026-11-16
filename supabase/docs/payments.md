@@ -22,6 +22,9 @@ Secrets (function secrets, never committed or stored in the database):
 | `STRIPE_WEBHOOK_SECRET` | yes | Signing secret(s) of the webhook destination(s), `whsec_…`; comma-separate several |
 | `PAYMENTS_RETURN_URL` | for native | `https://…` page Stripe returns to after onboarding on iOS/Android (Stripe requires http(s)). The web app sends its own URL. The app re-checks status when it comes back to the foreground |
 | `STRIPE_CONNECT_COUNTRY` | no | Two-letter country for new accounts (default `US`) |
+| `STRIPE_TERMINAL_LOCATION_ID` | no | Stripe Terminal location (`tml_…`) for card-present payments. Unset: one location is created per salon on first use |
+
+On a hosted project these are set from `.env.hosted` by `npm run hosted:secrets` ([pilot-cutover.md](../../docs/pilot-cutover.md#3-hosted-supabase)).
 
 ## Manual setup (test mode)
 
@@ -43,11 +46,6 @@ Secrets (function secrets, never committed or stored in the database):
    ```
    Copy the `whsec_…` it prints into `STRIPE_WEBHOOK_SECRET` and restart `functions serve`. `--forward-connect-to` is what delivers the connected accounts' `account.updated` events. Try it with `stripe trigger payment_intent.succeeded`.
 7. **Onboard in the app:** Settings → Payments → **Connect with Stripe**. In test mode use Stripe's test data: phone `000 000 0000`, SMS code `000-000`, SSN `000-00-0000`, address line `address_full_match`, routing `110000000`, account `000123456789`. After returning, the screen shows **Payments enabled** (it re-syncs from Stripe even if the webhook hasn't arrived).
-8. **Hosted project:**
-   ```bash
-   npx supabase functions deploy payments
-   npx supabase functions deploy stripe-webhook --no-verify-jwt
-   npx supabase secrets set STRIPE_SECRET_KEY=sk_test_... PAYMENTS_RETURN_URL=https://...
-   ```
-9. **Register the webhook endpoint:** Developers → Webhooks → **Add destination**. Endpoint URL `https://<project-ref>.supabase.co/functions/v1/stripe-webhook`. Add **two** destinations with the same URL, one for **Your account** events and one for **Connected accounts** events, each with `account.updated`, `payment_intent.processing`, `payment_intent.succeeded`, `payment_intent.payment_failed`, `payment_intent.canceled` and `charge.refunded`. Each destination has its own signing secret; set both, comma-separated: `npx supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_connect...,whsec_platform...`.
-10. **Going live** repeats steps 2–9 in live mode with `sk_live_…` and a live webhook secret.
+8. **Hosted project:** functions are deployed by `npm run hosted:deploy` and secrets set by `npm run hosted:secrets` from `.env.hosted` ([pilot-cutover.md](../../docs/pilot-cutover.md#3-hosted-supabase)).
+9. **Register the webhook endpoint:** Developers → Webhooks → **Add destination**. Endpoint URL `https://<project-ref>.supabase.co/functions/v1/stripe-webhook`. Add **two** destinations with the same URL, one for **Your account** events and one for **Connected accounts** events, each with `account.updated`, `payment_intent.processing`, `payment_intent.succeeded`, `payment_intent.payment_failed`, `payment_intent.canceled` and `charge.refunded` (deposits and card checkouts on the salon's account arrive through the connected-accounts one). Each destination has its own signing secret; put both in `STRIPE_WEBHOOK_SECRET`, comma-separated (`whsec_platform…,whsec_connect…`), and run `npm run hosted:secrets`. `npm run hosted:verify` checks both destinations and their events.
+10. **Going live** repeats steps 2–9 in live mode with `sk_live_…` and the live webhook secrets.
