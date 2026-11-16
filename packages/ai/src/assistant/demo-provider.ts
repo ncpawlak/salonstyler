@@ -17,7 +17,50 @@ const WEEKDAYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 const pad = (n: number) => String(n).padStart(2, '0');
 const iso = (d: Date) => `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
 
-/** Parses "december 18th", "dec 18", "12/18", "tomorrow", "friday" relative to `today`. */
+const NUMBER_WORDS = [
+  'zero',
+  'one',
+  'two',
+  'three',
+  'four',
+  'five',
+  'six',
+  'seven',
+  'eight',
+  'nine',
+  'ten',
+  'eleven',
+  'twelve',
+];
+const AMOUNT = `(\\d{1,2}|an?|${NUMBER_WORDS.join('|')})`;
+const UNIT = '(day|week|month)s?';
+/** "in 6 weeks", "in a month", "in three days". */
+const IN_AMOUNT = new RegExp(`\\bin\\s+${AMOUNT}[\\s-]+${UNIT}\\b`);
+/** "6 week follow-up", "6-week followup", "6 weeks out", "two weeks from now", "a month later". */
+const AMOUNT_OUT = new RegExp(
+  `\\b${AMOUNT}[\\s-]+${UNIT}[\\s-]*(?:follow[\\s-]?ups?|check[\\s-]?ins?|out|from\\s+(?:now|today)|later|away)\\b`,
+);
+const NEXT_UNIT = /\bnext\s+(week|month)\b/;
+/** True when the text names a relative date ("in 6 weeks", "a 6 week follow-up", "next month"). */
+const RELATIVE = new RegExp(`${IN_AMOUNT.source}|${AMOUNT_OUT.source}|${NEXT_UNIT.source}`);
+
+const amount = (word: string) =>
+  /^\d+$/.test(word) ? Number(word) : word.startsWith('a') ? 1 : NUMBER_WORDS.indexOf(word);
+
+function addUnits(base: Date, n: number, unit: string): string {
+  if (unit === 'day') return iso(new Date(base.getTime() + n * 86_400_000));
+  if (unit === 'week') return iso(new Date(base.getTime() + n * 7 * 86_400_000));
+  // Months keep the day of month, clamped to the target month's last day (Jan 31 + 1 → Feb 28).
+  const y = base.getUTCFullYear();
+  const m = base.getUTCMonth() + n;
+  const last = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+  return iso(new Date(Date.UTC(y, m, Math.min(base.getUTCDate(), last))));
+}
+
+/**
+ * Parses "december 18th", "dec 18", "12/18", "tomorrow", "friday", "in 3 days",
+ * "a 6 week follow-up", "next week" or "next month" relative to `today`.
+ */
 export function parseDemoDate(text: string, today: string): string | null {
   const t = text.toLowerCase();
   const base = new Date(`${today}T00:00:00Z`);
@@ -28,6 +71,11 @@ export function parseDemoDate(text: string, today: string): string | null {
   };
   if (/\btoday\b/.test(t)) return today;
   if (/\btomorrow\b/.test(t)) return iso(new Date(base.getTime() + 86_400_000));
+  // Before weekdays/months: "6 months" would otherwise read as "mon".
+  const rel = IN_AMOUNT.exec(t) ?? AMOUNT_OUT.exec(t);
+  if (rel) return addUnits(base, amount(rel[1]!), rel[2]!);
+  const nextUnit = NEXT_UNIT.exec(t);
+  if (nextUnit) return addUnits(base, 1, nextUnit[1]!);
   const named =
     /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+(\d{1,2})(?:st|nd|rd|th)?\b/.exec(
       t,
@@ -45,6 +93,10 @@ export function parseDemoDate(text: string, today: string): string | null {
 
 type ToolResultMessage = Extract<ChatMessage, { role: 'tool' }>;
 type Json = Record<string, unknown>;
+
+/** "a", "a and b", "a, b and c". */
+const listOf = (items: string[]) =>
+  items.length <= 1 ? (items[0] ?? '') : `${items.slice(0, -1).join(', ')} and ${items.at(-1)}`;
 
 const parse = (s: string): Json => {
   try {
@@ -172,8 +224,17 @@ export class DemoAssistantProvider implements LLMProvider {
       return this.call('get_sales_report', { period });
     }
 
-    const schedule = /\b(?:schedule|book|put)\s+(.+?)\s+(?:in\s+)?(?:for|on)\s+(.+)$/i.exec(t);
-    if (schedule && !/^(the|that|option)\b/i.test(schedule[1]!)) {
+    const schedule =
+      /\b(?:schedule|book|put)\s+(.+?)\s+(?:in\s+)?(?:for|on)\s+(.+)$/i.exec(t) ??
+      new RegExp(
+        `\\b(?:schedule|book|put)\\s+(.+?)\\s+((?:in\\s+|next\\s+)?(?:${AMOUNT}[\\s-]+)?${UNIT}\\b.*)$`,
+        'i',
+      ).exec(t);
+    if (
+      schedule &&
+      !/^(the|that|option)\b/i.test(schedule[1]!) &&
+      (/\s(?:for|on)\s/i.test(t) || RELATIVE.test(schedule[2]!.toLowerCase()))
+    ) {
       return this.call('find_client', { query: schedule[1]!.replace(/'s$/i, '') });
     }
 
@@ -286,20 +347,30 @@ export class DemoAssistantProvider implements LLMProvider {
           (result.days as { date: string; label: string; slots: { time: string }[] }[]) ?? [];
         const requested = days.find((d) => d.date === result.requestedDate);
         const client = (result.client as { name: string } | null)?.name;
-        const who = client ? ` for ${client.split(' ')[0]}` : '';
+        const first = client?.split(' ')[0];
+        const who = first ? ` for ${first}` : '';
         const service = String(result.serviceSummary ?? '').split(' · ')[0];
+        const offset = (d: { date: string }) =>
+          Math.abs(Date.parse(d.date) - Date.parse(String(result.requestedDate)));
+        const others = days
+          .filter((d) => d !== requested && d.slots.length > 0)
+          .sort((a, b) => offset(a) - offset(b));
         if (requested && requested.slots.length > 0) {
-          const times = requested.slots.map((s) => s.time).join(', ');
+          const times = requested.slots.map((s) => s.time);
+          const what = service ? `${first ? `${first}'s ` : ''}${service}` : `An opening${who}`;
+          const also = others.length
+            ? ` Also open: ${listOf(others.slice(0, 3).map((d) => d.label))}.`
+            : '';
           return this.say(
-            `${requested.label}${who} (${service}): ${times} are open. Nearby days are below too. Tap one to hold it.`,
+            `${what} on ${requested.label}: ${listOf(times)} ${times.length === 1 ? 'is' : 'are'} open.${also} Tap a time to hold it.`,
           );
         }
-        const nearby = days.filter((d) => d.slots.length > 0).slice(0, 2);
+        const nearby = others.slice(0, 2);
         return this.say(
           `${String(result.requestedNote ?? 'Nothing open that day.')}${
             nearby.length
-              ? ` Closest openings${who}: ${nearby.map((d) => `${d.label} at ${d.slots[0]!.time}`).join(', ')}.`
-              : ' Nothing nearby either; try another week.'
+              ? ` Closest openings${who}: ${listOf(nearby.map((d) => `${d.label} at ${d.slots[0]!.time}`))}.`
+              : ' Nothing open in the next few weeks either.'
           }`,
         );
       }
@@ -315,7 +386,7 @@ export class DemoAssistantProvider implements LLMProvider {
       case 'propose_booking':
         if (error) return this.say(`I couldn't hold that: ${error.message}`);
         return this.say(
-          `I've held ${String(result.label)} (${String(result.serviceSummary)}). Tap Confirm to book it, or Change to pick another time.`,
+          `I've held ${String(result.label)} for ${String(result.serviceSummary)}. Tap Confirm to book it, or Change to pick another time.`,
         );
       case 'cancel_draft':
         return this.say(error ? error.message : 'Okay, I released that hold.');
